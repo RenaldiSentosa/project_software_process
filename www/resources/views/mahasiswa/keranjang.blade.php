@@ -7,6 +7,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Library SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -117,42 +121,6 @@
             fill: none; stroke: currentColor; stroke-width: 1.8;
             stroke-linecap: round; stroke-linejoin: round;
         }
-
-        /* MODAL LOGOUT */
-        .modal-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.45); z-index: 500;
-            align-items: center; justify-content: center;
-        }
-
-        .modal-overlay.open { display: flex; }
-
-        .modal {
-            background: #fff; border-radius: 16px; padding: 28px 28px 24px;
-            width: 100%; max-width: 340px; text-align: center;
-            box-shadow: 0 16px 48px rgba(0,0,0,0.15);
-        }
-
-        .modal-icon {
-            width: 48px; height: 48px; background: #fef2f2; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;
-        }
-
-        .modal-icon svg { width: 22px; height: 22px; fill: none; stroke: #dc2626; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-        .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-        .modal p  { font-size: 13px; color: #6b7280; margin-bottom: 24px; }
-        .modal-btns { display: flex; gap: 10px; }
-
-        .modal-btn {
-            flex: 1; height: 40px; border-radius: 10px;
-            font-size: 14px; font-weight: 600; font-family: inherit;
-            cursor: pointer; border: none; transition: background 0.15s;
-        }
-
-        .modal-btn.cancel  { background: #f3f4f6; color: #374151; }
-        .modal-btn.cancel:hover  { background: #e5e7eb; }
-        .modal-btn.confirm { background: #dc2626; color: #fff; }
-        .modal-btn.confirm:hover { background: #b91c1c; }
 
         /* MAIN */
         .main {
@@ -450,23 +418,10 @@
         @method('DELETE')
     </form>
 
-    {{-- MODAL LOGOUT --}}
-    <div class="modal-overlay" id="logoutModal">
-        <div class="modal">
-            <div class="modal-icon">
-                <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            </div>
-            <h3>Yakin mau logout?</h3>
-            <p>Kamu akan keluar dari akun SmartLab IPWIJA.</p>
-            <div class="modal-btns">
-                <button type="button" class="modal-btn cancel" onclick="closeLogoutModal()">No</button>
-                <form method="POST" action="{{ route('logout') }}" style="flex:1;">
-                    @csrf
-                    <button type="submit" class="modal-btn confirm" style="width:100%;">Yes</button>
-                </form>
-            </div>
-        </div>
-    </div>
+    {{-- Form Hidden khusus Logout via SweetAlert2 --}}
+    <form id="logoutForm" method="POST" action="{{ route('logout') }}" style="display:none;">
+        @csrf
+    </form>
 
     <script>
         // Dropdown User
@@ -482,14 +437,25 @@
             }
         });
 
-        // Modal Logout
+        // Modal Logout Menggunakan SweetAlert2 (Sesuai image_7db557.png)
         function openLogoutModal() {
             document.getElementById('dropdown').classList.remove('open');
-            document.getElementById('logoutModal').classList.add('open');
-        }
-
-        function closeLogoutModal() {
-            document.getElementById('logoutModal').classList.remove('open');
+            
+            Swal.fire({
+                title: 'Yakin ingin keluar?',
+                text: 'Kamu akan keluar dari sesi akun SmartLab IPWIJA.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626', /* Merah - Kanan */
+                cancelButtonColor: '#6b7280',  /* Abu-abu - Kiri */
+                confirmButtonText: 'Ya, Keluar!',
+                cancelButtonText: 'Batal'
+                /* reverseButtons dihapus agar Batal di KIRI & Ya, Keluar! di KANAN sesuai image_7db557.png */
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logoutForm').submit();
+                }
+            });
         }
 
         // Counter Karakter Textarea (0/500)
@@ -542,7 +508,6 @@
         function hapus(itemId, btnElement){
             if(confirm('Hapus alat ini dari keranjang?')) {
                 let deleteForm = document.getElementById('deleteItemForm');
-                // Arahkan ke endpoint destroy keranjang kamu (misal: /keranjang/hapus/{id})
                 deleteForm.action = `/keranjang/hapus/${itemId}`; 
                 deleteForm.submit();
             }

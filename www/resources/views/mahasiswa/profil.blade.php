@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
     <style>
         /* CSS RESET GLOBAL */
         *, *::before, *::after { 
@@ -62,17 +64,13 @@
             height: 100%; 
             object-fit: contain; 
         }
+
+        /* FIXED: Samain format brand-text sama peminjaman.blade.php */
         .brand-text { 
-            font-size: 12px; 
+            font-size: 13px; 
             font-weight: 700; 
             color: #111827; 
-            line-height: 1.2; 
-            text-transform: uppercase; 
-        }
-        .brand-subtext { 
-            font-weight: 400; 
-            color: #6b7280; 
-            text-transform: none; 
+            line-height: 1.3;
         }
         
         .nav-links { 
@@ -93,7 +91,6 @@
             color: #111827;
             background: #f3f4f6;
         }
-        /* State Aktif Halaman Profil */
         .nav-links a.active { 
             color: #008ecc; 
             background: #e0f2fe; 
@@ -167,7 +164,7 @@
             background: #ffffff;
             border: 1px solid #e5e7eb;
             border-radius: 14px;
-            width: 200px;
+            width: 220px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
             display: none;
             flex-direction: column;
@@ -467,24 +464,26 @@
 
     <nav class="navbar">
         <div class="nav-left">
+            {{-- FIXED: Samain format brand sama peminjaman.blade.php --}}
             <a href="{{ route('dashboard') }}" class="brand">
-                <div class="brand-logo"><img src="{{ asset('images/logo.png') }}" alt="Logo"></div>
-                <div class="brand-text">IPWIJA <span class="brand-subtext">SmartLab</span></div>
+                <div class="brand-logo"><img src="{{ asset('images/logo.png') }}" alt="Logo IPWIJA"></div>
+                <div class="brand-text">IPWIJA<br>SmartLab</div>
             </a>
             <div class="nav-links">
                 <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
                 <a href="{{ route('katalog') }}" class="{{ request()->routeIs('katalog') ? 'active' : '' }}">Katalog Alat</a>
                 <a href="{{ route('keranjang') }}" class="{{ request()->routeIs('keranjang') ? 'active' : '' }}">Keranjang</a>
                 <a href="{{ route('peminjaman') }}" class="{{ request()->routeIs('peminjaman') ? 'active' : '' }}">Peminjaman Saya</a>
-                <a href="{{ route('profil') }}" class="active">Profil</a>
+                <a href="{{ route('profil') }}" class="{{ request()->routeIs('profil') ? 'active' : '' }}">Profil</a>
             </div>
         </div>
         
         <div class="user-profile-wrapper" id="customUserWrapper">
             <div class="user-profile-trigger" onclick="toggleCustomDropdown(event)">
-                <div class="avatar-blue-circle">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
+                {{-- FIXED: Ganti ->name ke ->nama_lengkap biar konsisten sama peminjaman --}}
+                <div class="avatar-blue-circle">{{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}</div>
                 <div class="user-meta-data">
-                    <span class="meta-name">{{ auth()->user()->name ?? 'User' }}</span>
+                    <span class="meta-name">{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</span>
                     <span class="meta-role">Mahasiswa</span>
                 </div>
                 <svg class="arrow-toggle-icon" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -494,13 +493,15 @@
 
             <div class="custom-dropdown-box">
                 <div class="dropdown-identity">
-                    <span class="id-name">{{ auth()->user()->name ?? 'User' }}</span>
+                    {{-- FIXED: Ganti ->name ke ->nama_lengkap biar konsisten sama peminjaman --}}
+                    <span class="id-name">{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</span>
                     <span class="id-role">Mahasiswa</span>
                 </div>
-                
-                <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
+
+                {{-- FIXED: Samain pola logout dengan SweetAlert konfirmasi, pakai type="button" + id form --}}
+                <form action="{{ route('logout') }}" method="POST" style="margin: 0;" id="logoutForm">
                     @csrf
-                    <button type="submit" class="logout-btn-custom">
+                    <button type="button" class="logout-btn-custom" onclick="confirmLogout()">
                         <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
                         </svg>
@@ -534,7 +535,7 @@
                 <img src="{{ asset('images/avatar-illustration.png') }}" alt="Avatar">
             </div>
             <div class="user-intro-details">
-                <h2>{{ auth()->user()->name ?? 'Aprizal' }}</h2>
+                <h2>{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</h2>
                 <p>{{ auth()->user()->email ?? 'MuhamadAprizal01@gmail.com' }}</p>
                 <div class="pill-container">
                     <span class="identity-pill">Mahasiswa</span>
@@ -622,15 +623,38 @@
         </div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
-        // Mengontrol Aktif Dropdown Pojok Kanan Atas
+        // Catch Notifikasi session flash Laravel & transform to SweetAlert2
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: "{{ session('success') }}",
+                fontFamily: 'Plus Jakarta Sans',
+                confirmButtonColor: '#008ecc'
+            });
+        @endif
+
+        @if($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: "{{ $errors->first() }}",
+                fontFamily: 'Plus Jakarta Sans',
+                confirmButtonColor: '#008ecc'
+            });
+        @endif
+
+        // Toggle Aktif Buka-Tutup Dropdown Profile
         function toggleCustomDropdown(event) {
             event.stopPropagation(); 
             const wrapper = document.getElementById('customUserWrapper');
             wrapper.classList.toggle('show');
         }
 
-        // Auto Close Dropdown jika mengklik sembarang tempat
+        // Auto Close Dropdown jika diklik sembarang di luar menu
         window.addEventListener('click', function(e) {
             const wrapper = document.getElementById('customUserWrapper');
             if (wrapper && !wrapper.contains(e.target)) {
@@ -646,6 +670,25 @@
             } else {
                 input.type = "password";
             }
+        }
+
+        // FIXED: Konfirmasi SweetAlert2 sebelum Logout (sama persis kayak peminjaman.blade.php)
+        function confirmLogout() {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Yakin ingin keluar?',
+                text: 'Kamu akan keluar dari sesi akun SmartLab IPWIJA.',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Keluar!',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                fontFamily: 'Plus Jakarta Sans',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logoutForm').submit();
+                }
+            });
         }
     </script>
 </body>

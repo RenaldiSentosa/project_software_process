@@ -64,17 +64,12 @@
             height: 100%; 
             object-fit: contain; 
         }
+
         .brand-text { 
-            font-size: 12px; 
+            font-size: 13px; 
             font-weight: 700; 
             color: #111827; 
-            line-height: 1.2; 
-            text-transform: uppercase; 
-        }
-        .brand-subtext { 
-            font-weight: 400; 
-            color: #6b7280; 
-            text-transform: none; 
+            line-height: 1.3;
         }
         
         .nav-links { 
@@ -196,27 +191,6 @@
             font-size: 12px;
             color: #6b7280;
             margin-top: 2px;
-        }
-
-        .dropdown-menu-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 18px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #4b5563;
-            text-decoration: none;
-            transition: background 0.15s ease;
-        }
-        .dropdown-menu-item:hover {
-            background: #f3f4f6;
-            color: #111827;
-        }
-        .dropdown-menu-item svg {
-            width: 16px;
-            height: 16px;
-            stroke: currentColor;
         }
 
         .custom-dropdown-box .logout-btn-custom {
@@ -437,8 +411,8 @@
     <nav class="navbar">
         <div class="nav-left">
             <a href="{{ route('dashboard') }}" class="brand">
-                <div class="brand-logo"><img src="{{ asset('images/logo.png') }}" alt="Logo"></div>
-                <div class="brand-text">IPWIJA <span class="brand-subtext">SmartLab</span></div>
+                <div class="brand-logo"><img src="{{ asset('images/logo.png') }}" alt="Logo IPWIJA"></div>
+                <div class="brand-text">IPWIJA<br>SmartLab</div>
             </a>
             <div class="nav-links">
                 <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
@@ -451,9 +425,9 @@
         
         <div class="user-profile-wrapper" id="customUserWrapper">
             <div class="user-profile-trigger" onclick="toggleCustomDropdown(event)">
-                <div class="avatar-blue-circle">A</div>
+                <div class="avatar-blue-circle">{{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}</div>
                 <div class="user-meta-data">
-                    <span class="meta-name">Aprizal</span>
+                    <span class="meta-name">{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</span>
                     <span class="meta-role">Mahasiswa</span>
                 </div>
                 <svg class="arrow-toggle-icon" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -463,20 +437,15 @@
 
             <div class="custom-dropdown-box">
                 <div class="dropdown-identity">
-                    <span class="id-name">Aprizal</span>
+                    <span class="id-name">{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</span>
                     <span class="id-role">Mahasiswa</span>
                 </div>
-                
-                <a href="{{ route('profil') }}" class="dropdown-menu-item">
-                    <svg fill="none" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                    </svg>
-                    Profil Saya
-                </a>
-                
-                <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
+
+                {{-- Menu Profil Saya dihapus sesuai permintaan --}}
+
+                <form action="{{ route('logout') }}" method="POST" style="margin: 0;" id="logoutForm">
                     @csrf
-                    <button type="submit" class="logout-btn-custom">
+                    <button type="button" class="logout-btn-custom" onclick="confirmLogout()">
                         <svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
                         </svg>
@@ -615,6 +584,25 @@
                     row.style.display = '';
                 } else {
                     row.style.display = 'none';
+                }
+            });
+        }
+
+        // Konfirmasi SweetAlert2 sebelum Logout
+        function confirmLogout() {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Yakin ingin keluar?',
+                text: 'Kamu akan keluar dari sesi akun SmartLab IPWIJA.',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Keluar!',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                fontFamily: 'Plus Jakarta Sans',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logoutForm').submit();
                 }
             });
         }
