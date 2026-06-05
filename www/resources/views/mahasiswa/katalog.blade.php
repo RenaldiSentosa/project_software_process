@@ -7,6 +7,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -184,73 +187,7 @@
             stroke-linejoin: round;
         }
 
-        /* MODAL LOGOUT */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.45);
-            z-index: 500;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-overlay.open { display: flex; }
-
-        .modal {
-            background: #fff;
-            border-radius: 16px;
-            padding: 28px 28px 24px;
-            width: 100%;
-            max-width: 340px;
-            text-align: center;
-            box-shadow: 0 16px 48px rgba(0,0,0,0.15);
-        }
-
-        .modal-icon {
-            width: 48px;
-            height: 48px;
-            background: #fef2f2;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-        }
-
-        .modal-icon svg {
-            width: 22px;
-            height: 22px;
-            fill: none;
-            stroke: #dc2626;
-            stroke-width: 1.8;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-        .modal p  { font-size: 13px; color: #6b7280; margin-bottom: 24px; }
-
-        .modal-btns { display: flex; gap: 10px; }
-
-        .modal-btn {
-            flex: 1;
-            height: 40px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            border: none;
-            transition: background 0.15s;
-        }
-
-        .modal-btn.cancel  { background: #f3f4f6; color: #374151; }
-        .modal-btn.cancel:hover  { background: #e5e7eb; }
-        .modal-btn.confirm { background: #dc2626; color: #fff; }
-        .modal-btn.confirm:hover { background: #b91c1c; }
-
-        /* MAIN */
+        /* MAIN LAYOUT */
         .main { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
 
         /* HEADER */
@@ -265,7 +202,7 @@
         .page-header h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
         .page-header p  { font-size: 13px; color: #6b7280; }
 
-        /* TOOLBAR */
+        /* FILTER TOOLBAR */
         .toolbar {
             display: flex;
             align-items: center;
@@ -337,14 +274,25 @@
         .count-label { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
         .count-label span { font-weight: 600; color: #111827; }
 
-        /* GRID */
+        /* GRID SYSTEM */
         .grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 14px;
         }
 
-        /* CARD */
+        .empty-state {
+            grid-column: span 4;
+            background: #fff;
+            border: 1px dashed #d1d5db;
+            border-radius: 14px;
+            padding: 40px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        /* CARD COMPONENT */
         .card {
             background: #fff;
             border: 1px solid #e5e7eb;
@@ -416,13 +364,14 @@
         }
 
         .btn-keranjang svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-        .btn-keranjang.tambah   { background: #eff6ff; color: #2563eb; }
+        .btn-keranjang.tambah   { background: #eff6ff; color: #2563eb; width: 100%; }
         .btn-keranjang.tambah:hover { background: #dbeafe; }
         .btn-keranjang.ditambah { background: #f0fdf4; color: #16a34a; cursor: default; }
         .btn-keranjang.nonaktif { background: #f3f4f6; color: #9ca3af; cursor: not-allowed; }
 
-        @media (max-width: 900px) { .grid { grid-template-columns: repeat(3, 1fr); } }
-        @media (max-width: 640px) { .grid { grid-template-columns: repeat(2, 1fr); .nav-links { display: none; } } }
+        /* RESPONSIVE BREAKPOINTS */
+        @media (max-width: 900px) { .grid { grid-template-columns: repeat(3, 1fr); } .empty-state { grid-column: span 3; } }
+        @media (max-width: 640px) { .grid { grid-template-columns: repeat(2, 1fr); } .empty-state { grid-column: span 2; } .nav-links { display: none; } }
     </style>
 </head>
 <body>
@@ -441,27 +390,27 @@
                 <a href="{{ route('katalog') }}" class="active">Katalog Alat</a>
                 <a href="{{ route('keranjang') }}">Keranjang</a>
                 <a href="{{ route('peminjaman') }}">Peminjaman Saya</a>
-                <a href="{{ route('profil') }}" class="{{ request()->routeIs('profil') ? 'active' : '' }}">Profil</a>
+                <a href="{{ route('profil') }}">Profil</a>
             </div>
         </div>
         <div class="nav-right">
             <div class="user-wrapper">
                 <div class="user-btn" onclick="toggleDropdown()" id="userBtn">
-                    <div class="avatar">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
+                    <div class="avatar">{{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}</div>
                     <div class="user-info">
-                        <div class="user-name">{{ auth()->user()->name ?? 'Aprizal' }}</div>
+                        <div class="user-name">{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</div>
                         <div class="user-role">Mahasiswa</div>
                     </div>
                     <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="6 9 12 15 18 9"/>
-                    </</svg>
+                    </svg>
                 </div>
                 <div class="dropdown" id="dropdown">
                     <div class="dropdown-header">
-                        <div class="d-name">{{ auth()->user()->name ?? 'Aprizal' }}</div>
+                        <div class="d-name">{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</div>
                         <div class="d-role">Mahasiswa</div>
                     </div>
-                    <button class="dropdown-item logout" onclick="openLogoutModal()">
+                    <button class="dropdown-item logout" onclick="triggerLogout()">
                         <svg viewBox="0 0 24 24">
                             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
                             <polyline points="16 17 21 12 16 7"/>
@@ -469,21 +418,23 @@
                         </svg>
                         Logout
                     </button>
+                    {{-- Form Logout Tersembunyi Keamanan CSRF Laravel --}}
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                        @csrf
+                    </form>
                 </div>
             </div>
         </div>
     </nav>
 
-    {{-- MAIN --}}
+    {{-- MAIN CONTENT --}}
     <main class="main">
-
-        {{-- Header --}}
         <div class="page-header">
             <h1>Katalog Alat</h1>
             <p>Jelajahi peralatan lab yang tersedia dan tambahkan ke keranjang peminjaman.</p>
         </div>
 
-        {{-- Toolbar --}}
+        {{-- Toolbar Filter & Cari --}}
         <div class="toolbar">
             <div class="search-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -503,24 +454,13 @@
 
         <p class="count-label">Menampilkan <span id="countLabel">0</span> alat</p>
 
-        {{-- Grid --}}
+        {{-- Grid Card Alat --}}
         <div class="grid" id="alatGrid">
+            @php $alatList = $alat ?? []; @endphp
 
-            @php
-            $alatList = $alat ?? [
-                (object) ['nama' => 'Router Cisco', 'kategori' => 'Network', 'lokasi' => 'Workshop', 'stok' => 5, 'status' => 'tersedia', 'cart' => false],
-                (object) ['nama' => 'Switch Hub', 'kategori' => 'Network', 'lokasi' => 'Workshop', 'stok' => 5, 'status' => 'tersedia', 'cart' => false],
-                (object) ['nama' => 'LAN Tester', 'kategori' => 'Network', 'lokasi' => 'Workshop', 'stok' => 0, 'status' => 'habis',    'cart' => false],
-                (object) ['nama' => 'Arduino Uno', 'kategori' => 'IoT', 'lokasi' => 'Laboratorium', 'stok' => 5, 'status' => 'tersedia', 'cart' => true],
-                (object) ['nama' => 'Raspberry Pi 4', 'kategori' => 'IoT', 'lokasi' => 'Laboratorium', 'stok' => 5, 'status' => 'tersedia', 'cart' => false],
-                (object) ['nama' => 'NodeMCU ESP8266', 'kategori' => 'IoT', 'lokasi' => 'Laboratorium', 'stok' => 2, 'status' => 'terbatas', 'cart' => false],
-                (object) ['nama' => 'Tang Crimping', 'kategori' => 'Hardware', 'lokasi' => 'Workshop', 'stok' => 5, 'status' => 'tersedia', 'cart' => false],
-                (object) ['nama' => 'Obeng Set', 'kategori' => 'Hardware', 'lokasi' => 'Workshop', 'stok' => 5, 'status' => 'tersedia', 'cart' => true],
-            ];
-            @endphp
-
-            @foreach ($alatList as $item)
+            @forelse ($alatList as $item)
             @php 
+                $id = is_object($item) ? $item->id : ($item['id'] ?? 0);
                 $nama = is_object($item) ? $item->nama : $item['nama'];
                 $kategori = is_object($item) ? $item->kategori : $item['kategori'];
                 $lokasi = is_object($item) ? $item->lokasi : $item['lokasi'];
@@ -560,42 +500,33 @@
                             Stok Habis
                         </button>
                     @else
-                        <button class="btn-keranjang tambah" onclick="tambahKeranjang(this)">
-                            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            Tambah ke keranjang
-                        </button>
+                        {{-- Hubungkan Tombol dengan Form agar data tersimpan nyata ke Backend --}}
+                        <form action="{{ route('peminjaman.store') }}" method="POST" onsubmit="return tambahKeranjangAjax(this, '{{ $nama }}')">
+                            @csrf
+                            <input type="hidden" name="alat_id" value="{{ $id }}">
+                            <button type="submit" class="btn-keranjang tambah">
+                                <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Tambah ke keranjang
+                            </button>
+                        </form>
                     @endif
                 </div>
             </div>
-            @endforeach
-
+            @empty
+            <div class="empty-state">
+                <p>Belum ada data alat tersedia.</p>
+            </div>
+            @endforelse
         </div>
     </main>
 
-    {{-- MODAL LOGOUT --}}
-    <div class="modal-overlay" id="logoutModal">
-        <div class="modal">
-            <div class="modal-icon">
-                <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            </div>
-            <h3>Yakin mau logout?</h3>
-            <p>Kamu akan keluar dari akun SmartLab IPWIJA.</p>
-            <div class="modal-btns">
-                <button class="modal-btn cancel" onclick="closeLogoutModal()">Batal</button>
-                <form method="POST" action="{{ route('logout') }}" style="flex:1;">
-                    @csrf
-                    <button type="submit" class="modal-btn confirm" style="width:100%;">Ya, Keluar</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
+    {{-- JAVASCRIPT LOGIC --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             filterAlat();
         });
 
-        // Dropdown user
+        // Dropdown Menu Profil
         function toggleDropdown() {
             document.getElementById('dropdown').classList.toggle('open');
         }
@@ -608,21 +539,58 @@
             }
         });
 
-        // Modal logout
-        function openLogoutModal() {
+        // SweetAlert2 Confirmed Modal Logout
+        function triggerLogout() {
             document.getElementById('dropdown').classList.remove('open');
-            document.getElementById('logoutModal').classList.add('open');
+            Swal.fire({
+                title: 'Yakin mau logout?',
+                text: "Kamu akan keluar dari sesi SmartLab IPWIJA.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#9ca3af',
+                confirmButtonText: 'Ya, Keluar!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logout-form').submit();
+                }
+            });
         }
 
-        function closeLogoutModal() {
-            document.getElementById('logoutModal').classList.remove('open');
+        // Fungsi Handler submit form via backend dengan visual SweetAlert2 Toast Sukses
+        function tambahKeranjangAjax(form, namaAlat) {
+            const btn = form.querySelector('button[type="submit"]');
+            
+            // Ubah tampilan tombol seketika demi kenyamanan user experience (UX)
+            btn.classList.remove('tambah');
+            btn.classList.add('ditambah');
+            btn.disabled = true;
+            btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg> Sudah Ditambah`;
+
+            // Trigger Pop-up Toast SweetAlert2
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2500,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+
+            Toast.fire({
+                icon: 'success',
+                title: `${namaAlat} berhasil dimasukkan ke keranjang`
+            });
+
+            // Biarkan form tetap melakukan submit request ke backend Laravel
+            return true;
         }
 
-        document.getElementById('logoutModal').addEventListener('click', function(e) {
-            if (e.target === this) closeLogoutModal();
-        });
-
-        // Filter & search (FIXED logic style property)
+        // Sistem Pencarian & Filter Kategori Client-side
         function filterAlat() {
             const keyword  = document.getElementById('searchInput').value.toLowerCase();
             const kategori = document.getElementById('kategoriSelect').value.toLowerCase();
@@ -643,15 +611,12 @@
                 }
             });
 
-            document.getElementById('countLabel').textContent = count;
-        }
-
-        // Tambah ke keranjang (UI only)
-        function tambahKeranjang(btn) {
-            btn.classList.remove('tambah');
-            btn.classList.add('ditambah');
-            btn.innerHTML = `<svg viewBox="0 0 24 24" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg> Sudah Ditambah`;
-            btn.onclick = null;
+            const countLabel = document.getElementById('countLabel');
+            if(countLabel && cards.length > 0) {
+                countLabel.textContent = count;
+            } else if(cards.length === 0) {
+                countLabel.textContent = 0;
+            }
         }
     </script>
 </body>

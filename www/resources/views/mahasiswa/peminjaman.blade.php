@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    
     <style>
         /* CSS RESET GLOBAL */
         *, *::before, *::after { 
@@ -168,7 +170,7 @@
             background: #ffffff;
             border: 1px solid #e5e7eb;
             border-radius: 14px;
-            width: 200px;
+            width: 220px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
             display: none;
             flex-direction: column;
@@ -194,6 +196,27 @@
             font-size: 12px;
             color: #6b7280;
             margin-top: 2px;
+        }
+
+        .dropdown-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4b5563;
+            text-decoration: none;
+            transition: background 0.15s ease;
+        }
+        .dropdown-menu-item:hover {
+            background: #f3f4f6;
+            color: #111827;
+        }
+        .dropdown-menu-item svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
         }
 
         .custom-dropdown-box .logout-btn-custom {
@@ -399,6 +422,14 @@
             stroke: currentColor;
             stroke-width: 2;
         }
+
+        /* State Empty Table Styling */
+        .empty-table-state {
+            padding: 48px 16px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -413,7 +444,7 @@
                 <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
                 <a href="{{ route('katalog') }}" class="{{ request()->routeIs('katalog') ? 'active' : '' }}">Katalog Alat</a>
                 <a href="{{ route('keranjang') }}" class="{{ request()->routeIs('keranjang') ? 'active' : '' }}">Keranjang</a>
-                <a href="{{ route('peminjaman') }}" class="{{ request()->routeIs('peminjaman') ? 'active' : '' }}">Peminjaman Saya</a>
+                <a href="{{ route('peminjaman') }}" class="{{ request()->routeIs('peminjaman') || request()->is('peminjaman*') ? 'active' : '' }}">Peminjaman Saya</a>
                 <a href="{{ route('profil') }}" class="{{ request()->routeIs('profil') ? 'active' : '' }}">Profil</a>
             </div>
         </div>
@@ -435,6 +466,13 @@
                     <span class="id-name">Aprizal</span>
                     <span class="id-role">Mahasiswa</span>
                 </div>
+                
+                <a href="{{ route('profil') }}" class="dropdown-menu-item">
+                    <svg fill="none" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                    </svg>
+                    Profil Saya
+                </a>
                 
                 <form action="{{ route('logout') }}" method="POST" style="margin: 0;">
                     @csrf
@@ -470,18 +508,6 @@
         </div>
 
         <div class="table-container">
-            @php
-            // Menyusun dummy data yang rapi dan konsisten dengan penamaan ID sistem peminjaman
-            $peminjamanList = $peminjaman ?? [
-                ['id' => 'PMJ-2026-001', 'alat' => 'Cisco Router 2911', 'tgl_aju' => '05 Mei 2026', 'periode' => '10 Mei 2026 — 20 Mei 2026', 'status' => 'disetujui'],
-                ['id' => 'PMJ-2026-002', 'alat' => 'Solid State Drive (SSD) 512GB', 'tgl_aju' => '06 Mei 2026', 'periode' => '15 Mei 2026 — 25 Mei 2026', 'status' => 'menunggu'],
-                ['id' => 'PMJ-2026-003', 'alat' => 'Tang Crimping RJ45 Pro', 'tgl_aju' => '04 Mei 2026', 'periode' => '08 Mei 2026 — 12 Mei 2026', 'status' => 'ditolak'],
-                ['id' => 'PMJ-2026-004', 'alat' => 'Desoldering Heat Gun Portable', 'tgl_aju' => '10 Mei 2026', 'periode' => '15 Mei 2026 — 25 Mei 2026', 'status' => 'dikembalikan'],
-                ['id' => 'PMJ-2026-005', 'alat' => 'Arduino Uno R3 Starter Kit', 'tgl_aju' => '03 Mei 2026', 'periode' => '12 Mei 2026 — 19 Mei 2026', 'status' => 'dipinjam'],
-                ['id' => 'PMJ-2026-006', 'alat' => 'NodeMCU ESP32 Wi-Fi Board', 'tgl_aju' => '07 Mei 2026', 'periode' => '18 Mei 2026 — 28 Mei 2026', 'status' => 'menunggu']
-            ];
-            @endphp
-
             <table>
                 <thead>
                     <tr>
@@ -494,21 +520,24 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($peminjamanList as $item)
-                    <tr class="table-row row-{{ $item['status'] }}" data-status="{{ $item['status'] }}">
+                    @forelse ($peminjaman as $item)
+                    @php 
+                        $statusClean = strtolower($item['status']); 
+                    @endphp
+                    <tr class="table-row row-{{ $statusClean }}" data-status="{{ $statusClean }}">
                         <td style="font-weight: 600; color: #4b5563;">{{ $item['id'] }}</td>
                         <td style="font-weight: 500;">{{ $item['alat'] }}</td>
                         <td>{{ $item['tgl_aju'] }}</td>
                         <td>{{ $item['periode'] }}</td>
                         <td>
-                            <span class="badge-pill {{ $item['status'] }}">
-                                @if($item['status'] == 'menunggu')
+                            <span class="badge-pill {{ $statusClean }}">
+                                @if($statusClean == 'menunggu')
                                     Menunggu
-                                @elseif($item['status'] == 'disetujui')
+                                @elseif($statusClean == 'disetujui')
                                     Disetujui
-                                @elseif($item['status'] == 'dipinjam')
+                                @elseif($statusClean == 'dipinjam')
                                     Dipinjam
-                                @elseif($item['status'] == 'dikembalikan')
+                                @elseif($statusClean == 'dikembalikan')
                                     Dikembalikan
                                 @else
                                     Ditolak
@@ -516,7 +545,7 @@
                             </span>
                         </td>
                         <td>
-                            <a href="#" class="btn-detail">
+                            <a href="{{ route('peminjaman.detail', $item['id']) }}" class="btn-detail">
                                 <svg viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
@@ -525,13 +554,42 @@
                             </a>
                         </td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="6" class="empty-table-state">
+                            Belum ada riwayat permintaan peminjaman alat.
+                        </td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
+        // Catch Notifikasi session flash Laravel & transform to SweetAlert2
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: "{{ session('success') }}",
+                fontFamily: 'Plus Jakarta Sans',
+                confirmButtonColor: '#008ecc'
+            });
+        @endif
+
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: "{{ session('error') }}",
+                fontFamily: 'Plus Jakarta Sans',
+                confirmButtonColor: '#008ecc'
+            });
+        @endif
+
         // Toggle Aktif Buka-Tutup Dropdown Profile
         function toggleCustomDropdown(event) {
             event.stopPropagation(); 

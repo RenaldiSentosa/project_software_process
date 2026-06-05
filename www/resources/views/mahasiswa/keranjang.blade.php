@@ -190,6 +190,7 @@
             margin-bottom: 18px;
         }
         .alert-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+        .alert-success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
 
         /* ITEM */
         .item {
@@ -205,7 +206,7 @@
 
         .image {
             width: 54px; height: 54px;
-            background: #2563eb;
+            background: #eef2f6;
             border-radius: 12px;
             display: flex;
             justify-content: center; align-items: center;
@@ -226,14 +227,20 @@
             background: none;
             cursor: pointer;
             font-size: 15px;
-            color: #374151;
+            color: #9ca3af;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.15s;
         }
+        .qty button:hover { color: #111827; }
 
         .qty input.jumlah-input {
-            width: 30px;
+            width: 35px;
             text-align: center;
-            border: none;
-            background: transparent;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            background: #fff;
             font-family: inherit;
             font-size: 14px;
             font-weight: 600;
@@ -241,7 +248,6 @@
             outline: none;
         }
 
-        /* Menyembunyikan spinner up/down bawaan browser pada input number */
         .qty input.jumlah-input::-webkit-outer-spin-button,
         .qty input.jumlah-input::-webkit-inner-spin-button {
             -webkit-appearance: none; margin: 0;
@@ -256,7 +262,7 @@
         }
         .delete:hover { color: #dc2626; }
 
-        /* DETAIL */
+        /* DETAIL FORM */
         .header2 { font-size: 18px; font-weight: 600; margin-bottom: 5px; }
         .desc { font-size: 13px; color: #9ca3af; margin-bottom: 20px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
@@ -270,6 +276,7 @@
             font-family: inherit;
             font-size: 13px;
             outline: none;
+            background: #fff;
         }
         .group input:focus, textarea:focus { border-color: #2563eb; }
         textarea { resize: none; height: 110px; }
@@ -320,7 +327,7 @@
                 <a href="{{ route('katalog') }}">Katalog Alat</a>
                 <a href="{{ route('keranjang') }}" class="active">Keranjang</a>
                 <a href="{{ route('peminjaman') }}">Peminjaman Saya</a>
-                <a href="{{ route('profil') }}" class="{{ request()->routeIs('profil') ? 'active' : '' }}">Profil</a>
+                <a href="{{ route('profil') }}">Profil</a>
             </div>
         </div>
         <div class="nav-right">
@@ -353,28 +360,32 @@
         </div>
     </nav>
 
-    {{-- MAIN --}}
+    {{-- MAIN CONTENT --}}
     <div class="main">
-        {{-- Flash message jika terjadi validasi error server-side --}}
+        {{-- Flash message Laravel --}}
         @if(session('error'))
             <div class="alert alert-danger">
                 {{ session('error') }}
             </div>
         @endif
+        @if(session('success'))
+            <div class="alert alert-success">
+                {{ session('success') }}
+            </div>
+        @endif
 
         <div class="card">
             <div class="title">Keranjang Peminjaman</div>
-            <div class="sub" id="summaryCount">{{ count($cart ?? []) }} item dipilih</div>
+            <div class="sub" id="summaryCount">{{ (isset($cart) && count($cart) > 0) ? count($cart) : 0 }} item dipilih.</div>
         </div>
 
-        {{-- Form Utama Pembungkus Data sesuai Aturan API Spesifikasi LMS --}}
+        {{-- Form Utama Pembungkus --}}
         <form id="borrowForm" method="POST" action="{{ route('peminjaman.store') }}">
             @csrf
 
             <div class="card" id="cartCard">
                 @if(isset($cart) && count($cart) > 0)
                     @foreach($cart as $id => $details)
-                        {{-- Struktur Item Dinamis Mengikuti Data Session/Database --}}
                         <div class="item" data-id="{{ $id }}">
                             <div class="left">
                                 <div class="image">
@@ -387,54 +398,57 @@
                                 <div>
                                     <div class="name">{{ $details['nama_alat'] ?? 'Nama Alat' }}</div>
                                     <div class="cat">{{ $details['kategori'] ?? 'Kategori' }}</div>
-                                    <small style="color: #6b7280;">Tersedia: <span class="max-stok">{{ $details['stok_tersedia'] ?? 0 }}</span> unit</small>
+                                    <small style="color: #9ca3af; font-size: 11px;">Tersedia: <span class="max-stok">{{ $details['stok_tersedia'] ?? 10 }}</span> unit</small>
                                 </div>
                             </div>
                             <div class="right">
                                 <div class="qty">
                                     <button type="button" onclick="minus(this)">−</button>
-                                    {{-- Menggunakan input hidden/number agar jumlah_unit dari array item masuk ke request submit --}}
-                                    <input type="number" name="items[{{ $id }}][jumlah_unit]" class="jumlah-input" value="{{ $details['jumlah_unit'] ?? 1 }}" min="1" max="{{ $details['stok_tersedia'] ?? 10 }}" readonly>
+                                    <input type="number" name="items[{{ $id }}][jumlah_unit]" class="jumlah-input" value="{{ $details['jumlah_unit'] ?? 1 }}" min="1" max="{{ $details['stok_tersedia'] ?? 10 }}" onchange="validateOnInput(this)">
                                     <button type="button" onclick="plus(this)">+</button>
                                 </div>
-                                <div class="delete" onclick="hapus(this)">✕</div>
+                                <div class="delete" onclick="hapus('{{ $id }}', this)">✕</div>
                             </div>
                         </div>
                     @endforeach
                 @else
-                    {{-- State Tampilan Jika Keranjang Kosong --}}
                     <div class="empty-cart">
-                        <p>Keranjang kamu masih kosong dek. Silakan pilih alat di katalog terlebih dahulu.</p>
-                        <a href="{{ route('katalog') }}" class="btn" style="text-decoration:none; display:inline-block;">Lihat Katalog Alat</a>
+                        <p>Keranjang kamu masih kosong. Silakan pilih alat di katalog terlebih dahulu.</p>
+                        <a href="{{ route('katalog') }}" class="btn" style="text-decoration:none; display:inline-block;">Lihat katalog Alat</a>
                     </div>
                 @endif
             </div>
 
-            {{-- Detail Permintaan Form, Hanya tampil jika item ada --}}
-            @if(isset($cart) && count($cart) > 0)
-                <div class="card" id="detailCard">
-                    <div class="header2">Detail Permintaan</div>
-                    <div class="desc">Isi formulir di bawah untuk mengirim permintaan peminjaman.</div>
-                    
-                    <div class="grid">
-                        <div class="group">
-                            <label for="tgl_rencana_pinjam">Tanggal Peminjaman *</label>
-                            <input type="date" id="tgl_rencana_pinjam" name="tgl_rencana_pinjam" required value="{{ old('tgl_rencana_pinjam') }}">
-                        </div>
-                        <div class="group">
-                            <label for="tgl_rencana_kembali">Tanggal Pengembalian *</label>
-                            <input type="date" id="tgl_rencana_kembali" name="tgl_rencana_kembali" required value="{{ old('tgl_rencana_kembali') }}">
-                        </div>
-                        <div class="group full">
-                            <label for="keperluan">Tujuan Penggunaan *</label>
-                            <textarea id="keperluan" name="keperluan" placeholder="Jelaskan untuk apa alat ini akan digunakan (projek kursus, penelitian, sesi lab, dll.)" required>{{ old('keperluan') }}</textarea>
-                        </div>
+            {{-- Detail Formulir Permintaan --}}
+            <div class="card" id="detailCard" style="{{ (isset($cart) && count($cart) > 0) ? '' : 'display: none;' }}">
+                <div class="header2">Detail Permintaan</div>
+                <div class="desc">Isi formulir di bawah untuk mengirim permintaan peminjaman.</div>
+                
+                <div class="grid">
+                    <div class="group">
+                        <label for="tgl_rencana_pinjam">Tanggal Peminjaman *</label>
+                        <input type="date" id="tgl_rencana_pinjam" name="tgl_rencana_pinjam" required value="{{ old('tgl_rencana_pinjam') }}">
                     </div>
-                    <button type="submit" class="btn">📝 Kirim Permintaan Peminjaman</button>
+                    <div class="group">
+                        <label for="tgl_rencana_kembali">Tanggal Pengembalian *</label>
+                        <input type="date" id="tgl_rencana_kembali" name="tgl_rencana_kembali" required value="{{ old('tgl_rencana_kembali') }}">
+                    </div>
+                    <div class="group full" style="position: relative;">
+                        <label for="keperluan">Tujuan Penggunaan *</label>
+                        <textarea id="keperluan" name="keperluan" maxlength="500" placeholder="Jelaskan untuk apa alat ini akan digunakan (projek kursus, penelitian, sesi lab, dll.)" required oninput="updateCharCount(this)">{{ old('keperluan') }}</textarea>
+                        <div style="text-align: right; font-size: 11px; color: #9ca3af; margin-top: 4px;" id="charCount">0/500</div>
+                    </div>
                 </div>
-            @endif
+                <button type="submit" class="btn">🚀 Kirim Permintaan Peminjaman</button>
+            </div>
         </form>
     </div>
+
+    {{-- Form Hidden khusus hapus data session di backend via POST/DELETE --}}
+    <form id="deleteItemForm" method="POST" action="" style="display:none;">
+        @csrf
+        @method('DELETE')
+    </form>
 
     {{-- MODAL LOGOUT --}}
     <div class="modal-overlay" id="logoutModal">
@@ -442,7 +456,7 @@
             <div class="modal-icon">
                 <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             </div>
-            <h3>Yakin mau logout dek??</h3>
+            <h3>Yakin mau logout?</h3>
             <p>Kamu akan keluar dari akun SmartLab IPWIJA.</p>
             <div class="modal-btns">
                 <button type="button" class="modal-btn cancel" onclick="closeLogoutModal()">No</button>
@@ -455,7 +469,7 @@
     </div>
 
     <script>
-        // Dropdown user
+        // Dropdown User
         function toggleDropdown() {
             document.getElementById('dropdown').classList.toggle('open');
         }
@@ -468,7 +482,7 @@
             }
         });
 
-        // Modal logout
+        // Modal Logout
         function openLogoutModal() {
             document.getElementById('dropdown').classList.remove('open');
             document.getElementById('logoutModal').classList.add('open');
@@ -478,72 +492,75 @@
             document.getElementById('logoutModal').classList.remove('open');
         }
 
-        document.getElementById('logoutModal').addEventListener('click', function(e) {
-            if (e.target === this) closeLogoutModal();
+        // Counter Karakter Textarea (0/500)
+        function updateCharCount(textarea) {
+            const currentLength = textarea.value.length;
+            document.getElementById('charCount').innerText = `${currentLength}/500`;
+        }
+
+        // Set counter awal saat page pertama kali diload (jika ada old value)
+        document.addEventListener('DOMContentLoaded', function() {
+            const textarea = document.getElementById('keperluan');
+            if(textarea) updateCharCount(textarea);
         });
 
-        // Qty Logic (Ditambahkan pengaman batas maksimum stok ketersediaan alat sesuai aturan bisnis)
+        // Logika Tombol Plus (+)
         function plus(btn){
             let input = btn.parentElement.querySelector('.jumlah-input');
-            let maxStok = parseInt(btn.closest('.item').querySelector('.max-stok').innerText);
-            let val = parseInt(input.value);
+            let maxStok = parseInt(btn.closest('.item').querySelector('.max-stok').innerText) || 10;
+            let val = parseInt(input.value) || 0;
             
             if(val < maxStok) {
                 input.value = val + 1;
-                // Opsional: lakukan AJAX patch request untuk update session keranjang di server
             } else {
-                alert('Jumlah unit tidak boleh melebihi stok yang tersedia saat ini!');
+                alert('Jumlah unit tidak boleh melebihi stok yang tersedia!');
             }
         }
 
+        // Logika Tombol Minus (-)
         function minus(btn){
             let input = btn.parentElement.querySelector('.jumlah-input');
-            let val = parseInt(input.value);
+            let val = parseInt(input.value) || 0;
             if(val > 1){
                 input.value = val - 1;
-                // Opsional: lakukan AJAX patch request untuk update session keranjang di server
             }
         }
 
-        // Hapus Item dengan penanganan UI dinamis
-        function hapus(btn){
-            let itemRow = btn.closest('.item');
-            let itemId = itemRow.getAttribute('data-id');
-            
-            // Logika Client-Side Penghapusan Elemen
-            itemRow.remove();
-            updateCount();
-
-            // Skenario tambahan: Mengirim AJAX request untuk menghapus data item di session backend Laravel
-            /*
-            fetch(`/keranjang/hapus/${itemId}`, {
-                method: 'DELETE',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-            });
-            */
-        }
-
-        // Update Total Item di UI secara real-time
-        function updateCount(){
-            let total = document.querySelectorAll('.item').length;
-            document.getElementById('summaryCount').innerText = total + " item dipilih";
-            
-            // Jika item habis, tampilkan layout kosong
-            if(total === 0){
-                document.getElementById('cartCard').innerHTML = `
-                    <div class="empty-cart">
-                        <p>Keranjang kamu masih kosong dek. Silakan pilih alat di katalog terlebih dahulu.</p>
-                        <a href="{{ route('katalog') }}" class="btn" style="text-decoration:none; display:inline-block;">Lihat Katalog Alat</a>
-                    </div>`;
-                let detailCard = document.getElementById('detailCard');
-                if(detailCard) detailCard.remove();
+        // Validasi jika pengguna mengetik angka manual di input
+        function validateOnInput(input) {
+            let maxStok = parseInt(input.closest('.item').querySelector('.max-stok').innerText) || 10;
+            let val = parseInt(input.value);
+            if (isNaN(val) || val < 1) {
+                input.value = 1;
+            } else if (val > maxStok) {
+                alert('Jumlah unit melebihi stok ketersediaan!');
+                input.value = maxStok;
             }
         }
 
-        // Validasi Sederhana sebelum Submit Form di Client-side
+        // Penanganan Hapus Item Sinkron Backend Session
+        function hapus(itemId, btnElement){
+            if(confirm('Hapus alat ini dari keranjang?')) {
+                let deleteForm = document.getElementById('deleteItemForm');
+                // Arahkan ke endpoint destroy keranjang kamu (misal: /keranjang/hapus/{id})
+                deleteForm.action = `/keranjang/hapus/${itemId}`; 
+                deleteForm.submit();
+            }
+        }
+
+        // Validasi Aturan Tanggal Sebelum Submit Form
         document.getElementById('borrowForm')?.addEventListener('submit', function(e) {
-            let tglPinjam = new Date(document.getElementById('tgl_rencana_pinjam').value);
-            let tglKembali = new Date(document.getElementById('tgl_rencana_kembali').value);
+            let tglPinjamInput = document.getElementById('tgl_rencana_pinjam').value;
+            let tglKembaliInput = document.getElementById('tgl_rencana_kembali').value;
+
+            if(!tglPinjamInput || !tglKembaliInput) {
+                e.preventDefault();
+                alert('Tanggal peminjaman dan pengembalian wajib diisi!');
+                return false;
+            }
+
+            let tglPinjam = new Date(tglPinjamInput);
+            let tglKembali = new Date(tglKembaliInput);
             let hariIni = new Date();
             hariIni.setHours(0,0,0,0);
 
@@ -555,7 +572,7 @@
 
             if(tglKembali < tglPinjam) {
                 e.preventDefault();
-                alert('Tanggal pengembalian tidak boleh mendahului tanggal peminjaman!');
+                alert('Tanggal pengembalian tidak boleh kurang dari tanggal peminjaman!');
                 return false;
             }
         });

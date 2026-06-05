@@ -9,11 +9,72 @@ use App\Models\Tool;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Exception;
+use Carbon\Carbon; // Dipakai untuk memformat tanggal ke bahasa Indonesia
 
 class BorrowingController extends Controller
 {
     /**
-     * Tampilkan halaman form peminjaman alat (Halaman Blade Mahasiswa)
+     * 1. HALAMAN RIWAYAT TABEL: Tampilkan list riwayat "Peminjaman Saya"
+     * Fungsi ini mengambil data peminjaman sekaligus data User yang sedang login secara dinamis
+     */
+    public function index()
+    {
+        // Ambil data user mahasiswa yang sedang login secara realtime dari DB
+        $user = Auth::user(); 
+        
+        // Fallback objek dummy jika belum login / untuk kebutuhan testing awal backend agar tidak crash
+        if (!$user) {
+            $user = (object)[
+                'id' => 2,
+                'name' => 'Aprizal Kim',
+                'nim' => '202301110011',
+                'program_studi' => 'Teknik Informatika'
+            ];
+        }
+
+        $userId = $user->id ?? 2;
+
+        // Ambil data peminjaman milik user ini beserta detail item alat & nama alatnya
+        $dataPeminjaman = Borrowing::with(['items.tool'])
+                            ->where('mahasiswa_id', $userId)
+                            ->orderBy('created_at', 'desc')
+                            ->get();
+
+        // Format datanya menjadi array rapi agar pas dengan struktur tabel di Blade lu bang
+        $peminjaman = [];
+        
+        foreach ($dataPeminjaman as $row) {
+            // Logika penentuan nama alat yang tampil di kolom tabel
+            $namaAlat = 'Tidak Diketahui';
+            if ($row->items->count() > 0) {
+                $namaAlat = $row->items->first()->tool->nama_alat ?? 'Alat Lab';
+                // Jika meminjam lebih dari 1 jenis alat, beri keterangan tambahan (+ x alat lainnya)
+                if ($row->items->count() > 1) {
+                    $namaAlat .= ' (+ ' . ($row->items->count() - 1) . ' alat lainnya)';
+                }
+            }
+
+            // Mengubah format tanggal bawaan DB menjadi format teks Indonesia (Contoh: 10 Mei 2026)
+            $tglAju = Carbon::parse($row->created_at)->translatedFormat('d F Y');
+            $tglPinjam = Carbon::parse($row->tgl_rencana_pinjam)->translatedFormat('d M Y');
+            $tglKembali = Carbon::parse($row->tgl_rencana_kembali)->translatedFormat('d M Y');
+
+            $peminjaman[] = [
+                // Membuat format nomor invoice/ID peminjaman custom (Contoh: PMJ-2026-001)
+                'id'      => 'PMJ-' . Carbon::parse($row->created_at)->format('Y') . '-' . str_pad($row->id, 3, '0', STR_PAD_LEFT),
+                'alat'    => $namaAlat,
+                'tgl_aju' => $tglAju,
+                'periode' => $tglPinjam . ' — ' . $tglKembali,
+                'status'  => strtolower($row->status), // Dipaksa lowercase agar sesuai dengan warna badge CSS (.menunggu, .disetujui)
+            ];
+        }
+
+        // Kirim variabel $peminjaman dan data $user ke view riwayat mahasiswa
+        return view('mahasiswa.peminjaman', compact('peminjaman', 'user'));
+    }
+
+    /**
+     * 2. HALAMAN FORM INPUT: Tampilkan halaman form pengisian peminjaman alat
      */
     public function create()
     {
@@ -22,66 +83,85 @@ class BorrowingController extends Controller
                      ->whereNull('deleted_at')
                      ->get();
 
-        // GANTI BARIS INI YA BANG:
-        return view('mahasiswa.peminjaman', compact('tools'));
+        // Diarahkan ke file form pengajuan pinjam (Sesuaikan nama file view form lu ya bang, misal: form_peminjaman)
+        return view('mahasiswa.form_peminjaman', compact('tools'));
     }
 
     /**
-     * Proses simpan data pengajuan peminjaman ke Database
+     * 3. PROSES SIMPAN: Proses validasi dan simpan data pengajuan peminjaman ke Database
      */
     public function store(Request $request)
     {
-        // 1. Validasi input dari form blade abang
+        // 1. Validasi input form
         $request->validate([
             'tgl_rencana_pinjam'   => 'required|date|after_or_equal:today',
             'tgl_rencana_kembali'  => 'required|date|after:tgl_rencana_pinjam',
             'keperluan'            => 'required|string|max:500',
-            'tools'                => 'required|array', // Array ID alat yang dipilih
+            'tools'                => 'required|array', // Array ID alat yang dipilih dari checklist/keranjang
             'jumlah_unit'          => 'required|array', // Array jumlah unit tiap alat
         ]);
 
-        // Gunakan DB Transaction biar aman. Kalau di tengah jalan ada yang error, data otomatis dibatalkan (rollback)
+        // Gunakan DB Transaction biar aman. Kalau di tengah jalan ada satu yang gagal, semua insert otomatis dibatalkan (rollback)
         DB::beginTransaction();
 
         try {
             // 2. Simpan ke tabel master 'borrowings'
             $borrowing = new Borrowing();
-            // Jika fitur Auth login abang sudah jadi, pakai: Auth::id()
-            // Sementara untuk testing backend, kita hardcode dulu ke ID 2 (sesuaikan ID mahasiswa di tabel users abang)
             $borrowing->mahasiswa_id = Auth::id() ?? 2; 
             $borrowing->tgl_rencana_pinjam = $request->tgl_rencana_pinjam;
             $borrowing->tgl_rencana_kembali = $request->tgl_rencana_kembali;
             $borrowing->keperluan = $request->keperluan;
-            $borrowing->status = 'Menunggu'; // Status default awal
+            $borrowing->status = 'Menunggu'; // Status default awal pengajuan
             $borrowing->save();
 
             // 3. Looping untuk simpan ke tabel detail 'borrowing_items'
             foreach ($request->tools as $index => $toolId) {
                 $qtyDiminta = $request->jumlah_unit[$index];
 
-                // Cek stok alat di database apakah mencukupi
+                // Cek ketersediaan stok alat di database secara realtime
                 $tool = Tool::find($toolId);
                 if (!$tool || $tool->stok_tersedia < $qtyDiminta) {
-                    throw new Exception("Stok untuk alat '" . ($tool->nama_alat ?? 'Tidak Diketahui') . "' tidak mencukupi!");
+                    throw new Exception("Stok untuk alat '" . ($tool->nama_alat ?? 'Tidak Diketahui') . "' tidak mencukupi atau alat tidak ditemukan!");
                 }
 
-                // Simpan detailnya
-                $detail = new Borrowing_Item(); // Memanggil Model dengan underscore abang
+                // Simpan baris detail barang yang dipinjam
+                $detail = new Borrowing_Item(); 
                 $detail->borrowing_id = $borrowing->id;
                 $detail->tool_id = $toolId;
                 $detail->jumlah_unit = $qtyDiminta;
                 $detail->save();
             }
 
-            // Jika semua proses looping aman, kunci perubahan ke database
+            // Kunci perubahan data jika seluruh proses aman tanpa hambatan
             DB::commit();
 
-            return redirect()->back()->with('success', 'Pengajuan peminjaman alat berhasil dikirim! Menunggu persetujuan admin.');
+            // Redirect balik ke rute halaman list riwayat dengan flash alert sukses
+            return redirect()->route('peminjaman')->with('success', 'Pengajuan peminjaman alat berhasil dikirim! Menunggu persetujuan admin.');
 
         } catch (Exception $e) {
-            // Jika ada gagal di tengah jalan, batalkan semua insert data di atas
+            // Batalkan semua insert data jika terjadi error di tengah jalan agar database tidak korup/berantakan
             DB::rollBack();
             return redirect()->back()->withErrors(['error' => $e->getMessage()])->withInput();
         }
+    }
+
+    /**
+     * 4. HALAMAN DETAIL: Tampilkan rincian detail item alat yang dipinjam
+     * Dipanggil saat tombol "Detail" atau "Aksi" di tabel diklik
+     */
+    public function show(string $id)
+    {
+        // Ambil data peminjaman beserta relasi item dan alatnya berdasarkan ID rute URL
+        $detail = Borrowing::with(['items.tool'])->findOrFail($id);
+        
+        // Ambil data user yang sedang login untuk informasi header profil di blade detail
+        $user = Auth::user() ?? (object)[
+            'name' => 'Aprizal Kim',
+            'nim' => '202301110011',
+            'program_studi' => 'Teknik Informatika'
+        ];
+
+        // Mengarahkan ke file view detail peminjaman milik mahasiswa
+        return view('mahasiswa.detail_peminjaman', compact('detail', 'user'));
     }
 }

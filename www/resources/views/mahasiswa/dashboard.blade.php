@@ -7,6 +7,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CDN SweetAlert2 untuk Pop-up Logout Modern -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -125,7 +129,7 @@
             flex-shrink: 0;
         }
 
-        /* MAIN */
+        /* MAIN LAYOUT */
         .main {
             max-width: 960px;
             margin: 0 auto;
@@ -232,7 +236,7 @@
 
         .lihat-semua:hover { text-decoration: underline; }
 
-        /* PEMINJAMAN LIST (HEADER-DETAIL MATCHING PDF SPEC) */
+        /* PEMINJAMAN LIST */
         .pinjam-list { display: flex; flex-direction: column; gap: 0; }
 
         .pinjam-item {
@@ -265,8 +269,7 @@
             border-radius: 50%;
         }
 
-        /* Badge color mappings matching Database Spec ENUM */
-        .badge.menunggu      { background: #fff7ed; color: #f97316; }
+        .badge.menunggu        { background: #fff7ed; color: #f97316; }
         .badge.menunggu .badge-dot   { background: #f97316; }
         
         .badge.disetujui      { background: #eff6ff; color: #2563eb; }
@@ -275,11 +278,22 @@
         .badge.dipinjam      { background: #f5f3ff; color: #7c3aed; }
         .badge.dipinjam .badge-dot   { background: #7c3aed; }
         
-        .badge.ditolak       { background: #fef2f2; color: #dc2626; }
+        .badge.ditolak        { background: #fef2f2; color: #dc2626; }
         .badge.ditolak .badge-dot    { background: #dc2626; }
         
         .badge.dikembalikan { background: #f0fdf4; color: #16a34a; }
         .badge.dikembalikan .badge-dot { background: #16a34a; }
+
+        .empty-state {
+            padding: 32px 16px;
+            text-align: center;
+            color: #9ca3af;
+        }
+        .empty-state p {
+            font-size: 13px;
+            margin-top: 4px;
+            color: #6b7280;
+        }
 
         /* AKSI CEPAT */
         .aksi-grid {
@@ -328,7 +342,7 @@
         .aksi-text h4 { font-size: 13px; font-weight: 600; margin-bottom: 3px; color: #111827; }
         .aksi-text p  { font-size: 12px; color: #9ca3af; }
 
-        /* DROPDOWN */
+        /* DROPDOWN MENU */
         .user-wrapper { position: relative; }
 
         .dropdown {
@@ -387,72 +401,6 @@
             stroke-linejoin: round;
         }
 
-        /* MODAL */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.45);
-            z-index: 500;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-overlay.open { display: flex; }
-
-        .modal {
-            background: #fff;
-            border-radius: 16px;
-            padding: 28px 28px 24px;
-            width: 100%;
-            max-width: 340px;
-            text-align: center;
-            box-shadow: 0 16px 48px rgba(0,0,0,0.15);
-        }
-
-        .modal-icon {
-            width: 48px;
-            height: 48px;
-            background: #fef2f2;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-        }
-
-        .modal-icon svg {
-            width: 22px;
-            height: 22px;
-            fill: none;
-            stroke: #dc2626;
-            stroke-width: 1.8;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
-        .modal p  { font-size: 13px; color: #6b7280; margin-bottom: 24px; }
-
-        .modal-btns { display: flex; gap: 10px; }
-
-        .modal-btn {
-            flex: 1;
-            height: 40px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            border: none;
-            transition: background 0.15s;
-        }
-
-        .modal-btn.cancel  { background: #f3f4f6; color: #374151; }
-        .modal-btn.cancel:hover  { background: #e5e7eb; }
-        .modal-btn.confirm { background: #dc2626; color: #fff; }
-        .modal-btn.confirm:hover { background: #b91c1c; }
-
         @media (max-width: 640px) {
             .stats { grid-template-columns: repeat(2, 1fr); }
             .nav-links { display: none; }
@@ -482,9 +430,11 @@
         <div class="nav-right">
             <div class="user-wrapper">
                 <div class="user-btn" onclick="toggleDropdown()" id="userBtn">
-                    <div class="avatar">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
+                    <!-- 🔥 FIX: Menggunakan nama_lengkap untuk inisial avatar -->
+                    <div class="avatar">{{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}</div>
                     <div class="user-info">
-                        <div class="user-name">{{ auth()->user()->name ?? 'Aprizal' }}</div>
+                        <!-- 🔥 FIX: Menggunakan nama_lengkap sesuai database registrasi asli -->
+                        <div class="user-name">{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</div>
                         <div class="user-role">Mahasiswa</div>
                     </div>
                     <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -493,10 +443,11 @@
                 </div>
                 <div class="dropdown" id="dropdown">
                     <div class="dropdown-header">
-                        <div class="d-name">{{ auth()->user()->name ?? 'Aprizal' }}</div>
+                        <!-- 🔥 FIX: Menyelaraskan property nama_lengkap di area dropdown -->
+                        <div class="d-name">{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</div>
                         <div class="d-role">Mahasiswa</div>
                     </div>
-                    <button class="dropdown-item logout" onclick="openLogoutModal()">
+                    <button class="dropdown-item logout" onclick="triggerLogout()">
                         <svg viewBox="0 0 24 24">
                             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
                             <polyline points="16 17 21 12 16 7"/>
@@ -509,19 +460,20 @@
         </div>
     </nav>
 
-    {{-- MAIN --}}
+    {{-- MAIN CONTENT --}}
     <main class="main">
 
-        {{-- Greeting --}}
+        {{-- Greeting Card --}}
         <div class="greeting">
-            <div class="greeting-avatar">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
+            <!-- 🔥 FIX: Menggunakan nama_lengkap untuk komponen sapaan utama -->
+            <div class="greeting-avatar">{{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}</div>
             <div>
-                <h2>Halo, {{ auth()->user()->name ?? 'Aprizal' }}!</h2>
+                <h2>Halo, {{ auth()->user()->nama_lengkap ?? 'Guest User' }}!</h2>
                 <p>Selamat datang di Portal Peminjaman Lab. Ada banyak alat tersedia untuk dipinjam.</p>
             </div>
         </div>
 
-        {{-- Stat Cards - Disesuaikan dengan Target Riil Enum Status Database --}}
+        {{-- Stat Cards --}}
         <div class="stats">
             <div class="stat-card">
                 <div class="stat-icon orange">
@@ -545,7 +497,7 @@
                 <div class="stat-icon green">
                     <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                 </div>
-                <div class="stat-value{{ ($total_terlambat ?? 0) > 0 ? ' text-red-600' : '' }}">{{ $total_dipinjam ?? '0' }}</div>
+                <div class="stat-value">{{ $total_dipinjam ?? '0' }}</div>
                 <div class="stat-label">Sedang Dipinjam</div>
                 <div class="stat-sub">Ada di tanganmu</div>
             </div>
@@ -560,7 +512,7 @@
             </div>
         </div>
 
-        {{-- Peminjaman Terbaru (Berbasis Grouping Keranjang Sesuai PDF SRS) --}}
+        {{-- Peminjaman Terbaru --}}
         <div class="section">
             <div class="section-header">
                 <span class="section-title">Aktivitas Peminjaman Terbaru</span>
@@ -581,30 +533,15 @@
                         </span>
                     </div>
                 @empty
-                    {{-- Dummy Data yang strukturnya sudah disamakan dengan logical Database Header-Detail --}}
-                    <div class="pinjam-item">
-                        <div class="pinjam-info">
-                            <h4>ID Transaksi: #LMS-20260510-02</h4>
-                            <p class="meta-desc">Keperluan: Tugas Akhir Splicing Fiber Optic (3 Jenis Alat)</p>
-                            <p class="meta-time">Rencana Pinjam: 2026-05-10 s/d 2026-05-15</p>
-                        </div>
-                        <span class="badge dipinjam"><span class="badge-dot"></span> Dipinjam</span>
-                    </div>
-                    <div class="pinjam-item">
-                        <div class="pinjam-info">
-                            <h4>ID Transaksi: #LMS-20260514-05</h4>
-                            <p class="meta-desc">Keperluan: Uji Coba Mikrotik Router VTP (1 Jenis Alat)</p>
-                            <p class="meta-time">Rencana Pinjam: 2026-05-15 s/d 2026-05-18</p>
-                        </div>
-                        <span class="badge menunggu"><span class="badge-dot"></span> Menunggu</span>
-                    </div>
-                    <div class="pinjam-item">
-                        <div class="pinjam-info">
-                            <h4>ID Transaksi: #LMS-20260502-01</h4>
-                            <p class="meta-desc">Keperluan: Praktikum Mandiri Sistem Operasi (2 Jenis Alat)</p>
-                            <p class="meta-time">Rencana Pinjam: 2026-05-02 s/d 2026-05-05</p>
-                        </div>
-                        <span class="badge dikembalikan"><span class="badge-dot"></span> Dikembalikan</span>
+                    <div class="empty-state">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px;">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <p>Belum ada riwayat aktivitas peminjaman.</p>
                     </div>
                 @endforelse
             </div>
@@ -648,29 +585,19 @@
 
     </main>
 
-    {{-- MODAL LOGOUT --}}
-    <div class="modal-overlay" id="logoutModal">
-        <div class="modal">
-            <div class="modal-icon">
-                <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            </div>
-            <h3>Yakin ingin keluar?</h3>
-            <p>Kamu akan keluar dari sesi akun SmartLab IPWIJA.</p>
-            <div class="modal-btns">
-                <button class="modal-btn cancel" onclick="closeLogoutModal()">Batal</button>
-                <form method="POST" action="{{ route('logout') }}" style="flex:1;">
-                    @csrf
-                    <button type="submit" class="modal-btn confirm" style="width:100%;">Keluar</button>
-                </form>
-            </div>
-        </div>
-    </div>
+    {{-- Form Logout Tersembunyi untuk Proteksi CSRF Laravel --}}
+    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+        @csrf
+    </form>
 
+    {{-- JAVASCRIPT LOGIC --}}
     <script>
+        // Toggle Dropdown Navbar Profil
         function toggleDropdown() {
             document.getElementById('dropdown').classList.toggle('open');
         }
 
+        // Tutup dropdown otomatis jika user mengklik area luar menu
         document.addEventListener('click', function(e) {
             const btn = document.getElementById('userBtn');
             const dd  = document.getElementById('dropdown');
@@ -679,18 +606,24 @@
             }
         });
 
-        function openLogoutModal() {
+        // Trigger Pop-up Konfirmasi Logout SweetAlert2
+        function triggerLogout() {
             document.getElementById('dropdown').classList.remove('open');
-            document.getElementById('logoutModal').classList.add('open');
+            Swal.fire({
+                title: 'Yakin ingin keluar?',
+                text: "Kamu akan keluar dari sesi akun SmartLab IPWIJA.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#9ca3af',
+                confirmButtonText: 'Ya, Keluar!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('logout-form').submit();
+                }
+            });
         }
-
-        function closeLogoutModal() {
-            document.getElementById('logoutModal').classList.remove('open');
-        }
-
-        document.getElementById('logoutModal').addEventListener('click', function(e) {
-            if (e.target === this) closeLogoutModal();
-        });
     </script>
 
 </body>
