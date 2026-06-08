@@ -35,12 +35,20 @@
             z-index: 100;
         }
 
-        .nav-left { display: flex; align-items: center; gap: 32px; }
+        .nav-left { display: flex; align-items: center; }
         .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
         .brand-logo { width: 36px; height: 36px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
         .brand-logo img { width: 100%; height: 100%; object-fit: contain; }
         .brand-text { font-size: 13px; font-weight: 600; color: #111827; line-height: 1.3; }
-        .nav-links { display: flex; align-items: center; gap: 4px; }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
 
         .nav-links a {
             padding: 6px 14px;
@@ -290,18 +298,26 @@
                 </div>
                 <div class="brand-text">IPWIJA<br>SmartLab</div>
             </a>
-            <div class="nav-links">
-                <a href="{{ route('dashboard') }}">Dashboard</a>
-                <a href="{{ route('katalog') }}">Katalog Alat</a>
-                <a href="{{ route('keranjang') }}" class="active">Keranjang</a>
-                <a href="{{ route('peminjaman') }}">Peminjaman Saya</a>
-                <a href="{{ route('profil') }}">Profil</a>
-            </div>
         </div>
+
+        <div class="nav-links">
+            <a href="{{ route('dashboard') }}">Dashboard</a>
+            <a href="{{ route('katalog') }}">Katalog Alat</a>
+            <a href="{{ route('keranjang') }}" class="active">Keranjang</a>
+            <a href="{{ route('peminjaman') }}">Peminjaman Saya</a>
+            <a href="{{ route('profil') }}">Profil</a>
+        </div>
+
         <div class="nav-right">
             <div class="user-wrapper">
                 <div class="user-btn" onclick="toggleDropdown()" id="userBtn">
-                    <div class="avatar">{{ strtoupper(substr(auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'A', 0, 1)) }}</div>
+                   <div class="avatar">
+                        @if(auth()->user()->foto_profil)
+                            <img src="{{ asset('storage/' . auth()->user()->foto_profil) }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                        @else
+                            {{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}
+                        @endif
+                    </div>
                     <div class="user-info">
                         <div class="user-name">{{ auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Aprizal' }}</div>
                         <div class="user-role">Mahasiswa</div>

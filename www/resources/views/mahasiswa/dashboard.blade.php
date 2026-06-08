@@ -7,8 +7,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- CDN SweetAlert2 untuk Pop-up Logout Modern -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
@@ -38,7 +36,6 @@
         .nav-left {
             display: flex;
             align-items: center;
-            gap: 32px;
         }
 
         .brand {
@@ -65,7 +62,11 @@
             line-height: 1.3;
         }
 
+        /* NAV LINKS — center absolute */
         .nav-links {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
             align-items: center;
             gap: 4px;
@@ -79,6 +80,7 @@
             color: #6b7280;
             text-decoration: none;
             transition: all 0.15s;
+            white-space: nowrap;
         }
 
         .nav-links a:hover { background: #f4f6fb; color: #111827; }
@@ -271,16 +273,12 @@
 
         .badge.menunggu        { background: #fff7ed; color: #f97316; }
         .badge.menunggu .badge-dot   { background: #f97316; }
-        
         .badge.disetujui      { background: #eff6ff; color: #2563eb; }
         .badge.disetujui .badge-dot  { background: #2563eb; }
-
         .badge.dipinjam      { background: #f5f3ff; color: #7c3aed; }
         .badge.dipinjam .badge-dot   { background: #7c3aed; }
-        
         .badge.ditolak        { background: #fef2f2; color: #dc2626; }
         .badge.ditolak .badge-dot    { background: #dc2626; }
-        
         .badge.dikembalikan { background: #f0fdf4; color: #16a34a; }
         .badge.dikembalikan .badge-dot { background: #16a34a; }
 
@@ -419,21 +417,27 @@
                 </div>
                 <div class="brand-text">IPWIJA<br>SmartLab</div>
             </a>
-            <div class="nav-links">
-                <a href="{{ route('dashboard') }}" class="active">Dashboard</a>
-                <a href="{{ route('katalog') }}">Katalog Alat</a>
-                <a href="{{ route('keranjang') }}">Keranjang</a>
-                <a href="{{ route('peminjaman') }}">Peminjaman Saya</a>
-                <a href="{{ route('profil') }}">Profil</a>
-            </div>
         </div>
+
+        <div class="nav-links">
+            <a href="{{ route('dashboard') }}" class="active">Dashboard</a>
+            <a href="{{ route('katalog') }}">Katalog Alat</a>
+            <a href="{{ route('keranjang') }}">Keranjang</a>
+            <a href="{{ route('peminjaman') }}">Peminjaman Saya</a>
+            <a href="{{ route('profil') }}">Profil</a>
+        </div>
+
         <div class="nav-right">
             <div class="user-wrapper">
                 <div class="user-btn" onclick="toggleDropdown()" id="userBtn">
-                    <!-- 🔥 FIX: Menggunakan nama_lengkap untuk inisial avatar -->
-                    <div class="avatar">{{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}</div>
+                    <div class="avatar">
+                        @if(auth()->user()->foto_profil)
+                            <img src="{{ asset('storage/' . auth()->user()->foto_profil) }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                        @else
+                            {{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}
+                        @endif
+                    </div>
                     <div class="user-info">
-                        <!-- 🔥 FIX: Menggunakan nama_lengkap sesuai database registrasi asli -->
                         <div class="user-name">{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</div>
                         <div class="user-role">Mahasiswa</div>
                     </div>
@@ -443,7 +447,6 @@
                 </div>
                 <div class="dropdown" id="dropdown">
                     <div class="dropdown-header">
-                        <!-- 🔥 FIX: Menyelaraskan property nama_lengkap di area dropdown -->
                         <div class="d-name">{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</div>
                         <div class="d-role">Mahasiswa</div>
                     </div>
@@ -465,7 +468,6 @@
 
         {{-- Greeting Card --}}
         <div class="greeting">
-            <!-- 🔥 FIX: Menggunakan nama_lengkap untuk komponen sapaan utama -->
             <div class="greeting-avatar">{{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}</div>
             <div>
                 <h2>Halo, {{ auth()->user()->nama_lengkap ?? 'Guest User' }}!</h2>
@@ -590,14 +592,11 @@
         @csrf
     </form>
 
-    {{-- JAVASCRIPT LOGIC --}}
     <script>
-        // Toggle Dropdown Navbar Profil
         function toggleDropdown() {
             document.getElementById('dropdown').classList.toggle('open');
         }
 
-        // Tutup dropdown otomatis jika user mengklik area luar menu
         document.addEventListener('click', function(e) {
             const btn = document.getElementById('userBtn');
             const dd  = document.getElementById('dropdown');
@@ -606,7 +605,6 @@
             }
         });
 
-        // Trigger Pop-up Konfirmasi Logout SweetAlert2
         function triggerLogout() {
             document.getElementById('dropdown').classList.remove('open');
             Swal.fire({

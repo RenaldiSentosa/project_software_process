@@ -18,7 +18,8 @@ use Illuminate\Notifications\Notifiable;
     'password', 
     'role', 
     'program_studi', 
-    'is_active'
+    'is_active',
+    'foto_profil' // ← tambahan baru untuk menyimpan path foto profil di database
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable

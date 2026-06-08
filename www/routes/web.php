@@ -28,10 +28,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // =========================================================================
 Route::middleware(['auth'])->group(function () {
 
-    // Profil Update
-    Route::put('/profil/update', function () {
-        return redirect()->route('profil')->with('success', 'Profil berhasil diperbarui!');
-    })->name('profil.update');
+    // Profil Update & Upload Foto
+    Route::put('/profil/update', [UserController::class, 'updatePassword'])->name('profil.update'); // ← pakai controller
+    Route::put('/profil/foto', [UserController::class, 'updateFoto'])->name('profil.foto');         // ← tambahan baru
 
     // Transaksi Peminjaman
     Route::get('/peminjaman/baru', [BorrowingController::class, 'create'])->name('peminjaman.create');
@@ -46,11 +45,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/keranjang', [CartController::class, 'index'])->name('keranjang');
     Route::get('/peminjaman', [BorrowingController::class, 'index'])->name('peminjaman');
     Route::get('/peminjaman/detail/{id}', [BorrowingController::class, 'show'])->name('peminjaman.detail');
-    
-    // Rute Profil menggunakan UserController
+
     Route::get('/profil', [UserController::class, 'index'])->name('profil');
 
-    // Prefix untuk menjaga link lama agar tetap berfungsi
     Route::prefix('mahasiswa')->name('mahasiswa.')->group(function () {
         Route::view('/dashboard', 'mahasiswa.dashboard')->name('dashboard');
         Route::view('/katalog', 'mahasiswa.katalog')->name('katalog');

@@ -20,36 +20,53 @@
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background: #e8edf3;
-            min-height: 100vh;
+            height: 100vh;
+            width: 100vw;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 40px 20px;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
         }
 
         .card {
             display: flex;
             flex-direction: row;
             width: 100%;
-            max-width: 960px;
-            min-height: 600px;
+            height: 100%;
             background: #fff;
-            border-radius: 20px;
+            border-radius: 0;
+            box-shadow: none;
             overflow: hidden;
-            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
         }
 
         /* ── LEFT PANEL ── */
         .left {
-            flex: 0 0 42%;
+            flex: 0 0 58%;
+            position: relative;
+            overflow: hidden;
+            padding: 48px 52px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 44px 38px;
-            color: #fff;
-            background:
-                linear-gradient(rgba(30, 144, 255, 0.38), rgba(20, 110, 210, 0.48)),
-                url('{{ asset("images/Rectangle 15.png") }}') center / cover no-repeat;
+            background-color: #1a7fd4;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(30, 144, 255, 0.45), rgba(20, 110, 210, 0.55));
+            z-index: 0;
+        }
+
+        /* Biar teks di dalam .left tetap muncul di atas gambar */
+        .branding, .left-body, .quote {
+            position: relative;
+            z-index: 1;
         }
 
         .branding {
@@ -88,14 +105,16 @@
 
         .left-body {
             margin: auto 0;
+            max-width: 90%;
         }
 
         .left-body h2 {
-            font-size: 28px;
+            font-size: 30px;
             font-weight: 800;
-            line-height: 1.3;
+            line-height: 1.25;
             color: #fff;
             margin-bottom: 12px;
+            white-space: nowrap; /* Supaya judul tidak terpotong ke baris baru */
         }
 
         .left-body p {
@@ -137,7 +156,7 @@
         /* ── RIGHT PANEL ── */
         .right {
             flex: 1;
-            padding: 52px;
+            padding: 52px 48px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -308,10 +327,11 @@
 
         /* RESPONSIVE */
         @media (max-width: 768px) {
-            .card { flex-direction: column; min-height: auto; }
-            .left { flex: none; min-height: 300px; padding: 36px 28px; }
-            .right { padding: 36px 28px; }
-            .left-body h2 { font-size: 22px; }
+            body { padding: 0; overflow-y: auto; }
+            .card { flex-direction: column; height: auto; }
+            .left { flex: none; height: 300px; padding: 36px 28px; }
+            .left-body h2 { white-space: normal; font-size: 24px; }
+            .right { padding: 36px 28px; width: 100%; }
         }
     </style>
 </head>
@@ -319,8 +339,10 @@
 
 <div class="card">
 
-    {{-- LEFT PANEL --}}
-    <div class="left">
+    <div class="left" style="background-image: url('{{ asset('images/GEDUNG IPWIJA.jpg.jpeg') }}'); background-size: cover; background-position: center center; background-repeat: no-repeat; background-color: #1a7fd4;">
+        {{-- 1. OVERLAY --}}
+        <div class="overlay"></div>
+
         {{-- A. BRANDING --}}
         <div class="branding">
             <div class="logo-icon">

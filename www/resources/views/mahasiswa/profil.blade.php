@@ -43,7 +43,6 @@
         .nav-left { 
             display: flex; 
             align-items: center; 
-            gap: 40px; 
         }
         
         .brand { 
@@ -65,7 +64,6 @@
             object-fit: contain; 
         }
 
-        /* FIXED: Samain format brand-text sama peminjaman.blade.php */
         .brand-text { 
             font-size: 13px; 
             font-weight: 700; 
@@ -76,7 +74,10 @@
         .nav-links { 
             display: flex; 
             align-items: center; 
-            gap: 8px; 
+            gap: 8px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
         }
         .nav-links a {
             padding: 8px 16px;
@@ -128,6 +129,12 @@
             justify-content: center;
             font-weight: 700;
             font-size: 14px;
+            overflow: hidden;
+        }
+        .avatar-blue-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .user-meta-data {
@@ -276,21 +283,62 @@
             align-items: center;
             gap: 20px;
         }
+
+        /* Avatar Upload Area */
+        .avatar-upload-wrapper {
+            position: relative;
+            flex-shrink: 0;
+        }
         .user-intro-avatar {
-            width: 64px;
-            height: 64px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
             background: #e0f2fe;
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            border: 3px solid #e5e7eb;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        .user-intro-avatar:hover {
+            border-color: #008ecc;
         }
         .user-intro-avatar img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
+        .avatar-upload-overlay {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 24px;
+            height: 24px;
+            background: #008ecc;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid #fff;
+            transition: background 0.15s;
+        }
+        .avatar-upload-overlay:hover {
+            background: #0077aa;
+        }
+        .avatar-upload-overlay svg {
+            width: 12px;
+            height: 12px;
+            fill: none;
+            stroke: #fff;
+            stroke-width: 2.5;
+        }
+        #fotoProfilInput {
+            display: none;
+        }
+
         .user-intro-details {
             display: flex;
             flex-direction: column;
@@ -458,30 +506,39 @@
         .btn-submit:hover {
             background: #0077aa;
         }
+
+        @media(max-width:700px){
+            .nav-links { display: none; }
+        }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
         <div class="nav-left">
-            {{-- FIXED: Samain format brand sama peminjaman.blade.php --}}
             <a href="{{ route('dashboard') }}" class="brand">
                 <div class="brand-logo"><img src="{{ asset('images/logo.png') }}" alt="Logo IPWIJA"></div>
                 <div class="brand-text">IPWIJA<br>SmartLab</div>
             </a>
-            <div class="nav-links">
-                <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
-                <a href="{{ route('katalog') }}" class="{{ request()->routeIs('katalog') ? 'active' : '' }}">Katalog Alat</a>
-                <a href="{{ route('keranjang') }}" class="{{ request()->routeIs('keranjang') ? 'active' : '' }}">Keranjang</a>
-                <a href="{{ route('peminjaman') }}" class="{{ request()->routeIs('peminjaman') ? 'active' : '' }}">Peminjaman Saya</a>
-                <a href="{{ route('profil') }}" class="{{ request()->routeIs('profil') ? 'active' : '' }}">Profil</a>
-            </div>
+        </div>
+
+        <div class="nav-links">
+            <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
+            <a href="{{ route('katalog') }}" class="{{ request()->routeIs('katalog') ? 'active' : '' }}">Katalog Alat</a>
+            <a href="{{ route('keranjang') }}" class="{{ request()->routeIs('keranjang') ? 'active' : '' }}">Keranjang</a>
+            <a href="{{ route('peminjaman') }}" class="{{ request()->routeIs('peminjaman') ? 'active' : '' }}">Peminjaman Saya</a>
+            <a href="{{ route('profil') }}" class="{{ request()->routeIs('profil') ? 'active' : '' }}">Profil</a>
         </div>
         
         <div class="user-profile-wrapper" id="customUserWrapper">
             <div class="user-profile-trigger" onclick="toggleCustomDropdown(event)">
-                {{-- FIXED: Ganti ->name ke ->nama_lengkap biar konsisten sama peminjaman --}}
-                <div class="avatar-blue-circle">{{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}</div>
+                <div class="avatar-blue-circle" id="navbarAvatar">
+                    @if(auth()->user()->foto_profil)
+                        <img src="{{ asset('storage/' . auth()->user()->foto_profil) }}" alt="Foto Profil">
+                    @else
+                        {{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}
+                    @endif
+                </div>
                 <div class="user-meta-data">
                     <span class="meta-name">{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</span>
                     <span class="meta-role">Mahasiswa</span>
@@ -493,12 +550,10 @@
 
             <div class="custom-dropdown-box">
                 <div class="dropdown-identity">
-                    {{-- FIXED: Ganti ->name ke ->nama_lengkap biar konsisten sama peminjaman --}}
                     <span class="id-name">{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</span>
                     <span class="id-role">Mahasiswa</span>
                 </div>
 
-                {{-- FIXED: Samain pola logout dengan SweetAlert konfirmasi, pakai type="button" + id form --}}
                 <form action="{{ route('logout') }}" method="POST" style="margin: 0;" id="logoutForm">
                     @csrf
                     <button type="button" class="logout-btn-custom" onclick="confirmLogout()">
@@ -530,16 +585,33 @@
             </div>
         @endif
 
+        {{-- Form Upload Foto Profil --}}
+        <form action="{{ route('profil.foto') }}" method="POST" enctype="multipart/form-data" id="fotoForm">
+            @csrf
+            @method('PUT')
+            <input type="file" id="fotoProfilInput" name="foto_profil" accept="image/*">
+        </form>
+
         <div class="user-intro-card">
-            <div class="user-intro-avatar">
-                <img src="{{ asset('images/avatar-illustration.png') }}" alt="Avatar">
+            <div class="avatar-upload-wrapper">
+                <div class="user-intro-avatar" onclick="document.getElementById('fotoProfilInput').click()">
+                    <img id="previewFoto"
+                        src="{{ auth()->user()->foto_profil ? asset('storage/' . auth()->user()->foto_profil) : asset('images/avatar-illustration.png') }}"
+                        alt="Avatar">
+                </div>
+                <div class="avatar-upload-overlay" onclick="document.getElementById('fotoProfilInput').click()">
+                    <svg viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z"/>
+                    </svg>
+                </div>
             </div>
             <div class="user-intro-details">
                 <h2>{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</h2>
                 <p>{{ auth()->user()->email ?? 'MuhamadAprizal01@gmail.com' }}</p>
                 <div class="pill-container">
                     <span class="identity-pill">Mahasiswa</span>
-                    <span class="identity-pill">{{ auth()->user()->jurusan ?? 'Teknik Informatika' }}</span>
+                    <span class="identity-pill">{{ auth()->user()->ProgramStudi ?? 'Teknik Informatika' }}</span>
                 </div>
             </div>
         </div>
@@ -572,8 +644,8 @@
                     <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18"/></svg>
                 </div>
                 <div class="info-content">
-                    <span class="info-label">Jurusan</span>
-                    <span class="info-value">{{ auth()->user()->jurusan ?? 'Teknik Informatika' }}</span>
+                    <span class="info-label">Program Studi</span>
+                    <span class="info-value">{{ auth()->user()->ProgramStudi ?? 'Teknik Informatika' }}</span>
                 </div>
             </div>
 
@@ -598,7 +670,8 @@
                     <div class="form-group">
                         <label for="password">Password Baru</label>
                         <div class="input-wrapper">
-                            <input type="password" id="password" name="password" placeholder="Masukkan password baru" required>
+                            {{-- required dihapus agar bisa simpan tanpa ganti password --}}
+                            <input type="password" id="password" name="password" placeholder="Kosongkan jika tidak ingin mengubah password">
                             <span class="eye-icon" onclick="togglePasswordVisibility('password')">
                                 <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
                             </span>
@@ -608,7 +681,8 @@
                     <div class="form-group">
                         <label for="password_confirmation">Konfirmasi Password Baru</label>
                         <div class="input-wrapper">
-                            <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Konfirmasi password baru" required>
+                            {{-- required dihapus agar bisa simpan tanpa ganti password --}}
+                            <input type="password" id="password_confirmation" name="password_confirmation" placeholder="Kosongkan jika tidak ingin mengubah password">
                             <span class="eye-icon" onclick="togglePasswordVisibility('password_confirmation')">
                                 <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
                             </span>
@@ -672,7 +746,39 @@
             }
         }
 
-        // FIXED: Konfirmasi SweetAlert2 sebelum Logout (sama persis kayak peminjaman.blade.php)
+        // Preview foto sebelum upload & auto submit form foto
+        document.getElementById('fotoProfilInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Validasi ukuran maks 2MB
+            if (file.size > 2 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File terlalu besar',
+                    text: 'Ukuran foto maksimal 2MB.',
+                    confirmButtonColor: '#008ecc',
+                    fontFamily: 'Plus Jakarta Sans',
+                });
+                return;
+            }
+
+            // Preview langsung di halaman
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                document.getElementById('previewFoto').src = ev.target.result;
+
+                // Update juga avatar navbar
+                const navAvatar = document.getElementById('navbarAvatar');
+                navAvatar.innerHTML = `<img src="${ev.target.result}" alt="Foto Profil" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+            };
+            reader.readAsDataURL(file);
+
+            // Auto submit form foto ke backend
+            document.getElementById('fotoForm').submit();
+        });
+
+        // Konfirmasi SweetAlert2 sebelum Logout
         function confirmLogout() {
             Swal.fire({
                 icon: 'warning',

@@ -43,7 +43,6 @@
         .nav-left { 
             display: flex; 
             align-items: center; 
-            gap: 40px; 
         }
         
         .brand { 
@@ -75,7 +74,10 @@
         .nav-links { 
             display: flex; 
             align-items: center; 
-            gap: 8px; 
+            gap: 8px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
         }
         .nav-links a {
             padding: 8px 16px;
@@ -404,6 +406,10 @@
             color: #6b7280;
             font-size: 14px;
         }
+
+        @media(max-width:700px){
+            .nav-links { display: none; }
+        }
     </style>
 </head>
 <body>
@@ -414,18 +420,25 @@
                 <div class="brand-logo"><img src="{{ asset('images/logo.png') }}" alt="Logo IPWIJA"></div>
                 <div class="brand-text">IPWIJA<br>SmartLab</div>
             </a>
-            <div class="nav-links">
-                <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
-                <a href="{{ route('katalog') }}" class="{{ request()->routeIs('katalog') ? 'active' : '' }}">Katalog Alat</a>
-                <a href="{{ route('keranjang') }}" class="{{ request()->routeIs('keranjang') ? 'active' : '' }}">Keranjang</a>
-                <a href="{{ route('peminjaman') }}" class="{{ request()->routeIs('peminjaman') || request()->is('peminjaman*') ? 'active' : '' }}">Peminjaman Saya</a>
-                <a href="{{ route('profil') }}" class="{{ request()->routeIs('profil') ? 'active' : '' }}">Profil</a>
-            </div>
+        </div>
+
+        <div class="nav-links">
+            <a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}">Dashboard</a>
+            <a href="{{ route('katalog') }}" class="{{ request()->routeIs('katalog') ? 'active' : '' }}">Katalog Alat</a>
+            <a href="{{ route('keranjang') }}" class="{{ request()->routeIs('keranjang') ? 'active' : '' }}">Keranjang</a>
+            <a href="{{ route('peminjaman') }}" class="{{ request()->routeIs('peminjaman') || request()->is('peminjaman*') ? 'active' : '' }}">Peminjaman Saya</a>
+            <a href="{{ route('profil') }}" class="{{ request()->routeIs('profil') ? 'active' : '' }}">Profil</a>
         </div>
         
         <div class="user-profile-wrapper" id="customUserWrapper">
             <div class="user-profile-trigger" onclick="toggleCustomDropdown(event)">
-                <div class="avatar-blue-circle">{{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}</div>
+               <div class="avatar">
+                        @if(auth()->user()->foto_profil)
+                            <img src="{{ asset('storage/' . auth()->user()->foto_profil) }}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                        @else
+                            {{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}
+                        @endif
+                    </div>
                 <div class="user-meta-data">
                     <span class="meta-name">{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</span>
                     <span class="meta-role">Mahasiswa</span>
