@@ -1,7 +1,6 @@
 @extends('layouts.admin')
 
 @section('title', 'Audit Trail - IPWIJA SmartLab')
-@section('page-header', 'Audit Trail')
 
 @section('styles')
 <style>
@@ -57,94 +56,80 @@ body {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
+                            @forelse($logs ?? [] as $log)
                             <tr class="hover:bg-slate-50/50 transition">
-                                <td class="py-4 px-6 text-slate-500">28 Mei 2026, 14:30</td>
-                                <td class="py-4 px-6 text-slate-900 font-bold">Sandy Aryadi</td>
-                                <td class="py-4 px-6 text-slate-500">Admin</td>
-                                <td class="py-4 px-6 text-slate-800">Manajemen Barang</td>
-                                <td class="py-4 px-6"><span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold">CREATE</span></td>
-                                <td class="py-4 px-6 text-slate-600">Menambahkan barang baru Meja (BRG-001)</td>
-                                <td class="py-4 px-6 text-center">
-                                    <button onclick="toggleModal('modal-audit-create')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye text-sm"></i></button>
+                                <td class="py-4 px-6 text-slate-500">{{ \Carbon\Carbon::parse($log->created_at)->translatedFormat('d M Y, H:i') }}</td>
+                                <td class="py-4 px-6 text-slate-900 font-bold">{{ $log->nama_pelaku ?? 'System' }}</td>
+                                <td class="py-4 px-6 text-slate-500">{{ $log->role_pelaku ?? '-' }}</td>
+                                <td class="py-4 px-6 text-slate-800">{{ $log->modul }}</td>
+                                <td class="py-4 px-6">
+                                    @php
+                                        $aksiColor = 'bg-slate-50 text-slate-600';
+                                        if($log->aksi == 'CREATE') $aksiColor = 'bg-emerald-50 text-emerald-600';
+                                        elseif($log->aksi == 'UPDATE') $aksiColor = 'bg-amber-50 text-amber-600';
+                                        elseif($log->aksi == 'DELETE') $aksiColor = 'bg-rose-50 text-rose-600';
+                                        elseif($log->aksi == 'APPROVE') $aksiColor = 'bg-blue-50 text-blue-600';
+                                        elseif($log->aksi == 'REJECT') $aksiColor = 'bg-red-50 text-red-600';
+                                        elseif($log->aksi == 'LOGIN') $aksiColor = 'bg-teal-50 text-teal-600';
+                                        elseif($log->aksi == 'EXPORT') $aksiColor = 'bg-purple-50 text-purple-600';
+                                    @endphp
+                                    <span class="px-2.5 py-0.5 rounded-full {{ $aksiColor }} text-[10px] font-bold">{{ $log->aksi }}</span>
                                 </td>
-                            </tr>
-                            <tr class="hover:bg-slate-50/50 transition">
-                                <td class="py-4 px-6 text-slate-500">28 Mei 2026, 13:15</td>
-                                <td class="py-4 px-6 text-slate-900 font-bold">Sandy Aryadi</td>
-                                <td class="py-4 px-6 text-slate-500">Admin</td>
-                                <td class="py-4 px-6 text-slate-800">Manajemen Alat</td>
-                                <td class="py-4 px-6"><span class="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-600 text-[10px] font-bold">UPDATE</span></td>
-                                <td class="py-4 px-6 text-slate-600">Mengubah data alat proyektor (ALT-002)</td>
+                                <td class="py-4 px-6 text-slate-600">{{ $log->id_record ? $log->modul . ' ID: ' . $log->id_record : '-' }}</td>
                                 <td class="py-4 px-6 text-center">
-                                    <button onclick="toggleModal('modal-audit-update')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye text-sm"></i></button>
+                                    <button onclick="toggleModal('modal-audit-detail-{{ $log->id }}')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye text-sm"></i></button>
                                 </td>
+                                
+                                <!-- Modal Detail Audit -->
+                                <div id="modal-audit-detail-{{ $log->id }}" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm transition-opacity opacity-0 flex items-center justify-center p-4">
+                                    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform duration-300">
+                                        <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                            <h3 class="font-bold text-slate-800 text-base">Detail Aktivitas Audit</h3>
+                                            <button onclick="toggleModal('modal-audit-detail-{{ $log->id }}')" class="text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+                                        </div>
+                                        <div class="p-6">
+                                            <div class="space-y-4 text-xs text-slate-700">
+                                                <div class="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
+                                                    <div class="font-semibold text-slate-500">Waktu</div>
+                                                    <div class="col-span-2">{{ \Carbon\Carbon::parse($log->created_at)->translatedFormat('d F Y, H:i:s') }}</div>
+                                                </div>
+                                                <div class="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
+                                                    <div class="font-semibold text-slate-500">Pelaku (User)</div>
+                                                    <div class="col-span-2 font-bold">{{ $log->nama_pelaku ?? 'System' }} <span class="text-slate-400 font-normal">({{ $log->role_pelaku ?? '-' }})</span></div>
+                                                </div>
+                                                <div class="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
+                                                    <div class="font-semibold text-slate-500">Modul</div>
+                                                    <div class="col-span-2">{{ $log->modul }}</div>
+                                                </div>
+                                                <div class="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
+                                                    <div class="font-semibold text-slate-500">Jenis Aksi</div>
+                                                    <div class="col-span-2">
+                                                        <span class="px-2.5 py-0.5 rounded-full {{ $aksiColor }} text-[10px] font-bold">{{ $log->aksi }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
+                                                    <div class="font-semibold text-slate-500">ID Record</div>
+                                                    <div class="col-span-2">{{ $log->id_record ?? '-' }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+                                            <button onclick="toggleModal('modal-audit-detail-{{ $log->id }}')" class="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition">Tutup</button>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </tr>
-                            <tr class="hover:bg-slate-50/50 transition">
-                                <td class="py-4 px-6 text-slate-500">28 Mei 2026, 11:00</td>
-                                <td class="py-4 px-6 text-slate-900 font-bold">Sandy Aryadi</td>
-                                <td class="py-4 px-6 text-slate-500">Admin</td>
-                                <td class="py-4 px-6 text-slate-800">Manajemen Barang</td>
-                                <td class="py-4 px-6"><span class="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-600 text-[10px] font-bold">DELETE</span></td>
-                                <td class="py-4 px-6 text-slate-600">Menghapus data barang BRG-009</td>
-                                <td class="py-4 px-6 text-center">
-                                    <button onclick="toggleModal('modal-audit-delete')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye text-sm"></i></button>
-                                </td>
+                            @empty
+                            <tr>
+                                <td colspan="7" class="text-center py-8 text-slate-500">Belum ada riwayat audit trail.</td>
                             </tr>
-                            <tr class="hover:bg-slate-50/50 transition">
-                                <td class="py-4 px-6 text-slate-500">28 Mei 2026, 09:45</td>
-                                <td class="py-4 px-6 text-slate-900 font-bold">Sandy Aryadi</td>
-                                <td class="py-4 px-6 text-slate-500">Admin</td>
-                                <td class="py-4 px-6 text-slate-800">Peminjaman</td>
-                                <td class="py-4 px-6"><span class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold">APPROVE</span></td>
-                                <td class="py-4 px-6 text-slate-600">Menyetujui pengajuan peminjaman PMJ-004</td>
-                                <td class="py-4 px-6 text-center">
-                                    <button onclick="toggleModal('modal-audit-approve')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye text-sm"></i></button>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-slate-50/50 transition">
-                                <td class="py-4 px-6 text-slate-500">28 Mei 2026, 09:30</td>
-                                <td class="py-4 px-6 text-slate-900 font-bold">Sandy Aryadi</td>
-                                <td class="py-4 px-6 text-slate-500">Admin</td>
-                                <td class="py-4 px-6 text-slate-800">Peminjaman</td>
-                                <td class="py-4 px-6"><span class="px-2.5 py-0.5 rounded-full bg-red-50 text-red-600 text-[10px] font-bold">REJECT</span></td>
-                                <td class="py-4 px-6 text-slate-600">Menolak pengajuan peminjaman PMJ-002</td>
-                                <td class="py-4 px-6 text-center">
-                                    <button onclick="toggleModal('modal-audit-rejected')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye text-sm"></i></button>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-slate-50/50 transition">
-                                <td class="py-4 px-6 text-slate-500">28 Mei 2026, 08:50</td>
-                                <td class="py-4 px-6 text-slate-900 font-bold">Sandy Aryadi</td>
-                                <td class="py-4 px-6 text-slate-500">Admin</td>
-                                <td class="py-4 px-6 text-slate-800">Laporan</td>
-                                <td class="py-4 px-6"><span class="px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-600 text-[10px] font-bold">EXPORT</span></td>
-                                <td class="py-4 px-6 text-slate-600">Mengekspor data laporan log mutasi stok ke Excel</td>
-                                <td class="py-4 px-6 text-center">
-                                    <button onclick="toggleModal('modal-audit-export')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye text-sm"></i></button>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-slate-50/50 transition">
-                                <td class="py-4 px-6 text-slate-500">28 Mei 2026, 08:00</td>
-                                <td class="py-4 px-6 text-slate-900 font-bold">Sandy Aryadi</td>
-                                <td class="py-4 px-6 text-slate-500">Admin</td>
-                                <td class="py-4 px-6 text-slate-800">Autentikasi</td>
-                                <td class="py-4 px-6"><span class="px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-600 text-[10px] font-bold">LOGIN</span></td>
-                                <td class="py-4 px-6 text-slate-600">User berhasil masuk ke dalam sistem</td>
-                                <td class="py-4 px-6 text-center">
-                                    <button onclick="toggleModal('modal-audit-login')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye text-sm"></i></button>
-                                </td>
-                            </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
-                <div class="p-5 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
-                    <span>Menampilkan 1-7 dari 340 log</span>
-                    <div class="flex gap-1">
-                        <button class="w-7 h-7 flex items-center justify-center rounded border border-slate-200 hover:bg-slate-50"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
-                        <button class="w-7 h-7 flex items-center justify-center rounded bg-blue-600 text-white font-medium">1</button>
-                        <button class="w-7 h-7 flex items-center justify-center rounded border border-slate-200 hover:bg-slate-50">2</button>
-                        <button class="w-7 h-7 flex items-center justify-center rounded border border-slate-200 hover:bg-slate-50"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
-                    </div>
+                <div class="p-5 border-t border-slate-100">
+                    {{ $logs->links() }}
                 </div>
             </div>
 @endsection

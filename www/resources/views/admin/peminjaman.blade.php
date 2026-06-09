@@ -1,7 +1,6 @@
 @extends('layouts.admin')
 
 @section('title', 'Peminjaman Admin - IPWIJA SmartLab')
-@section('page-header', 'Peminjaman Admin')
 
 @section('styles')
 <style>
@@ -63,68 +62,105 @@ body {
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
-                            <tr class="hover:bg-slate-50/50 transition">
-                                <td class="py-4 px-6 font-semibold text-slate-800">PJM-001</td>
-                                <td class="py-4 px-6"><span class="font-semibold text-slate-800 block">Muhamad Aprijal</span><span class="text-slate-400 text-[11px]">202301110011</span></td>
-                                <td class="py-4 px-6 font-medium text-slate-600">Teknik Informatika</td>
-                                <td class="py-4 px-6 font-medium text-slate-500">18 Mei 2026</td>
-                                <td class="py-4 px-6 font-medium text-slate-600">2 jenis, 6 unit</td>
-                                <td class="py-4 px-6"><span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-500 text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1 h-1 bg-blue-500 rounded-full"></span>Disetujui</span></td>
-                                <td class="py-4 px-6 text-center space-x-3">
-                                    <button onclick="toggleModal('modal-detail-disetujui')" class="text-slate-400 hover:text-slate-600" title="Lihat Detail"><i class="fa-regular fa-eye text-sm"></i></button>
-                                    <button class="text-slate-400 hover:text-purple-600" title="Catat Peminjaman"><i class="fa-solid fa-clipboard-check text-sm"></i></button>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-slate-50/50 transition">
-                                <td class="py-4 px-6 font-semibold text-slate-800">PJM-003</td>
-                                <td class="py-4 px-6"><span class="font-semibold text-slate-800 block">Muhamad Aprijal</span><span class="text-slate-400 text-[11px]">202301110011</span></td>
-                                <td class="py-4 px-6 font-medium text-slate-600">Teknik Informatika</td>
-                                <td class="py-4 px-6 font-medium text-slate-500">18 Mei 2026</td>
-                                <td class="py-4 px-6 font-medium text-slate-600">2 jenis, 6 unit</td>
-                                <td class="py-4 px-6"><span class="px-2 py-0.5 rounded-full bg-purple-50 text-purple-500 text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1 h-1 bg-purple-500 rounded-full"></span>Dipinjam</span></td>
-                                <td class="py-4 px-6 text-center space-x-3">
-                                    <button onclick="toggleModal('modal-detail-dipinjam')" class="text-slate-400 hover:text-slate-600" title="Lihat Detail"><i class="fa-regular fa-eye text-sm"></i></button>
-                                    <button class="text-slate-400 hover:text-emerald-600" title="Catat Pengembalian"><i class="fa-solid fa-rotate-left text-sm"></i></button>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-slate-50/50 transition">
-                                <td class="py-4 px-6 font-semibold text-slate-800">PJM-005</td>
-                                <td class="py-4 px-6"><span class="font-semibold text-slate-800 block">Muhamad Aprijal</span><span class="text-slate-400 text-[11px]">202301110011</span></td>
-                                <td class="py-4 px-6 font-medium text-slate-600">Teknik Informatika</td>
-                                <td class="py-4 px-6 font-medium text-slate-500">18 Mei 2026</td>
-                                <td class="py-4 px-6 font-medium text-slate-600">4 jenis, 7 unit</td>
-                                <td class="py-4 px-6"><span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>Menunggu</span></td>
-                                <td class="py-4 px-6 text-center space-x-3">
-                                    <button onclick="toggleModal('modal-detail-menunggu')" class="text-slate-400 hover:text-slate-600" title="Lihat Detail"><i class="fa-regular fa-eye text-sm"></i></button>
-                                    <button class="text-slate-400 hover:text-blue-600" title="Setujui"><i class="fa-solid fa-check text-sm"></i></button>
-                                    <button onclick="openPenolakanLangsung()" class="text-slate-400 hover:text-rose-600" title="Tolak"><i class="fa-solid fa-xmark text-sm"></i></button>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-slate-50/50 transition">
-                                <td class="py-4 px-6 font-semibold text-slate-800">PJM-007</td>
-                                <td class="py-4 px-6"><span class="font-semibold text-slate-800 block">Muhamad Aprijal</span><span class="text-slate-400 text-[11px]">202301110011</span></td>
-                                <td class="py-4 px-6 font-medium text-slate-600">Teknik Informatika</td>
-                                <td class="py-4 px-6 font-medium text-slate-500">18 Mei 2026</td>
-                                <td class="py-4 px-6 font-medium text-slate-600">2 jenis, 6 unit</td>
-                                <td class="py-4 px-6"><span class="px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1 h-1 bg-rose-500 rounded-full"></span>Ditolak</span></td>
-                                <td class="py-4 px-6 text-center shadow-sm">
-                                    <button class="text-slate-300 cursor-not-allowed" disabled><i class="fa-regular fa-eye text-sm"></i></button>
-                                </td>
-                            </tr>
+                            @forelse($borrowings ?? [] as $borrowing)
+                                <tr class="hover:bg-slate-50/50 transition">
+                                    <td class="py-4 px-6 font-semibold text-slate-800">PJM-{{ str_pad($borrowing->id, 3, '0', STR_PAD_LEFT) }}</td>
+                                    <td class="py-4 px-6"><span class="font-semibold text-slate-800 block">{{ $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? 'Unknown' }}</span><span class="text-slate-400 text-[11px]">{{ $borrowing->mahasiswa->nim ?? '-' }}</span></td>
+                                    <td class="py-4 px-6 font-medium text-slate-600">{{ $borrowing->mahasiswa->program_studi ?? '-' }}</td>
+                                    <td class="py-4 px-6 font-medium text-slate-500">{{ \Carbon\Carbon::parse($borrowing->created_at)->translatedFormat('d M Y') }}</td>
+                                    <td class="py-4 px-6 font-medium text-slate-600">{{ $borrowing->borrowingItems->count() }} jenis, {{ $borrowing->borrowingItems->sum('jumlah_unit') }} unit</td>
+                                    <td class="py-4 px-6">
+                                        @if($borrowing->status == 'Disetujui')
+                                            <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-500 text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1 h-1 bg-blue-500 rounded-full"></span>Disetujui</span>
+                                        @elseif($borrowing->status == 'Dipinjam' || $borrowing->status == 'Diproses')
+                                            <span class="px-2 py-0.5 rounded-full bg-purple-50 text-purple-500 text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1 h-1 bg-purple-500 rounded-full"></span>Dipinjam</span>
+                                        @elseif($borrowing->status == 'Menunggu')
+                                            <span class="px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>Menunggu</span>
+                                        @elseif($borrowing->status == 'Ditolak')
+                                            <span class="px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1 h-1 bg-rose-500 rounded-full"></span>Ditolak</span>
+                                        @elseif($borrowing->status == 'Selesai' || $borrowing->status == 'Dikembalikan')
+                                            <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1 h-1 bg-emerald-500 rounded-full"></span>Selesai</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-4 px-6 text-center space-x-3 flex justify-center items-center">
+                                        <button onclick="toggleModal('modal-detail-{{ $borrowing->id }}')" class="text-slate-400 hover:text-slate-600" title="Lihat Detail"><i class="fa-regular fa-eye text-sm"></i></button>
+                                        @if($borrowing->status == 'Menunggu')
+                                            <form action="{{ route('admin.peminjaman.approve', $borrowing->id) }}" method="POST" class="inline">
+                                                @csrf
+                                                <button type="submit" class="text-slate-400 hover:text-blue-600" title="Setujui"><i class="fa-solid fa-check text-sm"></i></button>
+                                            </form>
+                                            <form action="{{ route('admin.peminjaman.reject', $borrowing->id) }}" method="POST" class="inline">
+                                                @csrf
+                                                <button type="submit" class="text-slate-400 hover:text-rose-600" title="Tolak"><i class="fa-solid fa-xmark text-sm"></i></button>
+                                            </form>
+                                        @elseif($borrowing->status == 'Disetujui')
+                                            <form action="{{ route('admin.peminjaman.borrow', $borrowing->id) }}" method="POST" class="inline">
+                                                @csrf
+                                                <button type="submit" class="text-slate-400 hover:text-purple-600" title="Catat Peminjaman"><i class="fa-solid fa-clipboard-check text-sm"></i></button>
+                                            </form>
+                                        @elseif($borrowing->status == 'Dipinjam' || $borrowing->status == 'Diproses')
+                                            <form action="{{ route('admin.peminjaman.return', $borrowing->id) }}" method="POST" class="inline">
+                                                @csrf
+                                                <button type="submit" class="text-slate-400 hover:text-emerald-600" title="Catat Pengembalian"><i class="fa-solid fa-rotate-left text-sm"></i></button>
+                                            </form>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="text-center py-8 text-slate-500">Belum ada data peminjaman.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
-                <div class="p-5 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
-                    <span>Menampilkan 1-7 dari 120 alat</span>
-                    <div class="flex gap-1">
-                        <button class="w-7 h-7 flex items-center justify-center rounded border border-slate-200 hover:bg-slate-50"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
-                        <button class="w-7 h-7 flex items-center justify-center rounded bg-blue-600 text-white font-medium">1</button>
-                        <button class="w-7 h-7 flex items-center justify-center rounded border border-slate-200 hover:bg-slate-50">2</button>
-                        <button class="w-7 h-7 flex items-center justify-center rounded border border-slate-200 hover:bg-slate-50">3</button>
-                        <button class="w-7 h-7 flex items-center justify-center rounded border border-slate-200 hover:bg-slate-50"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+                <div class="p-5 border-t border-slate-100">
+                    {{ $borrowings->links() }}
+                </div>
+            </div>
+
+            <!-- Modals Detail Peminjaman -->
+            @foreach($borrowings as $b)
+            <div id="modal-detail-{{ $b->id }}" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm transition-opacity opacity-0 flex items-center justify-center p-4">
+                <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform duration-300">
+                    <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 class="font-bold text-slate-800 text-base">Detail Peminjaman</h3>
+                        <button onclick="toggleModal('modal-detail-{{ $b->id }}')" class="text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    </div>
+                    <div class="p-6">
+                        <div class="mb-4">
+                            <p class="text-xs text-slate-500 mb-1">Peminjam</p>
+                            <p class="text-sm font-semibold text-slate-800">{{ $b->mahasiswa->nama_lengkap ?? $b->mahasiswa->name ?? '-' }} ({{ $b->mahasiswa->nim ?? '-' }})</p>
+                        </div>
+                        <div class="mb-4">
+                            <p class="text-xs text-slate-500 mb-1">Kegiatan</p>
+                            <p class="text-sm font-semibold text-slate-800">{{ $b->kegiatan }}</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <p class="text-xs text-slate-500 mb-1">Tanggal Rencana Pinjam</p>
+                                <p class="text-sm font-semibold text-slate-800">{{ \Carbon\Carbon::parse($b->tgl_rencana_pinjam)->format('d M Y') }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 mb-1">Tanggal Rencana Kembali</p>
+                                <p class="text-sm font-semibold text-slate-800">{{ \Carbon\Carbon::parse($b->tgl_rencana_kembali)->format('d M Y') }}</p>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <p class="text-xs text-slate-500 mb-2">Item Dipinjam:</p>
+                            <ul class="list-disc list-inside text-sm font-semibold text-slate-800">
+                                @foreach($b->borrowingItems as $bi)
+                                    <li>{{ $bi->tool->nama_alat ?? 'Alat tidak ditemukan' }} ({{ $bi->jumlah }} unit)</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 p-4 border-t border-slate-100 bg-slate-50">
+                        <button onclick="toggleModal('modal-detail-{{ $b->id }}')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition">Tutup</button>
                     </div>
                 </div>
             </div>
+            @endforeach
 @endsection
 
 @section('scripts')

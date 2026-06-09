@@ -357,11 +357,11 @@
 
         {{-- B. KONTEN TENGAH --}}
         <div class="left-body">
-            <h2>Bergabung dengan SmartLab IPWIJA</h2>
-            <p>Daftar sekarang untuk mengakses katalog alat lab dan mengajukan peminjaman secara online.</p>
+            <h2>Selamat Datang Kembali!</h2>
+            <p>Masuk ke akun Anda untuk mulai mengelola peminjaman alat dan mengakses inventaris laboratorium.</p>
             <div class="badges">
-                <span class="badge">500+ Alat Lab</span>
-                <span class="badge">2,000+ Mahasiswa</span>
+                <span class="badge">Akses Cepat</span>
+                <span class="badge">Sistem Terintegrasi</span>
             </div>
         </div>
 

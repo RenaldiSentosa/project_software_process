@@ -61,6 +61,7 @@ class BorrowingController extends Controller
 
             $peminjaman[] = [
                 // Membuat format nomor invoice/ID peminjaman custom (Contoh: PMJ-2026-001)
+                'raw_id'  => $row->id,
                 'id'      => 'PMJ-' . Carbon::parse($row->created_at)->format('Y') . '-' . str_pad($row->id, 3, '0', STR_PAD_LEFT),
                 'alat'    => $namaAlat,
                 'tgl_aju' => $tglAju,

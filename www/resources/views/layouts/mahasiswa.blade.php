@@ -23,7 +23,7 @@
         .navbar {
             background: #fff;
             border-bottom: 1px solid #e5e7eb;
-            padding: 0 32px;
+            padding: 0 16px;
             height: 70px;
             display: flex;
             align-items: center;
@@ -33,7 +33,11 @@
             z-index: 100;
         }
 
-        .nav-left { display: flex; align-items: center; }
+        @media (min-width: 640px) {
+            .navbar { padding: 0 32px; }
+        }
+
+        .nav-left { display: flex; align-items: center; gap: 12px; }
 
         .brand {
             display: flex;
@@ -44,8 +48,8 @@
 
         /* Logo: sama persis dengan figma */
         .brand-logo {
-            width: 44px;
-            height: 44px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             overflow: hidden;
             flex-shrink: 0;
@@ -53,6 +57,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        
+        @media (min-width: 640px) {
+            .brand-logo { width: 44px; height: 44px; }
         }
 
         .brand-logo img {
@@ -62,20 +70,30 @@
         }
 
         .brand-text {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
             color: #111827;
             line-height: 1.3;
         }
 
+        @media (min-width: 640px) {
+            .brand-text { font-size: 13px; }
+        }
+
         /* NAV LINKS — centered */
         .nav-links {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-            gap: 4px;
+            display: none;
+        }
+
+        @media (min-width: 768px) {
+            .nav-links {
+                display: flex;
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                align-items: center;
+                gap: 4px;
+            }
         }
 
         .nav-links a {
@@ -91,6 +109,54 @@
 
         .nav-links a:hover { background: #f3f4f6; }
         .nav-links a.active { color: #0284c7; background: #e0f2fe; }
+
+        /* Mobile Nav Toggle */
+        .mobile-menu-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: transparent;
+            color: #4b5563;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+        
+        .mobile-menu-btn:hover { background: #f3f4f6; }
+
+        @media (min-width: 768px) {
+            .mobile-menu-btn { display: none; }
+        }
+
+        /* Mobile Nav Menu */
+        .mobile-nav {
+            display: none;
+            position: absolute;
+            top: 70px;
+            left: 0;
+            width: 100%;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 12px 16px;
+            z-index: 99;
+        }
+
+        .mobile-nav.open { display: flex; flex-direction: column; gap: 4px; }
+
+        .mobile-nav a {
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+            text-decoration: none;
+        }
+
+        .mobile-nav a:hover { background: #f3f4f6; }
+        .mobile-nav a.active { color: #0284c7; background: #e0f2fe; }
 
         .nav-right {
             display: flex;
@@ -114,12 +180,12 @@
 
         /* Avatar: seragam dengan figma */
         .avatar {
-            width: 38px;
-            height: 38px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: #e0f2fe;
             color: #0369a1;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 700;
             display: flex;
             align-items: center;
@@ -129,6 +195,10 @@
             letter-spacing: 0;
         }
 
+        @media (min-width: 640px) {
+            .avatar { width: 38px; height: 38px; font-size: 15px; }
+        }
+
         .avatar img {
             width: 100%;
             height: 100%;
@@ -136,7 +206,12 @@
             border-radius: 50%;
         }
 
-        .user-info { text-align: left; }
+        .user-info { text-align: left; display: none; }
+        
+        @media (min-width: 640px) {
+            .user-info { display: block; }
+        }
+
         .user-name { font-size: 13px; font-weight: 600; color: #111827; line-height: 1.3; }
         .user-role { font-size: 11px; color: #9ca3af; }
 
@@ -145,6 +220,11 @@
             height: 16px;
             color: #9ca3af;
             flex-shrink: 0;
+            display: none;
+        }
+
+        @media (min-width: 640px) {
+            .chevron-icon { display: block; }
         }
 
         /* ── DROPDOWN ── */
@@ -211,12 +291,13 @@
         .page-content {
             max-width: 960px;
             margin: 0 auto;
-            padding: 28px 24px;
+            padding: 16px 16px;
+        }
+        
+        @media (min-width: 640px) {
+            .page-content { padding: 28px 24px; }
         }
 
-        @media (max-width: 640px) {
-            .nav-links { display: none; }
-        }
     </style>
 
     @yield('styles')
@@ -226,6 +307,13 @@
     {{-- NAVBAR (satu file, tidak diulang di setiap page) --}}
     <nav class="navbar">
         <div class="nav-left">
+            <button class="mobile-menu-btn" onclick="toggleMobileNav()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
             <a href="{{ route('dashboard') }}" class="brand">
                 <div class="brand-logo">
                     <img src="{{ asset('images/logo.png') }}" alt="Logo IPWIJA"
@@ -236,6 +324,14 @@
         </div>
 
         <div class="nav-links">
+            <a href="{{ route('dashboard') }}" @class(['active' => request()->routeIs('dashboard')])>Dashboard</a>
+            <a href="{{ route('katalog') }}" @class(['active' => request()->routeIs('katalog')])>Katalog Alat</a>
+            <a href="{{ route('keranjang') }}" @class(['active' => request()->routeIs('keranjang')])>Keranjang</a>
+            <a href="{{ route('peminjaman') }}" @class(['active' => request()->routeIs('peminjaman*')])>Peminjaman Saya</a>
+            <a href="{{ route('profil') }}" @class(['active' => request()->routeIs('profil')])>Profil</a>
+        </div>
+        
+        <div class="mobile-nav" id="mobileNav">
             <a href="{{ route('dashboard') }}" @class(['active' => request()->routeIs('dashboard')])>Dashboard</a>
             <a href="{{ route('katalog') }}" @class(['active' => request()->routeIs('katalog')])>Katalog Alat</a>
             <a href="{{ route('keranjang') }}" @class(['active' => request()->routeIs('keranjang')])>Keranjang</a>
@@ -295,6 +391,10 @@
     </form>
 
     <script>
+        function toggleMobileNav() {
+            document.getElementById('mobileNav').classList.toggle('open');
+        }
+
         function toggleDropdown() {
             document.getElementById('dropdown').classList.toggle('open');
         }

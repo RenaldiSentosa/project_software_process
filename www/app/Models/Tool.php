@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Tool extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     // Karena nama tabelnya jamak tapi bukan standar bahasa inggris Laravel (tools)
     protected $table = 'tools';

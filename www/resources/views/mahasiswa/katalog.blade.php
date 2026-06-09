@@ -216,23 +216,23 @@
 
     {{-- Grid Card Alat --}}
     <div class="grid" id="alatGrid">
-        @php $alatList = $alat ?? []; @endphp
+        @php $alatList = $tools ?? []; @endphp
 
         @forelse ($alatList as $item)
         @php
-            $id = is_object($item) ? $item->id : ($item['id'] ?? 0);
-            $nama = is_object($item) ? $item->nama : $item['nama'];
-            $kategori = is_object($item) ? $item->kategori : $item['kategori'];
-            $lokasi = is_object($item) ? $item->lokasi : $item['lokasi'];
-            $stok = is_object($item) ? $item->stok : $item['stok'];
-            $status = is_object($item) ? $item->status : $item['status'];
-            $inCart = is_object($item) ? $item->cart : $item['cart'];
+            $id = $item->id;
+            $nama = $item->nama_alat;
+            $kategori = $item->kategori;
+            $lokasi = $item->lokasi;
+            $stok = $item->stok_tersedia;
+            $status = $item->status_alat;
+            $inCart = false; // We can integrate actual cart logic later
         @endphp
 
         <div class="card" data-nama="{{ strtolower($nama) }}" data-kategori="{{ strtolower($kategori) }}">
             <div class="card-img">
-                <img src="{{ asset('images/router.png') }}" alt="{{ $nama }}" onerror="this.style.display='none'">
-                <span class="card-badge {{ $status }}">{{ ucfirst($status) }}</span>
+                <img src="{{ $item->foto_alat ? asset('storage/'.$item->foto_alat) : asset('images/router.png') }}" alt="{{ $nama }}" onerror="this.src='{{ asset('images/router.png') }}'">
+                <span class="card-badge {{ strtolower($status) == 'tersedia' ? 'tersedia' : 'habis' }}">{{ ucfirst($status) }}</span>
             </div>
             <div class="card-body">
                 <div class="card-cat">{{ $kategori }}</div>
@@ -274,6 +274,11 @@
             <p>Belum ada data alat tersedia.</p>
         </div>
         @endforelse
+    </div>
+
+    <!-- Pagination -->
+    <div style="margin-top: 24px;">
+        {{ $tools->links() }}
     </div>
 @endsection
 

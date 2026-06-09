@@ -1,7 +1,6 @@
 @extends('layouts.admin')
 
 @section('title', 'Manajemen Alat - IPWIJA SmartLab')
-@section('page-header', 'Manajemen Alat')
 
 @section('styles')
 <style>
@@ -105,78 +104,166 @@ body {
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             @forelse($alatList ?? [] as $alat)
-                                @empty
                                 <tr class="hover:bg-slate-50/50 transition">
-                                    <td class="py-4 px-6 font-medium text-slate-500">ALT-001</td>
-                                    <td class="py-4 px-6"><span class="font-semibold text-slate-800 block">Router</span><span class="text-slate-400 text-[11px]">Baik</span></td>
-                                    <td class="py-4 px-6"><span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[11px] font-medium">Network</span></td>
-                                    <td class="py-4 px-6 font-medium">5</td>
-                                    <td class="py-4 px-6 font-medium">2</td>
-                                    <td class="py-4 px-6 text-slate-500 font-medium"><i class="fa-solid fa-location-dot mr-1.5 text-slate-400"></i>workshop</td>
-                                    <td class="py-4 px-6"><span class="px-2 py-0.5 rounded bg-purple-50 text-purple-600 text-[10px] font-bold">Dipinjam</span></td>
-                                    <td class="py-4 px-6 text-center space-x-2">
-                                        <button onclick="toggleModal('modal-detail')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye"></i></button>
-                                        <button onclick="toggleModal('modal-edit')" class="text-slate-400 hover:text-blue-600"><i class="fa-regular fa-pen-to-square"></i></button>
-                                        <button class="text-slate-400 hover:text-rose-600"><i class="fa-regular fa-clock"></i></button>
+                                    <td class="py-4 px-6 font-medium text-slate-500">{{ $alat->kode_alat }}</td>
+                                    <td class="py-4 px-6"><span class="font-semibold text-slate-800 block">{{ $alat->nama_alat }}</span><span class="text-slate-400 text-[11px]">{{ $alat->kondisi_fisik }}</span></td>
+                                    <td class="py-4 px-6"><span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[11px] font-medium">{{ $alat->kategori }}</span></td>
+                                    <td class="py-4 px-6 font-medium">{{ $alat->stok_total }}</td>
+                                    <td class="py-4 px-6 font-medium @if($alat->stok_tersedia == 0) text-rose-600 @endif">{{ $alat->stok_tersedia }}</td>
+                                    <td class="py-4 px-6 text-slate-500 font-medium"><i class="fa-solid fa-location-dot mr-1.5 text-slate-400"></i>{{ $alat->lokasi }}</td>
+                                    <td class="py-4 px-6">
+                                        @if($alat->status_alat == 'Tersedia')
+                                            <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[10px] font-bold">Tersedia</span>
+                                        @elseif($alat->status_alat == 'Dipinjam')
+                                            <span class="px-2 py-0.5 rounded bg-purple-50 text-purple-600 text-[10px] font-bold">Dipinjam</span>
+                                        @elseif($alat->status_alat == 'Rusak')
+                                            <span class="px-2 py-0.5 rounded bg-rose-50 text-rose-600 text-[10px] font-bold">Rusak</span>
+                                        @else
+                                            <span class="px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[10px] font-bold">{{ $alat->status_alat }}</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-4 px-6 text-center space-x-2 flex justify-center items-center">
+                                        <button onclick="toggleModal('modal-detail-{{ $alat->id }}')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye"></i></button>
+                                        <button onclick="toggleModal('modal-edit-{{ $alat->id }}')" class="text-slate-400 hover:text-blue-600"><i class="fa-regular fa-pen-to-square"></i></button>
+                                        <form action="{{ route('admin.manajemen_alat.destroy', $alat->id) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus alat ini?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-slate-400 hover:text-rose-600"><i class="fa-solid fa-trash"></i></button>
+                                        </form>
                                     </td>
                                 </tr>
-                                <tr class="hover:bg-slate-50/50 transition">
-                                    <td class="py-4 px-6 font-medium text-slate-500">ALT-002</td>
-                                    <td class="py-4 px-6"><span class="font-semibold text-slate-800 block">Keyboard</span><span class="text-slate-400 text-[11px]">Rusak</span></td>
-                                    <td class="py-4 px-6"><span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[11px] font-medium">Hardware</span></td>
-                                    <td class="py-4 px-6 font-medium">5</td>
-                                    <td class="py-4 px-6 font-medium text-rose-600">0</td>
-                                    <td class="py-4 px-6 text-slate-500 font-medium"><i class="fa-solid fa-location-dot mr-1.5 text-slate-400"></i>workshop</td>
-                                    <td class="py-4 px-6"><span class="px-2 py-0.5 rounded bg-rose-50 text-rose-600 text-[10px] font-bold">Rusak</span></td>
-                                    <td class="py-4 px-6 text-center space-x-2">
-                                        <button onclick="toggleModal('modal-detail')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye"></i></button>
-                                        <button onclick="toggleModal('modal-edit')" class="text-slate-400 hover:text-blue-600"><i class="fa-regular fa-pen-to-square"></i></button>
-                                        <button class="text-slate-400 hover:text-rose-600"><i class="fa-regular fa-clock"></i></button>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-slate-50/50 transition">
-                                    <td class="py-4 px-6 font-medium text-slate-500">ALT-003</td>
-                                    <td class="py-4 px-6"><span class="font-semibold text-slate-800 block">Arduino Uno</span><span class="text-slate-400 text-[11px]">Baik</span></td>
-                                    <td class="py-4 px-6"><span class="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[11px] font-medium">IoT</span></td>
-                                    <td class="py-4 px-6 font-medium">5</td>
-                                    <td class="py-4 px-6 font-medium">2</td>
-                                    <td class="py-4 px-6 text-slate-500 font-medium"><i class="fa-solid fa-location-dot mr-1.5 text-slate-400"></i>workshop</td>
-                                    <td class="py-4 px-6"><span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[10px] font-bold">Tersedia</span></td>
-                                    <td class="py-4 px-6 text-center space-x-2">
-                                        <button onclick="toggleModal('modal-detail')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye"></i></button>
-                                        <button onclick="toggleModal('modal-edit')" class="text-slate-400 hover:text-blue-600"><i class="fa-regular fa-pen-to-square"></i></button>
-                                        <button class="text-slate-400 hover:text-rose-600"><i class="fa-regular fa-clock"></i></button>
-                                    </td>
-                                </tr>
-                                <tr class="hover:bg-slate-50/50 transition">
-                                    <td class="py-4 px-6 font-medium text-slate-500">ALT-004</td>
-                                    <td class="py-4 px-6"><span class="font-semibold text-slate-800 block">Router</span><span class="text-slate-400 text-[11px]">Perbaikan</span></td>
-                                    <td class="py-4 px-6"><span class="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-[11px] font-medium">Network</span></td>
-                                    <td class="py-4 px-6 font-medium">5</td>
-                                    <td class="py-4 px-6 font-medium">2</td>
-                                    <td class="py-4 px-6 text-slate-500 font-medium"><i class="fa-solid fa-location-dot mr-1.5 text-slate-400"></i>workshop</td>
-                                    <td class="py-4 px-6"><span class="px-2 py-0.5 rounded bg-amber-50 text-amber-600 text-[10px] font-bold">Dalam Perbaikan</span></td>
-                                    <td class="py-4 px-6 text-center space-x-2">
-                                        <button onclick="toggleModal('modal-detail')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye"></i></button>
-                                        <button onclick="toggleModal('modal-edit')" class="text-slate-400 hover:text-blue-600"><i class="fa-regular fa-pen-to-square"></i></button>
-                                        <button class="text-slate-400 hover:text-rose-600"><i class="fa-regular fa-clock"></i></button>
-                                    </td>
+                            @empty
+                                <tr>
+                                    <td colspan="8" class="text-center py-8 text-slate-500">Belum ada data alat.</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
-                <div class="p-5 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
-                    <span>Menampilkan 1-4 dari 120 alat</span>
-                    <div class="flex gap-1">
-                        <button class="w-7 h-7 flex items-center justify-center rounded border border-slate-200 hover:bg-slate-50"><i class="fa-solid fa-chevron-left text-[10px]"></i></button>
-                        <button class="w-7 h-7 flex items-center justify-center rounded bg-blue-600 text-white font-medium">1</button>
-                        <button class="w-7 h-7 flex items-center justify-center rounded border border-slate-200 hover:bg-slate-50">2</button>
-                        <button class="w-7 h-7 flex items-center justify-center rounded border border-slate-200 hover:bg-slate-50">3</button>
-                        <button class="w-7 h-7 flex items-center justify-center rounded border border-slate-200 hover:bg-slate-50"><i class="fa-solid fa-chevron-right text-[10px]"></i></button>
+                <div class="p-5 border-t border-slate-100">
+                    {{ $alatList->links() }}
+                </div>
+            </div>
+
+            <!-- Modal Tambah Alat -->
+            <div id="modal-tambah" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm transition-opacity opacity-0 flex items-center justify-center p-4">
+                <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform duration-300">
+                    <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 class="font-bold text-slate-800 text-base">Tambah Alat Baru</h3>
+                        <button onclick="toggleModal('modal-tambah')" class="text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    </div>
+                    <div class="p-6">
+                        <form action="{{ route('admin.manajemen_alat.store') }}" method="POST">
+                            @csrf
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kode Alat</label>
+                                    <input type="text" name="kode_alat" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kategori</label>
+                                    <select name="kategori" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
+                                        <option value="Mikroskop">Mikroskop</option>
+                                        <option value="Elektronik">Elektronik</option>
+                                        <option value="Alat Ukur">Alat Ukur</option>
+                                        <option value="Lainnya">Lainnya</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Alat</label>
+                                <input type="text" name="nama_alat" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Deskripsi</label>
+                                <textarea name="deskripsi" rows="2" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500"></textarea>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4 mb-5">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Stok Total</label>
+                                    <input type="number" name="stok_total" required min="0" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Status</label>
+                                    <select name="status_alat" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
+                                        <option value="Tersedia">Tersedia</option>
+                                        <option value="Rusak">Rusak</option>
+                                        <option value="Dalam Perbaikan">Dalam Perbaikan</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Lokasi</label>
+                                    <input type="text" name="lokasi" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                                <button type="button" onclick="toggleModal('modal-tambah')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold transition">Batal</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition">Simpan Alat</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
+
+            <!-- Modals Edit -->
+            @foreach($alatList ?? [] as $alat)
+            <div id="modal-edit-{{ $alat->id }}" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm transition-opacity opacity-0 flex items-center justify-center p-4">
+                <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform duration-300">
+                    <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 class="font-bold text-slate-800 text-base">Edit Alat ({{ $alat->kode_alat }})</h3>
+                        <button onclick="toggleModal('modal-edit-{{ $alat->id }}')" class="text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+                    </div>
+                    <div class="p-6">
+                        <form action="{{ route('admin.manajemen_alat.update', $alat->id) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kategori</label>
+                                    <select name="kategori" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
+                                        <option value="Mikroskop" {{ $alat->kategori == 'Mikroskop' ? 'selected' : '' }}>Mikroskop</option>
+                                        <option value="Elektronik" {{ $alat->kategori == 'Elektronik' ? 'selected' : '' }}>Elektronik</option>
+                                        <option value="Alat Ukur" {{ $alat->kategori == 'Alat Ukur' ? 'selected' : '' }}>Alat Ukur</option>
+                                        <option value="Lainnya" {{ $alat->kategori == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Lokasi</label>
+                                    <input type="text" name="lokasi" required value="{{ $alat->lokasi }}" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Nama Alat</label>
+                                <input type="text" name="nama_alat" required value="{{ $alat->nama_alat }}" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block text-xs font-semibold text-slate-700 mb-1.5">Deskripsi</label>
+                                <textarea name="deskripsi" rows="2" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">{{ $alat->deskripsi }}</textarea>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mb-5">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Stok Total</label>
+                                    <input type="number" name="stok_total" required min="0" value="{{ $alat->stok_total }}" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">Status</label>
+                                    <select name="status_alat" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
+                                        <option value="Tersedia" {{ $alat->status_alat == 'Tersedia' ? 'selected' : '' }}>Tersedia</option>
+                                        <option value="Dipinjam" {{ $alat->status_alat == 'Dipinjam' ? 'selected' : '' }}>Dipinjam</option>
+                                        <option value="Rusak" {{ $alat->status_alat == 'Rusak' ? 'selected' : '' }}>Rusak</option>
+                                        <option value="Dalam Perbaikan" {{ $alat->status_alat == 'Dalam Perbaikan' ? 'selected' : '' }}>Dalam Perbaikan</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                                <button type="button" onclick="toggleModal('modal-edit-{{ $alat->id }}')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold transition">Batal</button>
+                                <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition">Simpan Perubahan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            @endforeach
 @endsection
 
 @section('scripts')

@@ -22,19 +22,27 @@
 </head>
 <body class="text-slate-700 min-h-screen flex">
 
+    {{-- Overlay / Backdrop untuk mobile --}}
+    <div id="mobile-sidebar-backdrop" class="fixed inset-0 bg-slate-900/50 z-40 hidden md:hidden" onclick="toggleSidebar()"></div>
+
     {{-- SIDEBAR (satu file, tidak diulang di setiap page admin) --}}
-    <div class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between fixed h-full z-10">
+    <div id="admin-sidebar" class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between fixed h-full z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300">
         <div>
             {{-- Sidebar Header: Logo IPWIJA --}}
-            <div class="p-6 flex items-center gap-3 border-b border-slate-100">
-                <img src="{{ asset('images/logo.png') }}"
-                     alt="Logo IPWIJA"
-                     class="h-10"
-                     onerror="this.onerror=null; this.parentNode.innerHTML='<div class=\'w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center\'><span class=\'text-blue-700 font-bold text-xs\'>IP</span></div>'">
-                <div>
-                    <h1 class="font-bold text-blue-900 text-lg leading-tight tracking-wide">IPWIJA</h1>
-                    <p class="text-xs text-slate-500 font-medium">SmartLab</p>
+            <div class="p-6 flex items-center justify-between border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                    <img src="{{ asset('images/logo.png') }}"
+                         alt="Logo IPWIJA"
+                         class="h-10"
+                         onerror="this.onerror=null; this.parentNode.innerHTML='<div class=\'w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center\'><span class=\'text-blue-700 font-bold text-xs\'>IP</span></div>'">
+                    <div>
+                        <h1 class="font-bold text-blue-900 text-lg leading-tight tracking-wide">IPWIJA</h1>
+                        <p class="text-xs text-slate-500 font-medium">SmartLab</p>
+                    </div>
                 </div>
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-slate-800">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
             </div>
 
             {{-- Sidebar Nav --}}
@@ -84,48 +92,56 @@
             </nav>
         </div>
 
-        {{-- Sidebar Footer: Tombol Logout --}}
-        <div class="p-4 border-t border-slate-100">
-            <button onclick="triggerLogout()"
-                    class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-rose-500 hover:bg-rose-50 w-full transition">
-                <i class="fa-solid fa-right-from-bracket text-base w-5 text-center"></i>
-                <span>Logout</span>
-            </button>
-        </div>
     </div>
 
     {{-- MAIN AREA --}}
-    <div class="flex-1 pl-64 flex flex-col min-h-screen">
+    <div class="flex-1 flex flex-col min-h-screen md:pl-64 w-full transition-all duration-300">
 
         {{-- TOPBAR --}}
-        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-10">
-            <h2 class="text-sm font-semibold text-slate-500">@yield('page-header', 'Dashboard')</h2>
+        <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="md:hidden text-slate-500 hover:text-slate-800 focus:outline-none">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+            </div>
 
             {{-- User info topbar: avatar seragam 36x36, foto profil atau inisial nama --}}
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-blue-700 text-sm overflow-hidden flex-shrink-0 bg-blue-100">
-                    @if(Auth::user()->foto_profil)
-                        <img src="{{ asset('storage/' . Auth::user()->foto_profil) }}"
-                             alt="Foto Profil"
-                             class="w-full h-full object-cover"
-                             onerror="this.style.display='none'; this.parentNode.innerHTML='{{ strtoupper(substr(Auth::user()->nama_lengkap ?? Auth::user()->name ?? 'A', 0, 1)) }}'">
-                    @else
-                        {{ strtoupper(substr(Auth::user()->nama_lengkap ?? Auth::user()->name ?? 'A', 0, 1)) }}
-                    @endif
-                </div>
-                <div class="text-right">
-                    <h4 class="text-sm font-semibold text-slate-800 leading-none">
-                        {{ Auth::user()->nama_lengkap ?? Auth::user()->name ?? 'Admin' }}
-                    </h4>
-                    <p class="text-xs text-slate-500 font-medium mt-1">
-                        {{ ucfirst(Auth::user()->role ?? 'Admin') }}
-                    </p>
+            <div class="relative">
+                <button onclick="toggleProfileDropdown()" class="flex items-center gap-3 focus:outline-none">
+                    <div class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-blue-700 text-sm overflow-hidden flex-shrink-0 bg-blue-100">
+                        @if(Auth::user()->foto_profil)
+                            <img src="{{ asset('storage/' . Auth::user()->foto_profil) }}"
+                                 alt="Foto Profil"
+                                 class="w-full h-full object-cover"
+                                 onerror="this.style.display='none'; this.parentNode.innerHTML='{{ strtoupper(substr(Auth::user()->nama_lengkap ?? Auth::user()->name ?? 'A', 0, 1)) }}'">
+                        @else
+                            {{ strtoupper(substr(Auth::user()->nama_lengkap ?? Auth::user()->name ?? 'A', 0, 1)) }}
+                        @endif
+                    </div>
+                    <div class="text-left flex items-center gap-2">
+                        <div>
+                            <h4 class="text-sm font-semibold text-slate-800 leading-none">
+                                {{ Auth::user()->nama_lengkap ?? Auth::user()->name ?? 'Admin' }}
+                            </h4>
+                            <p class="text-[10px] text-slate-500 font-medium mt-1 uppercase tracking-wider">
+                                {{ Auth::user()->role ?? 'Admin' }}
+                            </p>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-[10px] text-slate-400"></i>
+                    </div>
+                </button>
+
+                {{-- Dropdown Menu --}}
+                <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-36 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-50">
+                    <button onclick="triggerLogout()" class="w-full text-left px-4 py-2.5 text-sm text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-right-from-bracket w-4 text-center"></i> Logout
+                    </button>
                 </div>
             </div>
         </header>
 
         {{-- PAGE CONTENT (diisi oleh @section('content') di masing-masing page admin) --}}
-        <main class="p-8 space-y-6 flex-1 max-w-7xl w-full mx-auto">
+        <main class="p-4 sm:p-8 space-y-6 flex-1 max-w-7xl w-full mx-auto">
             @yield('content')
         </main>
     </div>
@@ -136,6 +152,35 @@
     </form>
 
     <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('admin-sidebar');
+            const backdrop = document.getElementById('mobile-sidebar-backdrop');
+            
+            if (sidebar.classList.contains('-translate-x-full')) {
+                // Open sidebar
+                sidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            } else {
+                // Close sidebar
+                sidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+        }
+
+        function toggleProfileDropdown() {
+            const dropdown = document.getElementById('profile-dropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        // Tutup dropdown saat klik di luar
+        window.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('profile-dropdown');
+            const button = dropdown.previousElementSibling;
+            if (!button.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
         function triggerLogout() {
             Swal.fire({
                 title: 'Yakin ingin keluar?',

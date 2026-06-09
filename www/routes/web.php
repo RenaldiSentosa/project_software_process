@@ -39,19 +39,21 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/keranjang/hapus/{id}', [CartController::class, 'destroy'])->name('keranjang.hapus');
 
     // =====================================================================
-    // 4. AREA MAHASISWA
+    // 4. AREA MAHASISWA & DOSEN
     // =====================================================================
-    Route::view('/dashboard', 'mahasiswa.dashboard')->name('dashboard');
-    Route::view('/katalog', 'mahasiswa.katalog')->name('katalog');
+    Route::get('/dashboard', [\App\Http\Controllers\MahasiswaController::class, 'dashboard'])->name('dashboard');
+    Route::get('/katalog', [\App\Http\Controllers\MahasiswaController::class, 'katalog'])->name('katalog');
     Route::get('/keranjang', [CartController::class, 'index'])->name('keranjang');
     Route::get('/peminjaman', [BorrowingController::class, 'index'])->name('peminjaman');
     Route::get('/peminjaman/detail/{id}', [BorrowingController::class, 'show'])->name('peminjaman.detail');
 
     Route::get('/profil', [UserController::class, 'index'])->name('profil');
+    Route::put('/profil/update', [UserController::class, 'updatePassword'])->name('profil.update');
+    Route::put('/profil/foto', [UserController::class, 'updateFoto'])->name('profil.foto');
 
     Route::prefix('mahasiswa')->name('mahasiswa.')->group(function () {
-        Route::view('/dashboard', 'mahasiswa.dashboard')->name('dashboard');
-        Route::view('/katalog', 'mahasiswa.katalog')->name('katalog');
+        Route::get('/dashboard', [\App\Http\Controllers\MahasiswaController::class, 'dashboard'])->name('dashboard');
+        Route::get('/katalog', [\App\Http\Controllers\MahasiswaController::class, 'katalog'])->name('katalog');
         Route::get('/keranjang', [CartController::class, 'index'])->name('keranjang');
         Route::get('/peminjaman', [BorrowingController::class, 'index'])->name('peminjaman');
         Route::get('/profil', [UserController::class, 'index'])->name('profil');
@@ -63,10 +65,25 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/manajemen-alat', [AdminController::class, 'manajemenAlat'])->name('manajemen_alat');
+        Route::post('/manajemen-alat', [AdminController::class, 'storeAlat'])->name('manajemen_alat.store');
+        Route::put('/manajemen-alat/{id}', [AdminController::class, 'updateAlat'])->name('manajemen_alat.update');
+        Route::delete('/manajemen-alat/{id}', [AdminController::class, 'destroyAlat'])->name('manajemen_alat.destroy');
+
         Route::get('/peminjaman', [AdminController::class, 'peminjaman'])->name('peminjaman');
+        Route::post('/peminjaman/{id}/approve', [AdminController::class, 'approvePeminjaman'])->name('peminjaman.approve');
+        Route::post('/peminjaman/{id}/reject', [AdminController::class, 'rejectPeminjaman'])->name('peminjaman.reject');
+        Route::post('/peminjaman/{id}/borrow', [AdminController::class, 'borrowPeminjaman'])->name('peminjaman.borrow');
+        Route::post('/peminjaman/{id}/return', [AdminController::class, 'returnPeminjaman'])->name('peminjaman.return');
+
         Route::get('/manajemen-barang', [AdminController::class, 'manajemenBarang'])->name('manajemen_barang');
+        Route::post('/manajemen-barang', [AdminController::class, 'storeBarang'])->name('manajemen_barang.store');
+        Route::put('/manajemen-barang/{id}', [AdminController::class, 'updateBarang'])->name('manajemen_barang.update');
+        Route::delete('/manajemen-barang/{id}', [AdminController::class, 'destroyBarang'])->name('manajemen_barang.destroy');
+        Route::post('/manajemen-barang/{id}/mutasi', [AdminController::class, 'mutasiStok'])->name('manajemen_barang.mutasi');
         Route::get('/laporan', [AdminController::class, 'laporan'])->name('laporan');
         Route::get('/audit-trail', [AdminController::class, 'auditTrail'])->name('audit_trail');
         Route::get('/manajemen-user', [AdminController::class, 'manajemenUser'])->name('manajemen_user');
+        Route::post('/manajemen-user', [AdminController::class, 'storeUser'])->name('manajemen_user.store');
+        Route::put('/manajemen-user/{id}', [AdminController::class, 'updateUser'])->name('manajemen_user.update');
     });
 });

@@ -39,4 +39,10 @@ class User extends Authenticatable
             'password' => 'hashed', // Password otomatis di-hash dengan aman oleh Laravel
         ];
     }
+
+    // Relasi ke Peminjaman
+    public function borrowings()
+    {
+        return $this->hasMany(Borrowing::class, 'mahasiswa_id');
+    }
 }
