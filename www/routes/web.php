@@ -5,11 +5,12 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AdminController;
 
 // =========================================================================
 // 1. HALAMAN UTAMA
 // =========================================================================
-Route::view('/', 'welcome')->name('welcome');
+Route::redirect('/', '/login');
 
 // =========================================================================
 // 2. MODUL AUTENTIKASI (GUEST)
@@ -60,12 +61,12 @@ Route::middleware(['auth'])->group(function () {
     // 5. AREA ADMIN / DOSEN
     // =====================================================================
     Route::prefix('admin')->name('admin.')->group(function () {
-        Route::view('/dashboard', 'admin.dashboard')->name('dashboard');
-        Route::view('/manajemen-alat', 'admin.manajemen-alat')->name('manajemen_alat');
-        Route::view('/peminjaman', 'admin.peminjaman')->name('peminjaman');
-        Route::view('/manajemen-barang', 'admin.manajemen-barang')->name('manajemen_barang');
-        Route::view('/laporan', 'admin.laporan')->name('laporan');
-        Route::view('/audit-trail', 'admin.audit-trail')->name('audit_trail');
-        Route::view('/manajemen-user', 'admin.manajemen-user')->name('manajemen_user');
+        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/manajemen-alat', [AdminController::class, 'manajemenAlat'])->name('manajemen_alat');
+        Route::get('/peminjaman', [AdminController::class, 'peminjaman'])->name('peminjaman');
+        Route::get('/manajemen-barang', [AdminController::class, 'manajemenBarang'])->name('manajemen_barang');
+        Route::get('/laporan', [AdminController::class, 'laporan'])->name('laporan');
+        Route::get('/audit-trail', [AdminController::class, 'auditTrail'])->name('audit_trail');
+        Route::get('/manajemen-user', [AdminController::class, 'manajemenUser'])->name('manajemen_user');
     });
 });

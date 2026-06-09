@@ -19,14 +19,17 @@
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background: #e8edf3;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .app-wrapper {
             height: 100vh;
             width: 100vw;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
         }
 
         .card {
@@ -432,7 +435,8 @@
 </head>
 <body>
 
-<div class="card">
+<div class="app-wrapper">
+    <div class="card">
 
     {{-- LEFT PANEL --}}
     <div class="left" style="background-image: url('{{ asset('images/GEDUNG IPWIJA.jpg.jpeg') }}'); background-size: cover; background-position: center center; background-repeat: no-repeat; background-color: #1a7fd4;">
@@ -707,6 +711,7 @@
         <p class="login-link">Sudah Punya Akun? <a href="{{ route('login') }}">Login</a></p>
 
     </div>
+</div>
 </div>
 
 <script>

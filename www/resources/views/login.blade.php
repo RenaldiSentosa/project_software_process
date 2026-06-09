@@ -20,14 +20,17 @@
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background: #e8edf3;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .app-wrapper {
             height: 100vh;
             width: 100vw;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
         }
 
         .card {
@@ -156,7 +159,7 @@
         /* ── RIGHT PANEL ── */
         .right {
             flex: 1;
-            padding: 52px 48px;
+            padding: 36px 52px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -337,7 +340,8 @@
 </head>
 <body>
 
-<div class="card">
+<div class="app-wrapper">
+    <div class="card">
 
     <div class="left" style="background-image: url('{{ asset('images/GEDUNG IPWIJA.jpg.jpeg') }}'); background-size: cover; background-position: center center; background-repeat: no-repeat; background-color: #1a7fd4;">
         {{-- 1. OVERLAY --}}
@@ -426,6 +430,8 @@
 
         <p class="register-link">Belum punya akun? <a href="{{ route('register') }}">Registrasi</a></p>
     </div>
+    </div>
+</div>
 </div>
 
 <script>

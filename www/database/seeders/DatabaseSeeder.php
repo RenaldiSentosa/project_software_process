@@ -3,23 +3,56 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // 1. Akun Admin
+        User::updateOrCreate(
+            ['email' => 'admin@ipwija.ac.id'],
+            [
+                'nama_lengkap'  => 'Sandy Aryadi',
+                'name'           => 'Admin',
+                'nim'           => 'admin',
+                'password'      => Hash::make('password'),
+                'role'          => 'admin',
+                'program_studi' => null,
+                'is_active'     => 1,
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // 2. Akun Mahasiswa
+        User::updateOrCreate(
+            ['email' => 'mahasiswa@ipwija.ac.id'],
+            [
+                'nama_lengkap'  => 'Renaldi Sentosa',
+                'name'           => 'Mahasiswa',
+                'nim'           => '202301110011',
+                'password'      => Hash::make('password'),
+                'role'          => 'mahasiswa',
+                'program_studi' => 'Teknik Informatika',
+                'is_active'     => 1,
+            ]
+        );
+
+        // 3. Akun Dosen
+        User::updateOrCreate(
+            ['email' => 'dosen@ipwija.ac.id'],
+            [
+                'nama_lengkap'  => 'Dr. Hermawan, M.T.',
+                'name'           => 'Dosen',
+                'nim'           => '198701012',
+                'password'      => Hash::make('password'),
+                'role'          => 'dosen',
+                'program_studi' => 'Teknik Informatika',
+                'is_active'     => 1,
+            ]
+        );
     }
 }

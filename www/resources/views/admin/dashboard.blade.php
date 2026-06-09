@@ -1,17 +1,11 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ $pageTitle ?? 'IPWIJA SmartLab - Dashboard Admin' }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        body {
+@extends('layouts.admin')
+
+@section('title', 'Dashboard Admin - IPWIJA SmartLab')
+@section('page-header', 'Dashboard Admin')
+
+@section('styles')
+<style>
+body {
             font-family: 'Inter', sans-serif;
             background-color: #F8FAFC;
         }
@@ -26,75 +20,19 @@
             background: #cbd5e1;
             border-radius: 4px;
         }
-    </style>
-</head>
-<body class="text-slate-700 min-h-screen flex">
+</style>
+@endsection
 
-    <div class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between fixed h-full z-10">
-        <div>
-            <div class="p-6 flex items-center gap-3 border-b border-slate-100">
-                <div class="w-10 h-10 bg-blue-900 rounded-full flex items-center justify-center text-white font-bold text-xs shadow-inner">
-                    <i class="fa-solid fa-graduation-cap"></i>
+@section('content')
+            
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4 mb-5">
+                <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-700 text-lg font-bold flex items-center justify-center flex-shrink-0">
+                    {{ strtoupper(substr(Auth::user()->nama_lengkap ?? Auth::user()->name ?? 'A', 0, 1)) }}
                 </div>
                 <div>
-                    <h1 class="font-bold text-blue-900 leading-tight tracking-wide">IPWIJA</h1>
-                    <p class="text-xs text-slate-500 font-medium">SmartLab</p>
+                    <h2 class="text-xl font-bold text-slate-900 tracking-tight">Halo, {{ Auth::user()->nama_lengkap ?? Auth::user()->name ?? 'Admin' }}!</h2>
+                    <p class="text-slate-500 text-sm mt-0.5">Selamat datang di pusat manajemen laboratorium Universitas IPWIJA.</p>
                 </div>
-            </div>
-
-            <nav class="p-4 space-y-1">
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-3 text-sm font-semibold rounded-lg bg-blue-50 text-blue-600 transition">
-                    <i class="fa-solid fa-table-columns text-base w-5 text-center"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="{{ route('admin.manajemen_alat') }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
-                    <i class="fa-solid fa-gear text-base w-5 text-center"></i>
-                    <span>Manajemen Alat</span>
-                </a>
-                <a href="{{ route('admin.peminjaman') }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
-                    <i class="fa-solid fa-calendar-check text-base w-5 text-center"></i>
-                    <span>Peminjaman</span>
-                </a>
-                <a href="{{ route('admin.manajemen_barang') }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
-                    <i class="fa-solid fa-box-open text-base w-5 text-center"></i>
-                    <span>Manajemen Barang</span>
-                </a>
-                <a href="{{ route('admin.laporan') }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
-                    <i class="fa-solid fa-chart-simple text-base w-5 text-center"></i>
-                    <span>Laporan</span>
-                </a>
-                <a href="{{ route('admin.audit_trail') }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
-                    <i class="fa-solid fa-shield-halved text-base w-5 text-center"></i>
-                    <span>Audit Trail</span>
-                </a>
-                <a href="{{ route('admin.manajemen_user') }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition">
-                    <i class="fa-solid fa-users text-base w-5 text-center"></i>
-                    <span>Manajemen User</span>
-                </a>
-            </nav>
-        </div>
-    </div>
-
-    <div class="flex-1 pl-64 flex flex-col min-h-screen">
-        
-        <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-end px-8 sticky top-0 z-10">
-            <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition">
-                <div class="w-10 h-10 bg-slate-100 rounded-full border border-slate-200 flex items-center justify-center font-semibold text-slate-600 shadow-sm">
-                    {{ substr(Auth::user()->name ?? 'Sandy Aryadi', 0, 1) }}
-                </div>
-                <div class="text-right">
-                    <h4 class="text-sm font-semibold text-slate-800 leading-none">{{ Auth::user()->name ?? 'Sandy Aryadi' }}</h4>
-                    <p class="text-xs text-slate-500 font-medium mt-1">{{ Auth::user()->role ?? 'Admin Lab' }}</p>
-                </div>
-                <i class="fa-solid fa-chevron-down text-xs text-slate-400 ml-1"></i>
-            </div>
-        </header>
-
-        <main class="p-8 space-y-6 flex-1 max-w-7xl w-full mx-auto">
-            
-            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Halo, {{ Auth::user()->name ?? 'Sandy Aryadi' }}!</h2>
-                <p class="text-slate-500 text-sm mt-1">Selamat datang di pusat manajemen laboratorium Universitas IPWIJA.</p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
@@ -370,16 +308,15 @@
                 </div>
             </div>
 
-        </main>
-    </div>
+@endsection
 
-    <script>
-        const tabs = document.querySelectorAll('button');
+@section('scripts')
+<script>
+const tabs = document.querySelectorAll('button');
         tabs.forEach(tab => {
             tab.addEventListener('click', () => {
                 console.log(`Filter diaktifkan: ${tab.innerText}`);
             });
         });
-    </script>
-</body>
-</html>
+</script>
+@endsection
