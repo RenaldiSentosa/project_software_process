@@ -11,13 +11,16 @@ return new class extends Migration
         Schema::create('item_mutations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('item_id')->constrained('items')->onDelete('cascade');
-            $table->string('tipe_mutasi'); // Masuk, Keluar, Rusak, Hilang
+            $table->enum('tipe_mutasi', ['Masuk', 'Keluar', 'Penyesuaian']);
             $table->integer('jumlah');
             $table->integer('stok_sebelum');
             $table->integer('stok_sesudah');
             $table->text('keterangan')->nullable();
             $table->foreignId('dilakukan_oleh')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
+            
+            // Indexes
+            $table->index('created_at');
         });
     }
 

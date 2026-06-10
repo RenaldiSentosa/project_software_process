@@ -9,7 +9,8 @@ use App\Models\Tool;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Exception;
-use Carbon\Carbon; // Dipakai untuk memformat tanggal ke bahasa Indonesia
+use Carbon\Carbon;
+use App\Services\N8NWebhookService;
 
 class BorrowingController extends Controller
 {
@@ -102,13 +103,24 @@ class BorrowingController extends Controller
             'jumlah_unit'          => 'required|array', // Array jumlah unit tiap alat
         ]);
 
+        $userId = Auth::id() ?? 2;
+
+        // Cek apakah mahasiswa masih memiliki peminjaman aktif
+        $activeBorrowing = Borrowing::where('mahasiswa_id', $userId)
+            ->whereIn('status', ['Menunggu', 'Disetujui', 'Dipinjam'])
+            ->first();
+
+        if ($activeBorrowing) {
+            return redirect()->back()->withErrors(['error' => 'Anda tidak dapat mengajukan peminjaman baru karena masih memiliki peminjaman yang sedang aktif atau menunggu persetujuan.'])->withInput();
+        }
+
         // Gunakan DB Transaction biar aman. Kalau di tengah jalan ada satu yang gagal, semua insert otomatis dibatalkan (rollback)
         DB::beginTransaction();
 
         try {
             // 2. Simpan ke tabel master 'borrowings'
             $borrowing = new Borrowing();
-            $borrowing->mahasiswa_id = Auth::id() ?? 2; 
+            $borrowing->mahasiswa_id = $userId; 
             $borrowing->tgl_rencana_pinjam = $request->tgl_rencana_pinjam;
             $borrowing->tgl_rencana_kembali = $request->tgl_rencana_kembali;
             $borrowing->keperluan = $request->keperluan;
@@ -131,10 +143,17 @@ class BorrowingController extends Controller
                 $detail->tool_id = $toolId;
                 $detail->jumlah_unit = $qtyDiminta;
                 $detail->save();
+
+                // Kurangi stok alat secara sementara (reserved)
+                $tool->stok_tersedia -= $qtyDiminta;
+                $tool->save();
             }
 
             // Kunci perubahan data jika seluruh proses aman tanpa hambatan
             DB::commit();
+            
+            // Trigger webhook untuk N8N
+            N8NWebhookService::sendBorrowingEvent('borrowing.submitted', $borrowing);
 
             // Redirect balik ke rute halaman list riwayat dengan flash alert sukses
             return redirect()->route('peminjaman')->with('success', 'Pengajuan peminjaman alat berhasil dikirim! Menunggu persetujuan admin.');

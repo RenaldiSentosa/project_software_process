@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('borrowing_id')->constrained('borrowings')->onDelete('cascade');
             $table->foreignId('tool_id')->constrained('tools')->onDelete('cascade');
             $table->integer('jumlah_unit')->default(1);
-            $table->string('kondisi_saat_kembali')->nullable();
+            $table->enum('kondisi_saat_kembali', ['Baik', 'Rusak Ringan', 'Rusak Berat'])->nullable();
             $table->text('catatan_pengembalian')->nullable();
             $table->timestamps();
         });

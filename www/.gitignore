@@ -5,6 +5,7 @@
 .env.production
 .phpactor.json
 .phpunit.result.cache
+.agents
 /.codex
 /.cursor/
 /.idea
@@ -21,6 +22,8 @@
 /storage/pail
 /vendor
 _ide_helper.php
+boost.json
 Homestead.json
+AGENTS.md
 Homestead.yaml
 Thumbs.db

@@ -10,17 +10,20 @@ return new class extends Migration
     {
         Schema::create('tools', function (Blueprint $table) {
             $table->id();
-            $table->string('kode_alat')->unique();
-            $table->string('nama_alat');
-            $table->string('kategori')->nullable();
+            $table->string('kode_alat', 20)->unique();
+            $table->string('nama_alat', 100);
+            $table->string('kategori', 50)->nullable();
             $table->text('deskripsi')->nullable();
             $table->integer('stok_total')->default(0);
             $table->integer('stok_tersedia')->default(0);
-            $table->string('status_alat')->default('Tersedia'); 
-            $table->string('lokasi')->nullable();
-            $table->string('foto_alat')->nullable();
+            $table->enum('status_alat', ['Tersedia', 'Dipinjam', 'Rusak', 'Dalam Perbaikan'])->default('Tersedia'); 
+            $table->string('lokasi', 50)->nullable();
+            $table->string('foto_alat', 255)->nullable();
             $table->timestamps();
             $table->softDeletes();
+            
+            // Indexes
+            $table->index('status_alat');
         });
     }
 

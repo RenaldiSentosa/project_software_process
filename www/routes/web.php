@@ -62,7 +62,7 @@ Route::middleware(['auth'])->group(function () {
     // =====================================================================
     // 5. AREA ADMIN / DOSEN
     // =====================================================================
-    Route::prefix('admin')->name('admin.')->group(function () {
+    Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/manajemen-alat', [AdminController::class, 'manajemenAlat'])->name('manajemen_alat');
         Route::post('/manajemen-alat', [AdminController::class, 'storeAlat'])->name('manajemen_alat.store');

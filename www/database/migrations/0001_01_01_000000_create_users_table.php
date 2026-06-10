@@ -13,18 +13,19 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('nama_lengkap')->nullable();
-            $table->string('name')->nullable();
-            $table->string('nim')->unique()->nullable();
-            $table->string('email')->unique();
+            $table->string('nama_lengkap', 100);
+            $table->string('name')->nullable(); // keeping this for auth compatibility if needed
+            $table->string('nim', 20)->unique()->nullable();
+            $table->string('email', 100)->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->string('role')->default('mahasiswa');
-            $table->string('program_studi')->nullable();
-            $table->tinyInteger('is_active')->default(0);
+            $table->string('password', 255);
+            $table->enum('role', ['admin', 'mahasiswa'])->default('mahasiswa');
+            $table->string('program_studi', 100)->nullable();
+            $table->boolean('is_active')->default(true);
             $table->string('foto_profil')->nullable();
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

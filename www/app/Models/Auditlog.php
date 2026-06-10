@@ -10,8 +10,6 @@ class AuditLog extends Model
     use HasFactory;
 
     protected $table = 'audit_logs';
-    protected $primaryKey = 'id_log'; // Sesuai dengan DB abang id_log
-    public $timestamps = false;
 
     protected $fillable = [
         'timestamp', 'dilakukan_oleh', 'nama_pelaku', 'role_pelaku', 

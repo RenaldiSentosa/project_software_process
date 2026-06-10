@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Models\Tool;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -49,9 +50,32 @@ class DatabaseSeeder extends Seeder
                 'name'           => 'Dosen',
                 'nim'           => '198701012',
                 'password'      => Hash::make('password'),
-                'role'          => 'dosen',
+                'role'          => 'mahasiswa',
                 'program_studi' => 'Teknik Informatika',
                 'is_active'     => 1,
+            ]
+        );
+
+        // Seed some Tools
+        Tool::updateOrCreate(
+            ['kode_alat' => 'BB400'],
+            [
+                'nama_alat' => 'Breadboard 400 Holes',
+                'kategori' => 'Komponen Dasar',
+                'stok_total' => 50,
+                'stok_tersedia' => 50,
+                'status_alat' => 'Tersedia'
+            ]
+        );
+
+        Tool::updateOrCreate(
+            ['kode_alat' => 'UNO-R3'],
+            [
+                'nama_alat' => 'Arduino Uno R3',
+                'kategori' => 'Microcontroller',
+                'stok_total' => 20,
+                'stok_tersedia' => 20,
+                'status_alat' => 'Tersedia'
             ]
         );
     }

@@ -8,6 +8,7 @@ use App\Models\Item;
 use App\Models\Borrowing;
 use App\Models\User;
 use App\Models\Auditlog;
+use App\Services\N8NWebhookService;
 
 class AdminController extends Controller
 {
@@ -23,11 +24,19 @@ class AdminController extends Controller
         $peminjamanBulanIni = Borrowing::whereMonth('created_at', now()->month)->count();
         $mahasiswaBaruBulanIni = User::where('role', 'mahasiswa')->whereMonth('created_at', now()->month)->count();
 
-        $permintaanData = Borrowing::with('mahasiswa', 'items.tool')
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
-            
+        $statusFilter = request('status', 'Semua');
+        $query = Borrowing::with('mahasiswa', 'items.tool')->orderBy('created_at', 'desc');
+        
+        if ($statusFilter == 'Menunggu') {
+            $query->where('status', 'Menunggu');
+        } elseif ($statusFilter == 'Aktif') {
+            $query->whereIn('status', ['Diproses', 'Disetujui', 'Dipinjam']);
+        } elseif ($statusFilter == 'Selesai') {
+            $query->whereIn('status', ['Selesai', 'Dikembalikan', 'Ditolak']);
+        }
+
+        $permintaanData = $query->take(5)->get();
+        
         $peminjamanList = $permintaanData->map(function($p) {
             $alat_nama = $p->items->first()->tool->nama_alat ?? 'Multiple/Tidak Diketahui';
             return [
@@ -43,24 +52,54 @@ class AdminController extends Controller
         });
 
         $aktivitasTerbaru = Auditlog::orderBy('created_at', 'desc')->take(5)->get()->map(function($log) {
+            $pesan = $log->aksi . ' ' . $log->modul;
+            
+            if ($log->modul == 'Manajemen Alat') {
+                $alat = \App\Models\Tool::find($log->id_record);
+                $nama_alat = $alat ? $alat->nama_alat : 'Alat tidak diketahui';
+                if ($log->aksi == 'CREATE') {
+                    $pesan = "menambah alat '$nama_alat'";
+                } elseif ($log->aksi == 'UPDATE') {
+                    $pesan = "memperbarui alat '$nama_alat'";
+                } elseif ($log->aksi == 'DELETE') {
+                    $pesan = "menghapus alat";
+                }
+            } elseif ($log->modul == 'Manajemen Barang') {
+                $barang = \App\Models\Item::find($log->id_record);
+                $nama_barang = $barang ? $barang->nama_barang : 'Barang tidak diketahui';
+                if ($log->aksi == 'CREATE') {
+                    $pesan = "menambah barang '$nama_barang'";
+                } elseif ($log->aksi == 'UPDATE') {
+                    $pesan = "memperbarui barang '$nama_barang'";
+                } elseif ($log->aksi == 'DELETE') {
+                    $pesan = "menghapus barang";
+                }
+            }
+
             return [
                 'nama' => $log->nama_pelaku ?? 'System',
-                'pesan' => $log->aksi . ' ' . $log->modul,
+                'pesan' => $pesan,
                 'waktu' => $log->created_at ? $log->created_at->diffForHumans() : 'Baru saja'
             ];
         });
 
         $stokRendahList = Tool::where('stok_tersedia', '<', 5)->take(4)->get()->map(function($tool) {
+            $persentase = $tool->stok_total > 0 ? round(($tool->stok_tersedia / $tool->stok_total) * 100) : 0;
             return [
                 'nama' => $tool->nama_alat,
-                'stok' => $tool->stok_tersedia . ' Unit'
+                'kategori' => $tool->kategori ?? 'Umum',
+                'lokasi' => $tool->lokasi ?? 'Lab',
+                'stok' => $tool->stok_tersedia,
+                'max_stok' => $tool->stok_total,
+                'satuan' => 'Unit',
+                'persentase' => $persentase
             ];
         });
 
         return view('admin.dashboard', compact(
             'totalAlat', 'peminjamanAktif', 'rendahStok', 'totalMahasiswa',
             'alatBaruBulanIni', 'peminjamanBulanIni', 'mahasiswaBaruBulanIni', 'rendahStokBulanIni',
-            'aktivitasTerbaru', 'stokRendahList', 'peminjamanList'
+            'aktivitasTerbaru', 'stokRendahList', 'peminjamanList', 'statusFilter'
         ));
     }
 
@@ -88,19 +127,19 @@ class AdminController extends Controller
         return view('admin.manajemen-barang', compact('items'));
     }
 
-    public function laporan()
+    public function laporan(Request $request)
     {
         $totalPeminjaman = \App\Models\Borrowing::count();
         $peminjamanBulanIni = \App\Models\Borrowing::whereMonth('created_at', now()->month)->count();
         
-        $peminjamanAktif = \App\Models\Borrowing::whereIn('status', ['Diproses', 'Dipinjam'])->count();
-        $peminjamanMenungguBulanIni = \App\Models\Borrowing::whereIn('status', ['Diproses', 'Dipinjam'])->whereMonth('created_at', now()->month)->count();
+        $peminjamanAktif = \App\Models\Borrowing::whereIn('status', ['Dipinjam', 'Menunggu'])->count();
+        $peminjamanMenungguBulanIni = \App\Models\Borrowing::whereIn('status', ['Dipinjam', 'Menunggu'])->whereMonth('created_at', now()->month)->count();
         
         $alatRusak = \App\Models\Item::where('kondisi', '!=', 'Baik')->count();
         $alatRusakBulanIni = \App\Models\Item::where('kondisi', '!=', 'Baik')->whereMonth('updated_at', now()->month)->count();
         
-        $totalMahasiswa = \App\Models\User::where('role', 'Mahasiswa')->count();
-        $mahasiswaBaruBulanIni = \App\Models\User::where('role', 'Mahasiswa')->whereMonth('created_at', now()->month)->count();
+        $totalMahasiswa = \App\Models\User::where('role', 'mahasiswa')->count();
+        $mahasiswaBaruBulanIni = \App\Models\User::where('role', 'mahasiswa')->whereMonth('created_at', now()->month)->count();
 
         // Chart Data: Alat Paling Sering Dipinjam
         $alatSeringDipinjam = \Illuminate\Support\Facades\DB::table('borrowing_items')
@@ -112,9 +151,18 @@ class AdminController extends Controller
             ->get();
 
         // Data for Tabs
-        $rekapPeminjaman = \App\Models\Borrowing::with('mahasiswa', 'items.tool')->orderBy('created_at', 'desc')->get();
+        $queryPeminjaman = \App\Models\Borrowing::with('mahasiswa', 'items.tool')->orderBy('created_at', 'desc');
+        
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $queryPeminjaman->whereBetween('created_at', [
+                $request->start_date . ' 00:00:00',
+                $request->end_date . ' 23:59:59'
+            ]);
+        }
+        $rekapPeminjaman = $queryPeminjaman->get();
+
         $inventarisList = \App\Models\Item::all();
-        $mutasiList = \App\Models\Auditlog::where('modul', 'Manajemen Barang')->orderBy('created_at', 'desc')->get();
+        $mutasiList = \App\Models\ItemMutation::with('item')->orderBy('created_at', 'desc')->get();
         $rekapMahasiswa = \App\Models\User::where('role', 'Mahasiswa')->withCount([
             'borrowings as total_pengajuan',
             'borrowings as menunggu' => function($query) { $query->where('status', 'Menunggu'); },
@@ -146,6 +194,8 @@ class AdminController extends Controller
     {
         $borrowing = Borrowing::findOrFail($id);
         $borrowing->status = 'Disetujui';
+        $borrowing->diproses_oleh = auth()->id();
+        $borrowing->tgl_diproses = now();
         $borrowing->save();
         
         Auditlog::create([
@@ -156,14 +206,34 @@ class AdminController extends Controller
             'id_record' => $id
         ]);
         
+        N8NWebhookService::sendBorrowingEvent('borrowing.approved', $borrowing);
+        
         return redirect()->back()->with('success', 'Peminjaman berhasil disetujui.');
     }
 
     public function rejectPeminjaman(Request $request, $id)
     {
+        $request->validate([
+            'catatan_admin' => 'required|string|max:1000'
+        ], [
+            'catatan_admin.required' => 'Catatan penolakan wajib diisi.'
+        ]);
+
         $borrowing = Borrowing::findOrFail($id);
         $borrowing->status = 'Ditolak';
+        $borrowing->diproses_oleh = auth()->id();
+        $borrowing->tgl_diproses = now();
+        $borrowing->catatan_admin = $request->catatan_admin;
         $borrowing->save();
+        
+        // Restore stock since it was rejected
+        foreach($borrowing->borrowingItems as $item) {
+            $tool = $item->tool;
+            if($tool) {
+                $tool->stok_tersedia += $item->jumlah_unit;
+                $tool->save();
+            }
+        }
         
         Auditlog::create([
             'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
@@ -172,6 +242,8 @@ class AdminController extends Controller
             'aksi' => 'REJECT',
             'id_record' => $id
         ]);
+        
+        N8NWebhookService::sendBorrowingEvent('borrowing.rejected', $borrowing);
         
         return redirect()->back()->with('success', 'Peminjaman telah ditolak.');
     }
@@ -193,17 +265,32 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Status peminjaman diubah menjadi Dipinjam.');
     }
 
-    public function returnPeminjaman($id)
+    public function returnPeminjaman(Request $request, $id)
     {
-        $borrowing = Borrowing::findOrFail($id);
-        $borrowing->status = 'Selesai';
+        $borrowing = Borrowing::with('borrowingItems.tool')->findOrFail($id);
+        $borrowing->status = 'Dikembalikan'; // as per SRS: 3.3.6 (2)
+        $borrowing->tgl_pengembalian_aktual = now();
         $borrowing->save();
         
-        // Restore stock
+        // Restore stock and update condition
+        // $request->kondisi expected format: ['borrowing_item_id' => 'Baik/Rusak Ringan/Rusak Berat']
+        $kondisiArray = $request->input('kondisi', []);
+
         foreach($borrowing->borrowingItems as $item) {
             $tool = $item->tool;
+            $kondisi = $kondisiArray[$item->id] ?? 'Baik'; // fallback to Baik
+            
+            $item->kondisi_saat_kembali = $kondisi;
+            $item->save();
+
             if($tool) {
-                $tool->stok_tersedia += $item->jumlah_unit;
+                if ($kondisi === 'Baik') {
+                    $tool->stok_tersedia += $item->jumlah_unit;
+                } else if ($kondisi === 'Rusak Ringan' || $kondisi === 'Rusak Berat') {
+                    // Sesuai SRS 3.3.4 (9): Jangan ubah Status Alat, kurangi stok_total dan stok_tersedia (tapi stok_tersedia sudah berkurang saat reserve, jadi jangan ditambah lagi, cukup kurangi stok_total).
+                    $tool->stok_total -= $item->jumlah_unit;
+                    // Note: stok_tersedia tetap (tidak ditambah) karena barangnya rusak/hilang
+                }
                 $tool->save();
             }
         }
@@ -215,6 +302,8 @@ class AdminController extends Controller
             'aksi' => 'UPDATE',
             'id_record' => $id
         ]);
+        
+        N8NWebhookService::sendBorrowingEvent('borrowing.returned', $borrowing);
         
         return redirect()->back()->with('success', 'Alat berhasil dikembalikan dan stok diperbarui.');
     }
@@ -233,13 +322,14 @@ class AdminController extends Controller
         
         $data['stok_tersedia'] = $data['stok_total'];
 
-        Tool::create($data);
+        $tool = Tool::create($data);
 
         Auditlog::create([
             'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
             'role_pelaku' => auth()->user()->role ?? 'Admin',
             'modul' => 'Manajemen Alat',
-            'aksi' => 'CREATE'
+            'aksi' => 'CREATE',
+            'id_record' => $tool->id
         ]);
 
         return redirect()->back()->with('success', 'Alat berhasil ditambahkan.');
@@ -303,13 +393,14 @@ class AdminController extends Controller
             'lokasi' => 'required|string|max:100',
         ]);
 
-        Item::create($data);
+        $item = Item::create($data);
 
         Auditlog::create([
             'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
             'role_pelaku' => auth()->user()->role ?? 'Admin',
             'modul' => 'Manajemen Barang',
-            'aksi' => 'CREATE'
+            'aksi' => 'CREATE',
+            'id_record' => $item->id
         ]);
 
         return redirect()->back()->with('success', 'Barang berhasil ditambahkan.');
@@ -372,6 +463,8 @@ class AdminController extends Controller
             return redirect()->back()->with('error', 'Stok tidak mencukupi untuk dikeluarkan.');
         }
 
+        $stok_sebelum = $item->stok;
+
         if ($request->tipe_mutasi == 'masuk') {
             $item->stok += $request->jumlah;
         } else {
@@ -379,6 +472,16 @@ class AdminController extends Controller
         }
         
         $item->save();
+
+        \App\Models\ItemMutation::create([
+            'item_id' => $item->id,
+            'tipe_mutasi' => ucfirst($request->tipe_mutasi),
+            'jumlah' => $request->jumlah,
+            'stok_sebelum' => $stok_sebelum,
+            'stok_sesudah' => $item->stok,
+            'keterangan' => $request->keterangan,
+            'dilakukan_oleh' => auth()->id()
+        ]);
 
         Auditlog::create([
             'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
@@ -407,9 +510,10 @@ class AdminController extends Controller
             'nama_lengkap' => $request->name,
             'email' => $request->email,
             'password' => \Illuminate\Support\Facades\Hash::make($request->password),
-            'role' => $request->role,
+            'role' => strtolower($request->role),
             'nim' => $request->nim,
-            'ProgramStudi' => $request->ProgramStudi
+            'program_studi' => $request->ProgramStudi,
+            'is_active' => $request->has('is_active') ? 1 : 0
         ]);
 
         Auditlog::create([
@@ -439,9 +543,10 @@ class AdminController extends Controller
             'name' => $request->name,
             'nama_lengkap' => $request->name,
             'email' => $request->email,
-            'role' => $request->role,
+            'role' => strtolower($request->role),
             'nim' => $request->nim,
-            'ProgramStudi' => $request->ProgramStudi
+            'program_studi' => $request->ProgramStudi,
+            'is_active' => $request->has('is_active') ? 1 : 0
         ]);
 
         if ($request->filled('password')) {
