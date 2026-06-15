@@ -6,6 +6,7 @@ use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\MahasiswaController;
 
 // =========================================================================
 // 1. HALAMAN UTAMA
@@ -29,31 +30,31 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // =========================================================================
 Route::middleware(['auth'])->group(function () {
 
-    // Profil Update & Upload Foto
-    Route::put('/profil/update', [UserController::class, 'updatePassword'])->name('profil.update'); // ← pakai controller
-    Route::put('/profil/foto', [UserController::class, 'updateFoto'])->name('profil.foto');         // ← tambahan baru
-
-    // Transaksi Peminjaman
-    Route::get('/peminjaman/baru', [BorrowingController::class, 'create'])->name('peminjaman.create');
-    Route::post('/peminjaman/simpan', [BorrowingController::class, 'store'])->name('peminjaman.store');
-    Route::delete('/keranjang/hapus/{id}', [CartController::class, 'destroy'])->name('keranjang.hapus');
-
-    // =====================================================================
-    // 4. AREA MAHASISWA & DOSEN
-    // =====================================================================
-    Route::get('/dashboard', [\App\Http\Controllers\MahasiswaController::class, 'dashboard'])->name('dashboard');
-    Route::get('/katalog', [\App\Http\Controllers\MahasiswaController::class, 'katalog'])->name('katalog');
-    Route::get('/keranjang', [CartController::class, 'index'])->name('keranjang');
-    Route::get('/peminjaman', [BorrowingController::class, 'index'])->name('peminjaman');
-    Route::get('/peminjaman/detail/{id}', [BorrowingController::class, 'show'])->name('peminjaman.detail');
-
+    // Profil
     Route::get('/profil', [UserController::class, 'index'])->name('profil');
     Route::put('/profil/update', [UserController::class, 'updatePassword'])->name('profil.update');
     Route::put('/profil/foto', [UserController::class, 'updateFoto'])->name('profil.foto');
 
+    // Keranjang
+    Route::get('/keranjang', [CartController::class, 'index'])->name('keranjang');
+    Route::post('/keranjang/tambah', [CartController::class, 'store'])->name('keranjang.store');  // ← FIX: route yang hilang
+    Route::delete('/keranjang/hapus/{id}', [CartController::class, 'destroy'])->name('keranjang.hapus');
+
+    // Peminjaman
+    Route::get('/peminjaman', [BorrowingController::class, 'index'])->name('peminjaman');
+    Route::get('/peminjaman/baru', [BorrowingController::class, 'create'])->name('peminjaman.create');
+    Route::post('/peminjaman/simpan', [BorrowingController::class, 'store'])->name('peminjaman.store');
+    Route::get('/peminjaman/detail/{id}', [BorrowingController::class, 'show'])->name('peminjaman.detail');
+
+    // =====================================================================
+    // 4. AREA MAHASISWA & DOSEN
+    // =====================================================================
+    Route::get('/dashboard', [MahasiswaController::class, 'dashboard'])->name('dashboard');
+    Route::get('/katalog', [MahasiswaController::class, 'katalog'])->name('katalog');
+
     Route::prefix('mahasiswa')->name('mahasiswa.')->group(function () {
-        Route::get('/dashboard', [\App\Http\Controllers\MahasiswaController::class, 'dashboard'])->name('dashboard');
-        Route::get('/katalog', [\App\Http\Controllers\MahasiswaController::class, 'katalog'])->name('katalog');
+        Route::get('/dashboard', [MahasiswaController::class, 'dashboard'])->name('dashboard');
+        Route::get('/katalog', [MahasiswaController::class, 'katalog'])->name('katalog');
         Route::get('/keranjang', [CartController::class, 'index'])->name('keranjang');
         Route::get('/peminjaman', [BorrowingController::class, 'index'])->name('peminjaman');
         Route::get('/profil', [UserController::class, 'index'])->name('profil');
@@ -64,6 +65,7 @@ Route::middleware(['auth'])->group(function () {
     // =====================================================================
     Route::middleware(['admin'])->prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+
         Route::get('/manajemen-alat', [AdminController::class, 'manajemenAlat'])->name('manajemen_alat');
         Route::post('/manajemen-alat', [AdminController::class, 'storeAlat'])->name('manajemen_alat.store');
         Route::put('/manajemen-alat/{id}', [AdminController::class, 'updateAlat'])->name('manajemen_alat.update');
@@ -80,8 +82,10 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/manajemen-barang/{id}', [AdminController::class, 'updateBarang'])->name('manajemen_barang.update');
         Route::delete('/manajemen-barang/{id}', [AdminController::class, 'destroyBarang'])->name('manajemen_barang.destroy');
         Route::post('/manajemen-barang/{id}/mutasi', [AdminController::class, 'mutasiStok'])->name('manajemen_barang.mutasi');
+
         Route::get('/laporan', [AdminController::class, 'laporan'])->name('laporan');
         Route::get('/audit-trail', [AdminController::class, 'auditTrail'])->name('audit_trail');
+
         Route::get('/manajemen-user', [AdminController::class, 'manajemenUser'])->name('manajemen_user');
         Route::post('/manajemen-user', [AdminController::class, 'storeUser'])->name('manajemen_user.store');
         Route::put('/manajemen-user/{id}', [AdminController::class, 'updateUser'])->name('manajemen_user.update');

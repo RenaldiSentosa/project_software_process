@@ -216,17 +216,20 @@
 
     {{-- Grid Card Alat --}}
     <div class="grid" id="alatGrid">
-        @php $alatList = $tools ?? []; @endphp
+        @php
+            $alatList = $tools ?? [];
+            $cartIds  = array_keys(session()->get('cart', []));
+        @endphp
 
         @forelse ($alatList as $item)
         @php
-            $id = $item->id;
-            $nama = $item->nama_alat;
+            $id      = $item->id;
+            $nama    = $item->nama_alat;
             $kategori = $item->kategori;
-            $lokasi = $item->lokasi;
-            $stok = $item->stok_tersedia;
-            $status = $item->status_alat;
-            $inCart = false; // We can integrate actual cart logic later
+            $lokasi  = $item->lokasi;
+            $stok    = $item->stok_tersedia;
+            $status  = $item->status_alat;
+            $inCart  = in_array($id, $cartIds);
         @endphp
 
         <div class="card" data-nama="{{ strtolower($nama) }}" data-kategori="{{ strtolower($kategori) }}">
@@ -248,17 +251,20 @@
                 </div>
 
                 @if ($inCart)
-                    <button class="btn-keranjang ditambah">
+                    {{-- Sudah ada di keranjang --}}
+                    <button class="btn-keranjang ditambah" disabled>
                         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                         Sudah Ditambah
                     </button>
                 @elseif ($stok == 0)
+                    {{-- Stok habis --}}
                     <button class="btn-keranjang nonaktif" disabled>
                         <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                         Stok Habis
                     </button>
                 @else
-                    <form action="{{ route('peminjaman.store') }}" method="POST" onsubmit="return tambahKeranjangAjax(this, '{{ $nama }}')">
+                    {{-- FIX: action sekarang ke keranjang.store, bukan peminjaman.store --}}
+                    <form action="{{ route('keranjang.store') }}" method="POST" onsubmit="return tambahKeranjangAjax(this, '{{ $nama }}')">
                         @csrf
                         <input type="hidden" name="alat_id" value="{{ $id }}">
                         <button type="submit" class="btn-keranjang tambah">

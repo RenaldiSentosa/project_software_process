@@ -21,7 +21,7 @@ Pastikan di sistem Anda sudah terpasang:
 2. **Jalankan Migration Database**
    Setelah container berjalan, lakukan migrasi database agar tabel-tabel terbuat:
    ```bash
-   docker exec -it laravel_app_sp php artisan migrate
+   docker exec -it laravel_app_sp php artisan migrate:fresh --seed
    ```
 
 3. **Perbaiki Hak Akses Folder (Opsional namun Penting)**

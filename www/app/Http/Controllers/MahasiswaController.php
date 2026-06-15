@@ -18,7 +18,7 @@ class MahasiswaController extends Controller
         $total_dipinjam = Borrowing::where('mahasiswa_id', $userId)->whereIn('status', ['Diproses', 'Dipinjam'])->count();
         $total_selesai = Borrowing::where('mahasiswa_id', $userId)->whereIn('status', ['Dikembalikan', 'Selesai'])->count();
 
-        $peminjaman = Borrowing::with('borrowingItems.tool')
+        $peminjaman = Borrowing::with('items.tool')
             ->where('mahasiswa_id', $userId)
             ->orderBy('created_at', 'desc')
             ->take(5)
@@ -27,7 +27,7 @@ class MahasiswaController extends Controller
                 return (object) [
                     'id' => str_pad($p->id, 4, '0', STR_PAD_LEFT),
                     'keperluan' => $p->kegiatan,
-                    'items_count' => $p->borrowingItems->count(),
+                    'items_count' => $p->items->count(),
                     'tanggal_pinjam' => \Carbon\Carbon::parse($p->tgl_rencana_pinjam)->format('Y-m-d'),
                     'tanggal_kembali' => \Carbon\Carbon::parse($p->tgl_rencana_kembali)->format('Y-m-d'),
                     'status' => $p->status

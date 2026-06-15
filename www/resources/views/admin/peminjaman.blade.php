@@ -68,7 +68,7 @@ body {
                                     <td class="py-4 px-6"><span class="font-semibold text-slate-800 block">{{ $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? 'Unknown' }}</span><span class="text-slate-400 text-[11px]">{{ $borrowing->mahasiswa->nim ?? '-' }}</span></td>
                                     <td class="py-4 px-6 font-medium text-slate-600">{{ $borrowing->mahasiswa->program_studi ?? '-' }}</td>
                                     <td class="py-4 px-6 font-medium text-slate-500">{{ \Carbon\Carbon::parse($borrowing->created_at)->translatedFormat('d M Y') }}</td>
-                                    <td class="py-4 px-6 font-medium text-slate-600">{{ $borrowing->borrowingItems->count() }} jenis, {{ $borrowing->borrowingItems->sum('jumlah_unit') }} unit</td>
+                                    <td class="py-4 px-6 font-medium text-slate-600">{{ $borrowing->items->count() }} jenis, {{ $borrowing->items->sum('jumlah_unit') }} unit</td>
                                     <td class="py-4 px-6">
                                         @if($borrowing->status == 'Disetujui')
                                             <span class="px-2 py-0.5 rounded-full bg-blue-50 text-blue-500 text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1 h-1 bg-blue-500 rounded-full"></span>Disetujui</span>
@@ -149,8 +149,8 @@ body {
                         <div class="mb-4">
                             <p class="text-xs text-slate-500 mb-2">Item Dipinjam:</p>
                             <ul class="list-disc list-inside text-sm font-semibold text-slate-800">
-                                @foreach($b->borrowingItems as $bi)
-                                    <li>{{ $bi->tool->nama_alat ?? 'Alat tidak ditemukan' }} ({{ $bi->jumlah }} unit)</li>
+                                @foreach($b->items as $bi)
+                                    <li>{{ $bi->tool->nama_alat ?? 'Alat tidak ditemukan' }} ({{ $bi->jumlah_unit }} unit)</li>
                                 @endforeach
                             </ul>
                         </div>
@@ -165,7 +165,6 @@ body {
 
 @section('scripts')
 <script>
-// Track stack modal detail yang sedang terbuka agar bisa kembali dengan benar
         let activeDetailModalId = null;
 
         function toggleModal(modalId) {
@@ -192,26 +191,21 @@ body {
             }
         }
 
-        // Alur pembukaan penolakan dari dalam modal detail
         function openPenolakanDariDetail() {
-            // Sembunyikan detail peminjaman terlebih dahulu
             if (activeDetailModalId) {
                 const currentDetail = document.getElementById(activeDetailModalId);
                 currentDetail.classList.add('opacity-0');
                 currentDetail.querySelector('div').classList.add('scale-95');
                 setTimeout(() => { currentDetail.classList.add('hidden'); }, 300);
             }
-            // Tampilkan dialog alasan penolakan
             toggleModal('modal-konfirmasi-penolakan');
         }
 
-        // Alur pembukaan penolakan langsung dari tombol aksi tabel utama
         function openPenolakanLangsung() {
             activeDetailModalId = null; 
             toggleModal('modal-konfirmasi-penolakan');
         }
 
-        // Menutup modal penolakan, mengembalikan modal detail jika sebelumnya dibuka melaluinya
         function closePenolakan() {
             toggleModal('modal-konfirmasi-penolakan');
             if (activeDetailModalId) {
@@ -226,7 +220,6 @@ body {
             }
         }
 
-        // Menutup modal ketika pengguna mengeklik area luar (backdrop) kosong
         window.onclick = function(event) {
             if (event.target.attributes.id && event.target.attributes.id.value.startsWith('modal-')) {
                 if (event.target.id === 'modal-konfirmasi-penolakan') {

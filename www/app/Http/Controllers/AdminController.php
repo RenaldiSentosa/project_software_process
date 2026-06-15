@@ -117,7 +117,7 @@ class AdminController extends Controller
 
     public function peminjaman()
     {
-        $borrowings = Borrowing::with('mahasiswa', 'borrowingItems.tool')->orderBy('created_at', 'desc')->paginate(10);
+        $borrowings = Borrowing::with('mahasiswa', 'items.tool')->orderBy('created_at', 'desc')->paginate(10);
         return view('admin.peminjaman', compact('borrowings'));
     }
 
@@ -141,7 +141,6 @@ class AdminController extends Controller
         $totalMahasiswa = \App\Models\User::where('role', 'mahasiswa')->count();
         $mahasiswaBaruBulanIni = \App\Models\User::where('role', 'mahasiswa')->whereMonth('created_at', now()->month)->count();
 
-        // Chart Data: Alat Paling Sering Dipinjam
         $alatSeringDipinjam = \Illuminate\Support\Facades\DB::table('borrowing_items')
             ->join('tools', 'borrowing_items.tool_id', '=', 'tools.id')
             ->select('tools.nama_alat', \Illuminate\Support\Facades\DB::raw('SUM(borrowing_items.jumlah_unit) as total'))
@@ -150,7 +149,6 @@ class AdminController extends Controller
             ->take(5)
             ->get();
 
-        // Data for Tabs
         $queryPeminjaman = \App\Models\Borrowing::with('mahasiswa', 'items.tool')->orderBy('created_at', 'desc');
         
         if ($request->filled('start_date') && $request->filled('end_date')) {
@@ -226,8 +224,7 @@ class AdminController extends Controller
         $borrowing->catatan_admin = $request->catatan_admin;
         $borrowing->save();
         
-        // Restore stock since it was rejected
-        foreach($borrowing->borrowingItems as $item) {
+        foreach($borrowing->items as $item) {
             $tool = $item->tool;
             if($tool) {
                 $tool->stok_tersedia += $item->jumlah_unit;
@@ -267,18 +264,16 @@ class AdminController extends Controller
 
     public function returnPeminjaman(Request $request, $id)
     {
-        $borrowing = Borrowing::with('borrowingItems.tool')->findOrFail($id);
-        $borrowing->status = 'Dikembalikan'; // as per SRS: 3.3.6 (2)
+        $borrowing = Borrowing::with('items.tool')->findOrFail($id);
+        $borrowing->status = 'Dikembalikan';
         $borrowing->tgl_pengembalian_aktual = now();
         $borrowing->save();
         
-        // Restore stock and update condition
-        // $request->kondisi expected format: ['borrowing_item_id' => 'Baik/Rusak Ringan/Rusak Berat']
         $kondisiArray = $request->input('kondisi', []);
 
-        foreach($borrowing->borrowingItems as $item) {
+        foreach($borrowing->items as $item) {
             $tool = $item->tool;
-            $kondisi = $kondisiArray[$item->id] ?? 'Baik'; // fallback to Baik
+            $kondisi = $kondisiArray[$item->id] ?? 'Baik';
             
             $item->kondisi_saat_kembali = $kondisi;
             $item->save();
@@ -287,9 +282,7 @@ class AdminController extends Controller
                 if ($kondisi === 'Baik') {
                     $tool->stok_tersedia += $item->jumlah_unit;
                 } else if ($kondisi === 'Rusak Ringan' || $kondisi === 'Rusak Berat') {
-                    // Sesuai SRS 3.3.4 (9): Jangan ubah Status Alat, kurangi stok_total dan stok_tersedia (tapi stok_tersedia sudah berkurang saat reserve, jadi jangan ditambah lagi, cukup kurangi stok_total).
                     $tool->stok_total -= $item->jumlah_unit;
-                    // Note: stok_tersedia tetap (tidak ditambah) karena barangnya rusak/hilang
                 }
                 $tool->save();
             }

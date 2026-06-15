@@ -31,7 +31,6 @@
 
     .badge-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; border: 1px solid transparent; }
     .badge-pill::before { content: ""; width: 5px; height: 5px; border-radius: 50%; display: inline-block; }
-
     .badge-pill.disetujui { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
     .badge-pill.disetujui::before { background: #0284c7; }
     .badge-pill.menunggu { background: #fef3c7; color: #b45309; border-color: #fde68a; }

@@ -74,6 +74,7 @@
         <div class="sub" id="summaryCount">{{ (isset($cart) && count($cart) > 0) ? count($cart) : 0 }} item dipilih.</div>
     </div>
 
+    {{-- Form peminjaman (submit detail permintaan) --}}
     <form id="borrowForm" method="POST" action="{{ route('peminjaman.store') }}">
         @csrf
 
@@ -136,7 +137,7 @@
         </div>
     </form>
 
-    {{-- Form Hidden khusus hapus item --}}
+    {{-- Form hidden khusus hapus item --}}
     <form id="deleteItemForm" method="POST" action="" style="display:none;">
         @csrf
         @method('DELETE')
