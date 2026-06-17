@@ -89,10 +89,7 @@ body {
                                                 @csrf
                                                 <button type="submit" class="text-slate-400 hover:text-blue-600" title="Setujui"><i class="fa-solid fa-check text-sm"></i></button>
                                             </form>
-                                            <form action="{{ route('admin.peminjaman.reject', $borrowing->id) }}" method="POST" class="inline">
-                                                @csrf
-                                                <button type="submit" class="text-slate-400 hover:text-rose-600" title="Tolak"><i class="fa-solid fa-xmark text-sm"></i></button>
-                                            </form>
+                                            <button type="button" onclick="openPenolakanLangsung({{ $borrowing->id }})" class="text-slate-400 hover:text-rose-600" title="Tolak"><i class="fa-solid fa-xmark text-sm"></i></button>
                                         @elseif($borrowing->status == 'Disetujui')
                                             <form action="{{ route('admin.peminjaman.borrow', $borrowing->id) }}" method="POST" class="inline">
                                                 @csrf
@@ -156,11 +153,35 @@ body {
                         </div>
                     </div>
                     <div class="flex justify-end gap-3 p-4 border-t border-slate-100 bg-slate-50">
+                        @if($b->status == 'Menunggu')
+                            <button type="button" onclick="openPenolakanDariDetail({{ $b->id }})" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-semibold transition">Tolak</button>
+                        @endif
                         <button onclick="toggleModal('modal-detail-{{ $b->id }}')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition">Tutup</button>
                     </div>
                 </div>
             </div>
             @endforeach
+
+            <!-- Modal Konfirmasi Penolakan (Global, dipakai untuk semua baris) -->
+            <div id="modal-konfirmasi-penolakan" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm transition-opacity opacity-0 flex items-center justify-center p-4">
+                <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-300">
+                    <form id="form-penolakan" method="POST" action="">
+                        @csrf
+                        <div class="p-5 border-b border-slate-100 bg-slate-50">
+                            <h3 class="font-bold text-slate-800 text-base">Konfirmasi Penolakan</h3>
+                            <p class="text-xs text-slate-500 mt-1">Mohon berikan alasan penolakan peminjaman ini.</p>
+                        </div>
+                        <div class="p-6">
+                            <label for="catatan_admin" class="block text-xs font-semibold text-slate-700 mb-2">Alasan Penolakan <span class="text-rose-500">*</span></label>
+                            <textarea name="catatan_admin" id="catatan_admin" rows="4" required maxlength="1000" placeholder="Contoh: Alat tiba-tiba rusak." class="w-full border border-slate-200 rounded-lg p-3 text-xs focus:outline-none focus:border-rose-400 transition resize-none"></textarea>
+                        </div>
+                        <div class="flex justify-end gap-3 p-4 border-t border-slate-100 bg-slate-50">
+                            <button type="submit" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition">Tolak</button>
+                            <button type="button" onclick="closePenolakan()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition">Batal</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 @endsection
 
 @section('scripts')
@@ -191,21 +212,35 @@ body {
             }
         }
 
-        function openPenolakanDariDetail() {
+        // Set action form penolakan ke route reject sesuai id peminjaman, lalu tampilkan modal
+        function setFormPenolakanAction(borrowingId) {
+            const form = document.getElementById('form-penolakan');
+            form.action = `/admin/peminjaman/${borrowingId}/reject`;
+            document.getElementById('catatan_admin').value = '';
+        }
+
+        // Alur pembukaan penolakan dari dalam modal detail
+        function openPenolakanDariDetail(borrowingId) {
+            // Sembunyikan detail peminjaman terlebih dahulu
             if (activeDetailModalId) {
                 const currentDetail = document.getElementById(activeDetailModalId);
                 currentDetail.classList.add('opacity-0');
                 currentDetail.querySelector('div').classList.add('scale-95');
                 setTimeout(() => { currentDetail.classList.add('hidden'); }, 300);
             }
+            setFormPenolakanAction(borrowingId);
+            // Tampilkan dialog alasan penolakan
             toggleModal('modal-konfirmasi-penolakan');
         }
 
-        function openPenolakanLangsung() {
+        // Alur pembukaan penolakan langsung dari tombol aksi tabel utama
+        function openPenolakanLangsung(borrowingId) {
             activeDetailModalId = null; 
+            setFormPenolakanAction(borrowingId);
             toggleModal('modal-konfirmasi-penolakan');
         }
 
+        // Menutup modal penolakan, mengembalikan modal detail jika sebelumnya dibuka melaluinya
         function closePenolakan() {
             toggleModal('modal-konfirmasi-penolakan');
             if (activeDetailModalId) {
@@ -220,6 +255,7 @@ body {
             }
         }
 
+        // Menutup modal ketika pengguna mengeklik area luar (backdrop) kosong
         window.onclick = function(event) {
             if (event.target.attributes.id && event.target.attributes.id.value.startsWith('modal-')) {
                 if (event.target.id === 'modal-konfirmasi-penolakan') {

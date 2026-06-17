@@ -18,6 +18,7 @@
     .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; margin-bottom: 18px; }
     .alert-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
     .alert-success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .alert-warning { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
 
     .item { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #eceff4; }
     .item:last-child { border: none; }
@@ -51,8 +52,24 @@
     textarea { resize: none; height: 110px; }
     .full { grid-column: 1/3; }
 
-    .btn { margin-top: 10px; background: #2563eb; color: white; border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.15s; }
+    .btn {
+        margin-top: 10px;
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 12px 18px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        transition: background 0.15s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
     .btn:hover { background: #1d4ed8; }
+    .btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+    .btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
     .empty-cart { text-align: center; padding: 40px 20px; color: #6b7280; }
     .empty-cart p { margin-bottom: 15px; font-size: 14px; }
@@ -62,11 +79,10 @@
 @endsection
 
 @section('content')
-    @if(session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+    @if($activeBorrowing ?? false)
+        <div class="alert alert-warning">
+            Anda masih memiliki peminjaman yang aktif atau menunggu persetujuan. Selesaikan peminjaman tersebut sebelum mengajukan permintaan baru.
+        </div>
     @endif
 
     <div class="card">
@@ -121,19 +137,22 @@
             <div class="form-grid">
                 <div class="group">
                     <label for="tgl_rencana_pinjam">Tanggal Peminjaman *</label>
-                    <input type="date" id="tgl_rencana_pinjam" name="tgl_rencana_pinjam" required value="{{ old('tgl_rencana_pinjam') }}">
+                    <input type="date" id="tgl_rencana_pinjam" name="tgl_rencana_pinjam" required value="{{ old('tgl_rencana_pinjam') }}" {{ ($activeBorrowing ?? false) ? 'disabled' : '' }}>
                 </div>
                 <div class="group">
                     <label for="tgl_rencana_kembali">Tanggal Pengembalian *</label>
-                    <input type="date" id="tgl_rencana_kembali" name="tgl_rencana_kembali" required value="{{ old('tgl_rencana_kembali') }}">
+                    <input type="date" id="tgl_rencana_kembali" name="tgl_rencana_kembali" required value="{{ old('tgl_rencana_kembali') }}" {{ ($activeBorrowing ?? false) ? 'disabled' : '' }}>
                 </div>
                 <div class="group full" style="position: relative;">
                     <label for="keperluan">Tujuan Penggunaan *</label>
-                    <textarea id="keperluan" name="keperluan" maxlength="500" placeholder="Jelaskan untuk apa alat ini akan digunakan (projek kursus, penelitian, sesi lab, dll.)" required oninput="updateCharCount(this)">{{ old('keperluan') }}</textarea>
+                    <textarea id="keperluan" name="keperluan" maxlength="500" placeholder="Jelaskan untuk apa alat ini akan digunakan (projek kursus, penelitian, sesi lab, dll.)" required oninput="updateCharCount(this)" {{ ($activeBorrowing ?? false) ? 'disabled' : '' }}>{{ old('keperluan') }}</textarea>
                     <div style="text-align: right; font-size: 11px; color: #9ca3af; margin-top: 4px;" id="charCount">0/500</div>
                 </div>
             </div>
-            <button type="submit" class="btn">🚀 Kirim Permintaan Peminjaman</button>
+            <button type="submit" class="btn" {{ ($activeBorrowing ?? false) ? 'disabled' : '' }}>
+                <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Kirim Permintaan Peminjaman
+            </button>
         </div>
     </form>
 
@@ -146,6 +165,24 @@
 
 @section('scripts')
 <script>
+    // Tampilkan flash message via SweetAlert
+    @if(session('error'))
+        Swal.fire({ icon: 'error', title: 'Oops...', text: "{{ session('error') }}", confirmButtonColor: '#2563eb' });
+    @endif
+    @if(session('success'))
+        Swal.fire({ icon: 'success', title: 'Berhasil!', text: "{{ session('success') }}", confirmButtonColor: '#2563eb' });
+    @endif
+
+    // Tampilkan peringatan peminjaman aktif saat halaman dibuka
+    @if($activeBorrowing ?? false)
+        Swal.fire({
+            icon: 'warning',
+            title: 'Masih Ada Peminjaman Aktif',
+            text: 'Anda masih memiliki peminjaman yang aktif atau menunggu persetujuan. Selesaikan dahulu sebelum mengajukan permintaan baru.',
+            confirmButtonColor: '#2563eb'
+        });
+    @endif
+
     function updateCharCount(textarea) {
         document.getElementById('charCount').innerText = `${textarea.value.length}/500`;
     }
@@ -159,8 +196,11 @@
         let input = btn.parentElement.querySelector('.jumlah-input');
         let maxStok = parseInt(btn.closest('.item').querySelector('.max-stok').innerText) || 10;
         let val = parseInt(input.value) || 0;
-        if (val < maxStok) { input.value = val + 1; }
-        else { alert('Jumlah unit tidak boleh melebihi stok yang tersedia!'); }
+        if (val < maxStok) {
+            input.value = val + 1;
+        } else {
+            Swal.fire({ icon: 'warning', title: 'Stok Tidak Cukup', text: 'Jumlah unit tidak boleh melebihi stok yang tersedia!', confirmButtonColor: '#2563eb' });
+        }
     }
 
     function minus(btn) {
@@ -172,31 +212,54 @@
     function validateOnInput(input) {
         let maxStok = parseInt(input.closest('.item').querySelector('.max-stok').innerText) || 10;
         let val = parseInt(input.value);
-        if (isNaN(val) || val < 1) { input.value = 1; }
-        else if (val > maxStok) { alert('Jumlah unit melebihi stok ketersediaan!'); input.value = maxStok; }
+        if (isNaN(val) || val < 1) {
+            input.value = 1;
+        } else if (val > maxStok) {
+            Swal.fire({ icon: 'warning', title: 'Stok Tidak Cukup', text: 'Jumlah unit melebihi stok ketersediaan!', confirmButtonColor: '#2563eb' });
+            input.value = maxStok;
+        }
     }
 
     function hapus(itemId, btnElement) {
-        if (confirm('Hapus alat ini dari keranjang?')) {
-            let deleteForm = document.getElementById('deleteItemForm');
-            deleteForm.action = `/keranjang/hapus/${itemId}`;
-            deleteForm.submit();
-        }
+        Swal.fire({
+            title: 'Hapus alat ini dari keranjang?',
+            text: 'Alat akan dihapus dari daftar peminjaman kamu.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#9ca3af',
+            confirmButtonText: 'Ya, hapus',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let deleteForm = document.getElementById('deleteItemForm');
+                deleteForm.action = `/keranjang/hapus/${itemId}`;
+                deleteForm.submit();
+            }
+        });
     }
 
     document.getElementById('borrowForm')?.addEventListener('submit', function(e) {
-        let tglPinjam  = new Date(document.getElementById('tgl_rencana_pinjam').value);
-        let tglKembali = new Date(document.getElementById('tgl_rencana_kembali').value);
+        let tglPinjamInput  = document.getElementById('tgl_rencana_pinjam');
+        let tglKembaliInput = document.getElementById('tgl_rencana_kembali');
+        let tglPinjam  = new Date(tglPinjamInput.value);
+        let tglKembali = new Date(tglKembaliInput.value);
         let hariIni    = new Date(); hariIni.setHours(0,0,0,0);
 
-        if (!document.getElementById('tgl_rencana_pinjam').value || !document.getElementById('tgl_rencana_kembali').value) {
-            e.preventDefault(); alert('Tanggal peminjaman dan pengembalian wajib diisi!'); return false;
+        if (!tglPinjamInput.value || !tglKembaliInput.value) {
+            e.preventDefault();
+            Swal.fire({ icon: 'error', title: 'Data Belum Lengkap', text: 'Tanggal peminjaman dan pengembalian wajib diisi!', confirmButtonColor: '#2563eb' });
+            return false;
         }
         if (tglPinjam < hariIni) {
-            e.preventDefault(); alert('Tanggal rencana peminjaman tidak boleh di masa lalu!'); return false;
+            e.preventDefault();
+            Swal.fire({ icon: 'error', title: 'Tanggal Tidak Valid', text: 'Tanggal rencana peminjaman tidak boleh di masa lalu!', confirmButtonColor: '#2563eb' });
+            return false;
         }
         if (tglKembali < tglPinjam) {
-            e.preventDefault(); alert('Tanggal pengembalian tidak boleh kurang dari tanggal peminjaman!'); return false;
+            e.preventDefault();
+            Swal.fire({ icon: 'error', title: 'Tanggal Tidak Valid', text: 'Tanggal pengembalian tidak boleh kurang dari tanggal peminjaman!', confirmButtonColor: '#2563eb' });
+            return false;
         }
     });
 </script>

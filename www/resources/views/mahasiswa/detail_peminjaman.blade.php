@@ -71,12 +71,13 @@
     .status-box.dikembalikan { background: #f0fdf4; border: 1px solid #bbf7d0; }
     .status-box.ditolak      { background: #fef2f2; border: 1px solid #fecaca; }
 
-    .status-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
-    .status-icon.menunggu     { background: #fef3c7; }
-    .status-icon.disetujui    { background: #dbeafe; }
-    .status-icon.dipinjam     { background: #ede9fe; }
-    .status-icon.dikembalikan { background: #dcfce7; }
-    .status-icon.ditolak      { background: #fee2e2; }
+    /* Status icon: sekarang bulatan solid polos, warnanya sama persis dengan dot di badge-pill */
+    .status-icon { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+    .status-icon.menunggu     { background: #d97706; }
+    .status-icon.disetujui    { background: #0284c7; }
+    .status-icon.dipinjam     { background: #8b5cf6; }
+    .status-icon.dikembalikan { background: #16a34a; }
+    .status-icon.ditolak      { background: #dc2626; }
 
     .status-content-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
     .status-content-title.menunggu     { color: #92400e; }
@@ -208,7 +209,7 @@
             Menunggu Persetujuan Admin
         </div>
         <div class="status-box menunggu">
-            <div class="status-icon menunggu">⏳</div>
+            <div class="status-icon menunggu"></div>
             <div>
                 <div class="status-content-title menunggu">Menunggu Review Admin</div>
                 <div class="status-content-desc">
@@ -224,7 +225,7 @@
             Detail Peminjaman Disetujui
         </div>
         <div class="status-box disetujui">
-            <div class="status-icon disetujui">✅</div>
+            <div class="status-icon disetujui"></div>
             <div>
                 <div class="status-content-title disetujui">Disetujui oleh Admin</div>
                 <div class="status-content-desc">
@@ -239,7 +240,7 @@
             Status Peminjaman Aktif
         </div>
         <div class="status-box dipinjam">
-            <div class="status-icon dipinjam">🔵</div>
+            <div class="status-icon dipinjam"></div>
             <div>
                 <div class="status-content-title dipinjam">Sedang Dipinjam</div>
                 <div class="status-content-desc">
@@ -254,7 +255,7 @@
             Status Pengembalian
         </div>
         <div class="status-box dikembalikan">
-            <div class="status-icon dikembalikan">✅</div>
+            <div class="status-icon dikembalikan"></div>
             <div>
                 <div class="status-content-title dikembalikan">Telah Dikembalikan</div>
                 <div class="status-content-desc">
@@ -296,7 +297,7 @@
             Catatan Admin
         </div>
         <div class="status-box ditolak">
-            <div class="status-icon ditolak">⚠️</div>
+            <div class="status-icon ditolak"></div>
             <div>
                 <div class="status-content-title ditolak">Permintaan Ditolak</div>
                 <div class="status-content-desc">

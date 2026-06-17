@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Tool;
+use App\Models\Borrowing;
+use Illuminate\Support\Facades\Auth;
 
 class CartController extends Controller
 {
@@ -12,7 +14,14 @@ class CartController extends Controller
     {
         $cart = session()->get('cart', []);
 
-        return view('mahasiswa.keranjang', compact('cart'));
+        $userId = Auth::id() ?? 2;
+
+        // Cek apakah mahasiswa masih memiliki peminjaman aktif/menunggu
+        $activeBorrowing = Borrowing::where('mahasiswa_id', $userId)
+            ->whereIn('status', ['Menunggu', 'Disetujui', 'Dipinjam'])
+            ->exists();
+
+        return view('mahasiswa.keranjang', compact('cart', 'activeBorrowing'));
     }
 
     // Menambahkan item ke keranjang session
@@ -26,6 +35,9 @@ class CartController extends Controller
 
         // Cek stok sebelum ditambah
         if ($alat->stok_tersedia <= 0) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Stok alat tidak tersedia!'], 422);
+            }
             return redirect()->back()->with('error', 'Stok alat tidak tersedia!');
         }
 
@@ -33,6 +45,9 @@ class CartController extends Controller
 
         // Kalau sudah ada di keranjang, skip (tidak double)
         if (isset($cart[$alat->id])) {
+            if ($request->wantsJson()) {
+                return response()->json(['message' => 'Alat sudah ada di keranjang!'], 422);
+            }
             return redirect()->back()->with('error', 'Alat sudah ada di keranjang!');
         }
 
@@ -45,6 +60,13 @@ class CartController extends Controller
         ];
 
         session()->put('cart', $cart);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'message' => "{$alat->nama_alat} berhasil ditambahkan ke keranjang!",
+                'alat_id' => $alat->id,
+            ]);
+        }
 
         return redirect()->back()->with('success', "{$alat->nama_alat} berhasil ditambahkan ke keranjang!");
     }

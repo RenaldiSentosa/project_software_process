@@ -363,10 +363,6 @@
                         <div class="d-name">{{ auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Guest' }}</div>
                         <div class="d-role">{{ ucfirst(auth()->user()->role ?? 'Mahasiswa') }}</div>
                     </div>
-                    <a href="{{ route('profil') }}" class="dropdown-item">
-                        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        Profil Saya
-                    </a>
                     <button class="dropdown-item logout" onclick="triggerLogout()">
                         <svg viewBox="0 0 24 24">
                             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
