@@ -12,14 +12,20 @@ class CartController extends Controller
     // Menampilkan halaman keranjang dengan data dari session
     public function index()
     {
-        $cart = session()->get('cart', []);
-
         $userId = Auth::id() ?? 2;
 
         // Cek apakah mahasiswa masih memiliki peminjaman aktif/menunggu
         $activeBorrowing = Borrowing::where('mahasiswa_id', $userId)
             ->whereIn('status', ['Menunggu', 'Disetujui', 'Dipinjam'])
             ->exists();
+
+        // TIDAK ADA auto-clear di sini lagi.
+        // Cart hanya boleh dikosongkan eksplisit: setelah submit berhasil
+        // (lihat BorrowingController@store) atau lewat tombol hapus manual.
+        // Auto-clear di index() sebelumnya BUG: activeBorrowing selalu
+        // false untuk pengajuan baru yang belum disubmit, jadi cart yang
+        // baru saja diisi ikut kehapus tiap kali halaman keranjang dibuka.
+        $cart = session()->get('cart', []);
 
         return view('mahasiswa.keranjang', compact('cart', 'activeBorrowing'));
     }
@@ -30,6 +36,23 @@ class CartController extends Controller
         $request->validate([
             'alat_id' => 'required|exists:tools,id',
         ]);
+
+        $userId = Auth::id() ?? 2;
+
+        // Cegah nambah ke keranjang kalau masih ada peminjaman aktif yang
+        // BELUM diproses (Menunggu/Disetujui/Dipinjam). Pengajuan yang
+        // sudah Ditolak/Dikembalikan tidak masuk sini, jadi tidak ngeblok.
+        $activeBorrowing = Borrowing::where('mahasiswa_id', $userId)
+            ->whereIn('status', ['Menunggu', 'Disetujui', 'Dipinjam'])
+            ->exists();
+
+        if ($activeBorrowing) {
+            $msg = 'Anda masih memiliki peminjaman yang aktif atau menunggu persetujuan.';
+            if ($request->wantsJson()) {
+                return response()->json(['message' => $msg], 422);
+            }
+            return redirect()->back()->with('error', $msg);
+        }
 
         $alat = Tool::findOrFail($request->alat_id);
 
