@@ -1,6 +1,6 @@
 @extends('layouts.mahasiswa')
 
-@section('title', 'Profil Mahasiswa - IPWIJA SmartLab')
+@section('title', 'Profil - IPWIJA SmartLab')
 
 @section('styles')
 <style>
@@ -59,9 +59,17 @@
 @endsection
 
 @section('content')
+@php
+    // FIX: tampilan menyesuaikan role user yang login (mahasiswa/dosen)
+    // Kolom 'name' di tabel users menyimpan ROLE ('Admin'/'Mahasiswa'/'Dosen'), bukan nama orang.
+    $roleRaw   = auth()->user()->name ?? 'Mahasiswa';
+    $isDosen   = strtolower($roleRaw) === 'dosen';
+    $nimLabel  = $isDosen ? 'NUPTK' : 'NIM';
+    $peranText = $isDosen ? 'Dosen / Peminjam' : 'Mahasiswa / Peminjam';
+@endphp
 <div class="main-content">
     <div class="page-header">
-        <h1>Profil Mahasiswa</h1>
+        <h1>Profil {{ $isDosen ? 'Dosen' : 'Mahasiswa' }}</h1>
         <p>Informasi akun dan preferensi.</p>
     </div>
 
@@ -90,8 +98,10 @@
             <h2>{{ auth()->user()->nama_lengkap ?? 'Guest User' }}</h2>
             <p>{{ auth()->user()->email }}</p>
             <div class="pill-container">
-                <span class="identity-pill">Mahasiswa</span>
-                <span class="identity-pill">{{ auth()->user()->ProgramStudi ?? 'Teknik Informatika' }}</span>
+                <span class="identity-pill">{{ $isDosen ? 'Dosen' : 'Mahasiswa' }}</span>
+                @unless($isDosen)
+                <span class="identity-pill">{{ auth()->user()->program_studi ?? 'Teknik Informatika' }}</span>
+                @endunless
             </div>
         </div>
     </div>
@@ -101,19 +111,21 @@
 
         <div class="info-row">
             <div class="info-icon-box"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z"/></svg></div>
-            <div class="info-content"><span class="info-label">NIM</span><span class="info-value">{{ auth()->user()->nim ?? '-' }}</span></div>
+            <div class="info-content"><span class="info-label">{{ $nimLabel }}</span><span class="info-value">{{ auth()->user()->nim ?? '-' }}</span></div>
         </div>
         <div class="info-row">
             <div class="info-icon-box"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg></div>
             <div class="info-content"><span class="info-label">Email</span><span class="info-value">{{ auth()->user()->email }}</span></div>
         </div>
+        @unless($isDosen)
         <div class="info-row">
             <div class="info-icon-box"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18"/></svg></div>
-            <div class="info-content"><span class="info-label">Program Studi</span><span class="info-value">{{ auth()->user()->ProgramStudi ?? 'Teknik Informatika' }}</span></div>
+            <div class="info-content"><span class="info-label">Program Studi</span><span class="info-value">{{ auth()->user()->program_studi ?? 'Teknik Informatika' }}</span></div>
         </div>
+        @endunless
         <div class="info-row">
             <div class="info-icon-box"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"/></svg></div>
-            <div class="info-content"><span class="info-label">Peran</span><span class="info-value">Mahasiswa / Peminjam</span></div>
+            <div class="info-content"><span class="info-label">Peran</span><span class="info-value">{{ $peranText }}</span></div>
         </div>
     </div>
 

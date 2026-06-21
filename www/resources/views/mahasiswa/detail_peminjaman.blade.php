@@ -13,8 +13,9 @@
     .section-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 16px; }
     .section-title svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-    /* Informasi Mahasiswa */
+    /* Informasi Pengguna */
     .mhs-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    .mhs-grid.dosen { grid-template-columns: 1fr 1fr; }
     .mhs-item label { font-size: 11px; color: #6b7280; display: block; margin-bottom: 3px; }
     .mhs-item span  { font-size: 14px; font-weight: 600; color: #111827; }
 
@@ -71,7 +72,7 @@
     .status-box.dikembalikan { background: #f0fdf4; border: 1px solid #bbf7d0; }
     .status-box.ditolak      { background: #fef2f2; border: 1px solid #fecaca; }
 
-    /* Status icon: sekarang bulatan solid polos, warnanya sama persis dengan dot di badge-pill */
+    /* Status icon: bulatan solid polos, warnanya sama persis dengan dot di badge-pill */
     .status-icon { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
     .status-icon.menunggu     { background: #d97706; }
     .status-icon.disetujui    { background: #0284c7; }
@@ -97,10 +98,19 @@
 
 @section('content')
 @php
+    // FIX: tampilan menyesuaikan role user yang login (mahasiswa/dosen)
+    // NOTE: $user->role di-set dari controller (lowercase, mis. 'dosen' / 'mahasiswa')
+    $isDosen   = ($user->role ?? 'mahasiswa') === 'dosen';
+    $namaLabel = $isDosen ? 'Nama Dosen' : 'Nama Mahasiswa';
+    $nimLabel  = $isDosen ? 'NUPTK' : 'NIM';
+
     $statusClean = strtolower($detail->status);
-    $tglAju      = \Carbon\Carbon::parse($detail->created_at)->translatedFormat('d F Y \p\u\k\u\l H.i');
-    $tglPinjam   = \Carbon\Carbon::parse($detail->tgl_rencana_pinjam)->translatedFormat('l, d F Y');
-    $tglKembali  = \Carbon\Carbon::parse($detail->tgl_rencana_kembali)->translatedFormat('l, d F Y');
+
+    // FIX: format tanggal full bahasa Indonesia (locale id)
+    $tglAju      = \Carbon\Carbon::parse($detail->created_at)->locale('id')->translatedFormat('d F Y \p\u\k\u\l H.i');
+    $tglPinjam   = \Carbon\Carbon::parse($detail->tgl_rencana_pinjam)->locale('id')->translatedFormat('l, d F Y');
+    $tglKembali  = \Carbon\Carbon::parse($detail->tgl_rencana_kembali)->locale('id')->translatedFormat('l, d F Y');
+
     $idFormatted = 'PMJ-' . \Carbon\Carbon::parse($detail->created_at)->format('Y') . '-' . str_pad($detail->id, 3, '0', STR_PAD_LEFT);
     $totalUnit   = $detail->items->sum('jumlah_unit');
 @endphp
@@ -121,24 +131,28 @@
 </div>
 
 <div class="card">
-    {{-- Informasi Mahasiswa --}}
+    {{-- Informasi Pengguna: judul & field menyesuaikan role --}}
     <div class="section-title">
         <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        Informasi Mahasiswa
+        {{ $isDosen ? 'Informasi Dosen' : 'Informasi Mahasiswa' }}
     </div>
-    <div class="mhs-grid" style="margin-bottom: 24px;">
+    <div class="mhs-grid {{ $isDosen ? 'dosen' : '' }}" style="margin-bottom: 24px;">
         <div class="mhs-item">
-            <label>Nama</label>
-            <span>{{ $user->name ?? '-' }}</span>
+            <label>{{ $namaLabel }}</label>
+            {{-- FIX: nama selalu dari kolom nama_lengkap. $user->name menyimpan ROLE, bukan nama orang --}}
+            <span>{{ $user->nama_lengkap ?? '-' }}</span>
         </div>
         <div class="mhs-item">
-            <label>NIM</label>
+            <label>{{ $nimLabel }}</label>
             <span>{{ $user->nim ?? '-' }}</span>
         </div>
+        {{-- Program Studi hanya tampil untuk mahasiswa --}}
+        @unless($isDosen)
         <div class="mhs-item">
             <label>Program Studi</label>
             <span>{{ $user->program_studi ?? '-' }}</span>
         </div>
+        @endunless
     </div>
 
     {{-- Tanggal --}}

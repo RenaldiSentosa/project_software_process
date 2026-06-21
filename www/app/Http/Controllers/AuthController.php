@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Http; // <--- WAJIB ADA: Untuk menembak Webhook ke n8n
+use Illuminate\Support\Facades\Validator;
 use App\Models\User;
 
 class AuthController extends Controller
@@ -23,30 +23,27 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
-        // Validasi input dari form login
         $request->validate([
             'login_input' => 'required|string',
             'password'    => 'required|string',
         ]);
 
-        // Cek apakah yang diinput itu format email atau string NIM biasa
         $fieldType = filter_var($request->login_input, FILTER_VALIDATE_EMAIL) ? 'email' : 'nim';
 
-        // Susun data kredensial untuk dicocokkan ke database
         $credentials = [
             $fieldType  => $request->login_input,
-            'password'   => $request->password,
-            'is_active'  => 1 // Akun wajib berstatus aktif (1) setelah divalidasi n8n
+            'password'  => $request->password,
+            // FIX: tidak ada lagi proses aktivasi, tapi is_active tetap
+            // dicek di sini sebagai jaga-jaga kalau ada akun lama yang
+            // is_active-nya masih 0 dari sebelum perubahan ini.
+            'is_active' => 1,
         ];
 
-        // Lakukan proses percobaan login
         if (Auth::attempt($credentials)) {
-            // Jika sukses, amankan session user
             $request->session()->regenerate();
 
             $user = Auth::user();
-            
-            // Redirect otomatis berdasarkan role user di database
+
             if ($user->role === 'admin') {
                 return redirect()->intended('/admin/dashboard');
             } else {
@@ -54,9 +51,8 @@ class AuthController extends Controller
             }
         }
 
-        // Jika gagal (salah password/email/nim atau akun nonaktif belum divalidasi n8n), balikkan ke halaman login
         return redirect()->back()->withErrors([
-            'login_error' => 'Email/NIM atau password salah, atau akun Anda belum diaktifkan oleh sistem kampus.',
+            'login_error' => 'Email/NIM atau password salah.',
         ])->withInput($request->except('password'));
     }
 
@@ -69,60 +65,78 @@ class AuthController extends Controller
     }
 
     /**
-     * 4. Proses Simpan Data Registrasi Mahasiswa Baru (Eksklusif @ipwija.ac.id & Terhubung n8n)
+     * 4. Proses Simpan Data Registrasi (Mahasiswa / Dosen)
+     *    FIX: akun langsung aktif (is_active = 1), tidak ada lagi proses
+     *    aktivasi via email/n8n. Semua error dikembalikan sebagai JSON
+     *    supaya bisa ditangkap SweetAlert di register.blade.php.
      */
     public function register(Request $request)
     {
-        // Validasi input form registrasi
-        $request->validate([
+        $role = $request->input('role', 'mahasiswa');
+
+        // Aturan digit NIM/NUPTK beda tergantung role:
+        // mahasiswa -> NIM harus 12 digit
+        // dosen     -> NUPTK harus 9 digit
+        $nimRule = $role === 'dosen' ? 'digits:9' : 'digits:12';
+
+        $validator = Validator::make($request->all(), [
             'nama_lengkap'  => 'required|string|max:100',
-            'nim'           => 'required|string|max:20|unique:users,nim',
+            'nim'           => ['required', 'string', $nimRule, 'unique:users,nim'],
             'email'         => 'required|string|email|max:100|unique:users,email',
-            'password'      => 'required|string|min:6|confirmed', // Wajib klop dengan password_confirmation
-            'program_studi' => 'required|string|max:100',
+            'password'      => 'required|string|min:8|confirmed',
+            'program_studi' => $role === 'dosen' ? 'nullable|string|max:100' : 'required|string|max:100',
         ], [
-            // Kustomisasi pesan error bahasa Indonesia
-            'nim.unique' => 'NIM ini sudah terdaftar di sistem.',
-            'email.unique' => 'Email ini sudah terdaftar di sistem.',
-            'password.confirmed' => 'Konfirmasi password tidak cocok.',
-            'password.min' => 'Password minimal harus 6 karakter.',
+            'nim.required'        => $role === 'dosen' ? 'NUPTK wajib diisi.' : 'NIM wajib diisi.',
+            'nim.digits'          => $role === 'dosen' ? 'NUPTK harus 9 digit angka.' : 'NIM harus 12 digit angka.',
+            'nim.unique'          => $role === 'dosen' ? 'NUPTK ini sudah terdaftar di sistem.' : 'NIM ini sudah terdaftar di sistem.',
+            'email.unique'        => 'Email ini sudah terdaftar di sistem.',
+            'email.required'      => 'Email wajib diisi.',
+            'email.email'         => 'Format email tidak valid.',
+            'password.required'   => 'Password wajib diisi.',
+            'password.min'        => 'Password minimal harus 8 karakter.',
+            'password.confirmed'  => 'Konfirmasi password tidak cocok.',
+            'program_studi.required' => 'Program studi wajib dipilih.',
+            'nama_lengkap.required'  => 'Nama wajib diisi.',
         ]);
 
+        // Aturan email khusus domain kampus, dicek manual supaya pesannya jelas
         $email = $request->email;
-
-        // 🔥 SATPAM DOMAIN: Hanya menerima email berakhiran @ipwija.ac.id
-        if (!str_ends_with($email, '@ipwija.ac.id')) {
-            return redirect()->back()
-                ->withInput()
-                ->withErrors(['email' => 'Registrasi ditolak! Anda wajib menggunakan email resmi Universitas IPWIJA (@ipwija.ac.id).']);
+        if ($email && !str_ends_with($email, '@ipwija.ac.id')) {
+            $validator->after(function ($v) {
+                $v->errors()->add('email', 'Registrasi ditolak! Anda wajib menggunakan email resmi Universitas IPWIJA (@ipwija.ac.id).');
+            });
         }
 
-        // Simpan data ke database dengan status PENDING (is_active = 0)
+        if ($validator->fails()) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'message' => $validator->errors()->first(),
+                    'errors'  => $validator->errors(),
+                ], 422);
+            }
+            return redirect()->back()->withErrors($validator)->withInput();
+        }
+
+        // Simpan data ke database — FIX: is_active langsung 1, akun aktif
+        // begitu daftar, tidak ada proses aktivasi lagi.
         $user = User::create([
             'nama_lengkap'  => $request->nama_lengkap,
             'nim'           => $request->nim,
             'email'         => $email,
-            'password'      => Hash::make($request->password), // Enkripsi password standar Laravel
-            'role'          => 'mahasiswa', // Otomatis mendaftar sebagai mahasiswa
+            'password'      => Hash::make($request->password),
+            'role'          => $role === 'dosen' ? 'dosen' : 'mahasiswa',
             'program_studi' => $request->program_studi,
-            'is_active'     => 0, // Set 0: Menunggu n8n memproses aktivasi via email
+            'is_active'     => 1,
         ]);
 
-        // 🚀 SEBAR DATA KE WEBHOOK n8n
-        try {
-            Http::post('URL_WEBHOOK_N8N_ABANG_DISINI', [
-                'nama_lengkap'  => $user->nama_lengkap,
-                'nim'           => $user->nim,
-                'email'         => $user->email,
-                'program_studi' => $user->program_studi,
-                'status'        => 'pendaftaran_baru'
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'message' => 'Registrasi berhasil! Silakan login dengan akun Anda.',
+                'redirect' => route('login'),
             ]);
-        } catch (\Exception $e) {
-            // Logger opsional: mencegah aplikasi crash jika server n8n belum dinyalakan/down saat testing
         }
 
-        // Setelah sukses, arahkan kembali ke halaman login
-        return redirect('/login')->with('success', 'Registrasi berhasil! Silakan cek inbox email @ipwija.ac.id Anda untuk instruksi aktivasi akun.');
+        return redirect('/login')->with('success', 'Registrasi berhasil! Silakan login dengan akun Anda.');
     }
 
     /**
@@ -131,11 +145,10 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
-        
-        // Bersihkan dan hancurkan session lama biar aman
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        
+
         return redirect('/login')->with('success', 'Berhasil logout!');
     }
 }

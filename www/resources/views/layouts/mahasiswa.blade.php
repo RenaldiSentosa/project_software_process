@@ -352,7 +352,8 @@
                     </div>
                     <div class="user-info">
                         <div class="user-name">{{ auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Guest' }}</div>
-                        <div class="user-role">{{ ucfirst(auth()->user()->role ?? 'Mahasiswa') }}</div>
+                        {{-- FIX: kolom 'role' tidak ada di tabel users. Role sebenarnya disimpan di kolom 'name' --}}
+                        <div class="user-role">{{ ucfirst(auth()->user()->name ?? 'Mahasiswa') }}</div>
                     </div>
                     <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="6 9 12 15 18 9"/>
@@ -361,7 +362,8 @@
                 <div class="dropdown" id="dropdown">
                     <div class="dropdown-header">
                         <div class="d-name">{{ auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Guest' }}</div>
-                        <div class="d-role">{{ ucfirst(auth()->user()->role ?? 'Mahasiswa') }}</div>
+                        {{-- FIX: kolom 'role' tidak ada di tabel users. Role sebenarnya disimpan di kolom 'name' --}}
+                        <div class="d-role">{{ ucfirst(auth()->user()->name ?? 'Mahasiswa') }}</div>
                     </div>
                     <button class="dropdown-item logout" onclick="triggerLogout()">
                         <svg viewBox="0 0 24 24">

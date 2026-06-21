@@ -266,6 +266,19 @@
         .input-wrap input::placeholder { color: #9ca3af; }
         .input-wrap select.placeholder { color: #9ca3af; }
 
+        /* Opsi di dalam dropdown selalu tebal & gelap, terlepas dari warna
+           teks <select> itu sendiri (yang abu-abu saat masih placeholder) */
+        .input-wrap select option {
+            color: #111827;
+            font-weight: 600;
+            background: #fff;
+        }
+
+        .input-wrap select option[value=""] {
+            color: #9ca3af;
+            font-weight: 400;
+        }
+
         .toggle-pw {
             background: none;
             border: none;
@@ -289,9 +302,9 @@
             stroke-linejoin: round;
         }
 
-        .error-msg {
-            font-size: 12px;
-            color: #dc2626;
+        .hint-msg {
+            font-size: 11.5px;
+            color: #9ca3af;
             margin-top: 5px;
         }
 
@@ -317,6 +330,7 @@
 
         .btn-daftar:hover { background: #1976d2; }
         .btn-daftar:active { background: #1565c0; }
+        .btn-daftar:disabled { opacity: 0.7; cursor: not-allowed; }
 
         .btn-daftar svg {
             width: 18px;
@@ -348,74 +362,6 @@
         /* FORM PANEL VISIBILITY */
         .form-panel { display: none; }
         .form-panel.active { display: block; }
-
-        /* STEP BAR */
-        .steps {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 18px;
-        }
-
-        .step-bar {
-            flex: 1;
-            height: 4px;
-            border-radius: 4px;
-            background: #e5e7eb;
-            transition: background 0.3s;
-        }
-
-        .step-bar.active { background: #2196f3; }
-
-        /* STEP VISIBILITY */
-        .step { display: none; }
-        .step.active { display: block; }
-
-        .btn-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 8px;
-        }
-
-        .btn {
-            flex: 1;
-            height: 48px;
-            border-radius: 10px;
-            font-size: 15px;
-            font-weight: 600;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            border: none;
-            transition: background 0.15s;
-        }
-
-        .btn-back {
-            background: #f0f4f9;
-            color: #374151;
-        }
-
-        .btn-back:hover { background: #e2e8f0; }
-
-        .btn-primary {
-            background: #2196f3;
-            color: #fff;
-        }
-
-        .btn-primary:hover { background: #1976d2; }
-        .btn-primary:active { background: #1565c0; }
-
-        .btn svg {
-            width: 18px;
-            height: 18px;
-            fill: none;
-            stroke: currentColor;
-            stroke-width: 2.2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
 
         .swal2-popup {
             font-family: 'Plus Jakarta Sans', sans-serif !important;
@@ -481,134 +427,124 @@
 
         {{-- ══ FORM MAHASISWA ══ --}}
         <div class="form-panel active" id="panel-mahasiswa">
-            <form method="POST" action="{{ route('register.proses') }}" id="registerForm">
+            <form method="POST" action="{{ route('register.proses') }}" id="formMahasiswa" class="register-form" novalidate>
                 @csrf
                 <input type="hidden" name="role" value="mahasiswa">
 
-                {{-- STEP 1 --}}
-                <div class="step active" id="step1">
-
-                    <div class="field">
-                        <label class="field-label" for="nama_lengkap">Nama Mahasiswa</label>
-                        <div class="input-wrap">
-                            <svg class="ico" viewBox="0 0 24 24">
-                                <circle cx="12" cy="7" r="4"/>
-                                <path d="M2 21c0-4 4-7 10-7s10 3 10 7"/>
-                            </svg>
-                            <input type="text" id="nama_lengkap" name="nama_lengkap"
-                                value="{{ old('nama_lengkap') }}"
-                                placeholder="Nama lengkap mahasiswa"
-                                autocomplete="name">
-                        </div>
-                        @error('nama_lengkap') <p class="error-msg">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="field">
-                        <label class="field-label" for="nim">NIM</label>
-                        <div class="input-wrap">
-                            <svg class="ico" viewBox="0 0 24 24">
-                                <rect x="3" y="4" width="18" height="16" rx="2"/>
-                                <path d="M7 8h10M7 12h6"/>
-                            </svg>
-                            <input type="text" id="nim" name="nim"
-                                value="{{ old('nim') }}"
-                                placeholder="Nomor induk mahasiswa"
-                                autocomplete="off">
-                        </div>
-                        @error('nim') <p class="error-msg">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="field">
-                        <label class="field-label" for="email">Email Aktif</label>
-                        <div class="input-wrap">
-                            <svg class="ico" viewBox="0 0 24 24">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                                <polyline points="22,6 12,13 2,6"/>
-                            </svg>
-                            <input type="email" id="email" name="email"
-                                value="{{ old('email') }}"
-                                placeholder="Nama@gmail.com"
-                                autocomplete="email">
-                        </div>
-                        @error('email') <p class="error-msg">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="field">
-                        <label class="field-label" for="program_studi">Program Studi</label>
-                        <div class="input-wrap">
-                            <svg class="ico" viewBox="0 0 24 24">
-                                <path d="M12 3L1 9l11 6 9-4.91V17M1 9v6m11-3v6"/>
-                            </svg>
-                            <select id="program_studi" name="program_studi"
-                                class="{{ old('program_studi') ? '' : 'placeholder' }}"
-                                onchange="this.classList.remove('placeholder')">
-                                <option value="" disabled {{ old('program_studi') ? '' : 'selected' }}>Pilih Program Studi</option>
-                                <option value="Teknik Informatika" {{ old('program_studi') == 'Teknik Informatika' ? 'selected' : '' }}>Teknik Informatika</option>
-                                <option value="Rekayasa Perangkat Lunak" {{ old('program_studi') == 'Rekayasa Perangkat Lunak' ? 'selected' : '' }}>Rekayasa Perangkat Lunak (RPL)</option>
-                                <option value="Sistem Informasi" {{ old('program_studi') == 'Sistem Informasi' ? 'selected' : '' }}>Sistem Informasi</option>
-                            </select>
-                            <svg class="ico" viewBox="0 0 24 24" style="stroke:#9ca3af; flex-shrink:0;">
-                                <polyline points="6 9 12 15 18 9"/>
-                            </svg>
-                        </div>
-                        @error('program_studi') <p class="error-msg">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="field">
-                        <label class="field-label" for="password">Password</label>
-                        <div class="input-wrap">
-                            <svg class="ico" viewBox="0 0 24 24">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                            </svg>
-                            <input type="password" id="password" name="password"
-                                placeholder="Minimal 8 karakter"
-                                autocomplete="new-password">
-                            <button type="button" class="toggle-pw" onclick="togglePw('password')" aria-label="Tampilkan password">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                    <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                            </button>
-                        </div>
-                        @error('password') <p class="error-msg">{{ $message }}</p> @enderror
-                    </div>
-
-                    <div class="field">
-                        <label class="field-label" for="password_confirmation">Konfirmasi Password</label>
-                        <div class="input-wrap">
-                            <svg class="ico" viewBox="0 0 24 24">
-                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                            </svg>
-                            <input type="password" id="password_confirmation" name="password_confirmation"
-                                placeholder="Ulangi Password"
-                                autocomplete="new-password">
-                            <button type="button" class="toggle-pw" onclick="togglePw('password_confirmation')" aria-label="Tampilkan konfirmasi password">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                    <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn-daftar">
-                        <svg viewBox="0 0 24 24">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <line x1="19" y1="8" x2="19" y2="14"/>
-                            <line x1="22" y1="11" x2="16" y2="11"/>
+                <div class="field">
+                    <label class="field-label" for="nama_lengkap">Nama Mahasiswa</label>
+                    <div class="input-wrap">
+                        <svg class="ico" viewBox="0 0 24 24">
+                            <circle cx="12" cy="7" r="4"/>
+                            <path d="M2 21c0-4 4-7 10-7s10 3 10 7"/>
                         </svg>
-                        Daftar Sekarang
-                    </button>
-
+                        <input type="text" id="nama_lengkap" name="nama_lengkap"
+                            placeholder="Nama lengkap mahasiswa"
+                            autocomplete="name">
+                    </div>
                 </div>
+
+                <div class="field">
+                    <label class="field-label" for="nim">NIM</label>
+                    <div class="input-wrap">
+                        <svg class="ico" viewBox="0 0 24 24">
+                            <rect x="3" y="4" width="18" height="16" rx="2"/>
+                            <path d="M7 8h10M7 12h6"/>
+                        </svg>
+                        <input type="text" id="nim" name="nim"
+                            placeholder="Nomor induk mahasiswa"
+                            maxlength="12"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            autocomplete="off">
+                    </div>
+                    <p class="hint-msg">NIM harus 12 digit angka.</p>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="email">Email Aktif</label>
+                    <div class="input-wrap">
+                        <svg class="ico" viewBox="0 0 24 24">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                            <polyline points="22,6 12,13 2,6"/>
+                        </svg>
+                        <input type="email" id="email" name="email"
+                            placeholder="nama@ipwija.ac.id"
+                            autocomplete="email">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="program_studi">Program Studi</label>
+                    <div class="input-wrap">
+                        <svg class="ico" viewBox="0 0 24 24">
+                            <path d="M12 3L1 9l11 6 9-4.91V17M1 9v6m11-3v6"/>
+                        </svg>
+                        <select id="program_studi" name="program_studi" class="placeholder"
+                            onchange="this.classList.remove('placeholder')">
+                            <option value="" disabled selected>Pilih Program Studi</option>
+                            <option value="Teknik Informatika">Teknik Informatika</option>
+                            <option value="Rekayasa Perangkat Lunak">Rekayasa Perangkat Lunak (RPL)</option>
+                            <option value="Sistem Informasi">Sistem Informasi</option>
+                        </select>
+                        <svg class="ico" viewBox="0 0 24 24" style="stroke:#9ca3af; flex-shrink:0;">
+                            <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="password">Password</label>
+                    <div class="input-wrap">
+                        <svg class="ico" viewBox="0 0 24 24">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <input type="password" id="password" name="password"
+                            placeholder="Minimal 8 karakter"
+                            autocomplete="new-password">
+                        <button type="button" class="toggle-pw" onclick="togglePw('password')" aria-label="Tampilkan password">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="password_confirmation">Konfirmasi Password</label>
+                    <div class="input-wrap">
+                        <svg class="ico" viewBox="0 0 24 24">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                        <input type="password" id="password_confirmation" name="password_confirmation"
+                            placeholder="Ulangi Password"
+                            autocomplete="new-password">
+                        <button type="button" class="toggle-pw" onclick="togglePw('password_confirmation')" aria-label="Tampilkan konfirmasi password">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-daftar">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <line x1="19" y1="8" x2="19" y2="14"/>
+                        <line x1="22" y1="11" x2="16" y2="11"/>
+                    </svg>
+                    Daftar Sekarang
+                </button>
             </form>
         </div>
 
         {{-- ══ FORM DOSEN ══ --}}
         <div class="form-panel" id="panel-dosen">
-            <form method="POST" action="{{ route('register.proses') }}">
+            <form method="POST" action="{{ route('register.proses') }}" id="formDosen" class="register-form" novalidate>
                 @csrf
                 <input type="hidden" name="role" value="dosen">
 
@@ -620,11 +556,9 @@
                             <path d="M2 21c0-4 4-7 10-7s10 3 10 7"/>
                         </svg>
                         <input type="text" id="nama_dosen" name="nama_lengkap"
-                            value="{{ old('nama_lengkap') }}"
                             placeholder="Nama lengkap dosen"
                             autocomplete="name">
                     </div>
-                    @error('nama_lengkap') <p class="error-msg">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="field">
@@ -635,11 +569,13 @@
                             <path d="M7 8h10M7 12h6"/>
                         </svg>
                         <input type="text" id="nuptk" name="nim"
-                            value="{{ old('nim') }}"
                             placeholder="Nomor Unik Pendidik Tenaga Kependidikan"
+                            maxlength="16"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
                             autocomplete="off">
                     </div>
-                    @error('nim') <p class="error-msg">{{ $message }}</p> @enderror
+                    <p class="hint-msg">NUPTK harus 16 digit angka.</p>
                 </div>
 
                 <div class="field">
@@ -650,11 +586,9 @@
                             <polyline points="22,6 12,13 2,6"/>
                         </svg>
                         <input type="email" id="email_dosen" name="email"
-                            value="{{ old('email') }}"
-                            placeholder="Nama@gmail.com"
+                            placeholder="nama@ipwija.ac.id"
                             autocomplete="email">
                     </div>
-                    @error('email') <p class="error-msg">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="field">
@@ -674,7 +608,6 @@
                             </svg>
                         </button>
                     </div>
-                    @error('password') <p class="error-msg">{{ $message }}</p> @enderror
                 </div>
 
                 <div class="field">
@@ -704,7 +637,6 @@
                     </svg>
                     Daftar Sekarang
                 </button>
-
             </form>
         </div>
 
@@ -721,31 +653,155 @@
     }
 
     function switchRole(role) {
-        // Update tab active state
         document.getElementById('tab-mahasiswa').classList.toggle('active', role === 'mahasiswa');
         document.getElementById('tab-dosen').classList.toggle('active', role === 'dosen');
-
-        // Show/hide form panels
         document.getElementById('panel-mahasiswa').classList.toggle('active', role === 'mahasiswa');
         document.getElementById('panel-dosen').classList.toggle('active', role === 'dosen');
     }
 
-    // Blok Handling Notifikasi dari Backend Laravel Controller
-    @if (session('error'))
-        document.addEventListener('DOMContentLoaded', function () {
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal',
-                text: "{{ session('error') }}",
+    // Cegah ketik karakter selain angka di NIM/NUPTK
+    document.querySelectorAll('#nim, #nuptk').forEach(function (input) {
+        input.addEventListener('input', function () {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    });
+
+    /* ============================================================
+       SEMUA VALIDASI PAKAI SWEETALERT (tidak ada lagi teks error
+       merah di bawah input). Ada 2 lapis:
+       1. Validasi cepat di JS sebelum submit (instan, tanpa request)
+       2. Validasi dari server lewat AJAX (NIM/email sudah dipakai dll)
+       ============================================================ */
+
+    function showError(message) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal',
+            text: message,
+            confirmButtonColor: '#2196f3'
+        });
+    }
+
+    function validateClientSide(form, role) {
+        const nama = form.querySelector('[name="nama_lengkap"]').value.trim();
+        const nim = form.querySelector('[name="nim"]').value.trim();
+        const email = form.querySelector('[name="email"]').value.trim();
+        const password = form.querySelector('[name="password"]').value;
+        const passwordConfirm = form.querySelector('[name="password_confirmation"]').value;
+        const programStudi = form.querySelector('[name="program_studi"]');
+
+        if (!nama) {
+            showError(role === 'dosen' ? 'Nama dosen wajib diisi.' : 'Nama mahasiswa wajib diisi.');
+            return false;
+        }
+
+        const nimLabel = role === 'dosen' ? 'NUPTK' : 'NIM';
+        const nimLength = role === 'dosen' ? 16 : 12;
+        if (!nim) {
+            showError(`${nimLabel} wajib diisi.`);
+            return false;
+        }
+        if (!/^\d+$/.test(nim)) {
+            showError(`${nimLabel} hanya boleh berisi angka.`);
+            return false;
+        }
+        if (nim.length !== nimLength) {
+            showError(`${nimLabel} harus ${nimLength} digit angka. Saat ini ${nim.length} digit.`);
+            return false;
+        }
+
+        if (!email) {
+            showError('Email wajib diisi.');
+            return false;
+        }
+        if (!email.endsWith('@ipwija.ac.id')) {
+            showError('Anda wajib menggunakan email resmi Universitas IPWIJA (@ipwija.ac.id).');
+            return false;
+        }
+
+        if (role === 'mahasiswa' && programStudi && !programStudi.value) {
+            showError('Program studi wajib dipilih.');
+            return false;
+        }
+
+        if (!password) {
+            showError('Password wajib diisi.');
+            return false;
+        }
+        if (password.length < 8) {
+            showError('Password minimal harus 8 karakter.');
+            return false;
+        }
+        if (password !== passwordConfirm) {
+            showError('Konfirmasi password tidak cocok.');
+            return false;
+        }
+
+        return true;
+    }
+
+    async function handleSubmit(e, role) {
+        e.preventDefault();
+        const form = e.target;
+
+        if (!validateClientSide(form, role)) {
+            return;
+        }
+
+        const submitBtn = form.querySelector('.btn-daftar');
+        const originalHtml = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = 'Memproses...';
+
+        try {
+            const formData = new FormData(form);
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                showError(data.message || 'Registrasi gagal, silakan coba lagi.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHtml;
+                return;
+            }
+
+            await Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: data.message || 'Registrasi berhasil! Akun Anda sudah aktif, silakan login.',
                 confirmButtonColor: '#2196f3'
             });
+
+            window.location.href = data.redirect || '{{ route('login') }}';
+
+        } catch (err) {
+            showError('Terjadi kesalahan jaringan. Silakan coba lagi.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalHtml;
+        }
+    }
+
+    document.getElementById('formMahasiswa').addEventListener('submit', (e) => handleSubmit(e, 'mahasiswa'));
+    document.getElementById('formDosen').addEventListener('submit', (e) => handleSubmit(e, 'dosen'));
+
+    // Tampilkan error session lama (kalau ada, dari non-AJAX fallback)
+    @if (session('error'))
+        document.addEventListener('DOMContentLoaded', function () {
+            showError("{{ session('error') }}");
         });
     @endif
 
-    @if ($errors->has('password') || $errors->has('program_studi'))
+    @if ($errors->any())
         document.addEventListener('DOMContentLoaded', function () {
-            // Jika error dari form mahasiswa, pastikan panel mahasiswa aktif
-            switchRole('mahasiswa');
+            showError("{{ $errors->first() }}");
         });
     @endif
 </script>

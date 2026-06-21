@@ -169,11 +169,21 @@ class BorrowingController extends Controller
     {
         $detail = Borrowing::with(['items.tool'])->findOrFail($id);
 
-        $user = Auth::user() ?? (object)[
-            'name' => 'Aprizal Kim',
-            'nim' => '202301110011',
-            'program_studi' => 'Teknik Informatika'
-        ];
+        $user = Auth::user();
+
+        if (!$user) {
+            $user = (object)[
+                'nama_lengkap'  => 'Aprizal Kim',
+                'nim'           => '202301110011',
+                'program_studi' => 'Teknik Informatika',
+                'role'          => 'mahasiswa',
+            ];
+        }
+
+        // Kolom 'name' di tabel users sebenarnya menyimpan ROLE user
+        // (mis. "Admin", "Mahasiswa", "Dosen"), bukan nama orangnya.
+        // Normalisasi ke lowercase biar konsisten dipakai di blade ($isDosen).
+        $user->role = strtolower($user->name ?? 'mahasiswa');
 
         return view('mahasiswa.detail_peminjaman', compact('detail', 'user'));
     }
