@@ -410,14 +410,15 @@ class AdminController extends Controller
     public function storeBarang(Request $request)
     {
         $data = $request->validate([
-            'kode_barang' => 'required|string|max:50',
-            'nama_barang' => 'required|string|max:100',
-            'kategori' => 'required|string|max:50',
-            'deskripsi' => 'nullable|string',
-            'stok' => 'required|integer|min:0',
-            'satuan' => 'required|string|max:20',
-            'kondisi' => 'required|string',
-            'lokasi' => 'required|string|max:100',
+            'kode_barang'   => 'required|string|max:50',
+            'nama_barang'   => 'required|string|max:100',
+            'kategori'      => 'required|string|max:50',
+            'deskripsi'     => 'nullable|string',
+            'stok'          => 'required|integer|min:0',
+            'stok_minimum'  => 'required|integer|min:0',
+            'satuan'        => 'required|string|max:20',
+            'kondisi'       => 'required|string',
+            'lokasi'        => 'required|string|max:100',
         ]);
 
         $item = Item::create($data);
@@ -425,9 +426,9 @@ class AdminController extends Controller
         Auditlog::create([
             'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
             'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Manajemen Barang',
-            'aksi' => 'CREATE',
-            'id_record' => $item->id
+            'modul'       => 'Manajemen Barang',
+            'aksi'        => 'CREATE',
+            'id_record'   => $item->id
         ]);
 
         return redirect()->back()->with('success', 'Barang berhasil ditambahkan.');
@@ -438,13 +439,14 @@ class AdminController extends Controller
         $item = Item::findOrFail($id);
         
         $data = $request->validate([
-            'nama_barang' => 'required|string|max:100',
-            'kategori' => 'required|string|max:50',
-            'deskripsi' => 'nullable|string',
-            'stok' => 'required|integer|min:0',
-            'satuan' => 'required|string|max:20',
-            'kondisi' => 'required|string',
-            'lokasi' => 'required|string|max:100',
+            'nama_barang'   => 'required|string|max:100',
+            'kategori'      => 'required|string|max:50',
+            'deskripsi'     => 'nullable|string',
+            'stok'          => 'required|integer|min:0',
+            'stok_minimum'  => 'required|integer|min:0',
+            'satuan'        => 'required|string|max:20',
+            'kondisi'       => 'required|string',
+            'lokasi'        => 'required|string|max:100',
         ]);
 
         $item->update($data);
@@ -452,9 +454,9 @@ class AdminController extends Controller
         Auditlog::create([
             'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
             'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Manajemen Barang',
-            'aksi' => 'UPDATE',
-            'id_record' => $id
+            'modul'       => 'Manajemen Barang',
+            'aksi'        => 'UPDATE',
+            'id_record'   => $id
         ]);
 
         return redirect()->back()->with('success', 'Barang berhasil diperbarui.');

@@ -13,8 +13,8 @@ class Item extends Model
     protected $table = 'items';
 
     protected $fillable = [
-        'kode_barang', 'nama_barang', 'kategori', 'deskripsi', 
-        'stok', 'satuan', 'kondisi', 'lokasi', 'tanggal_pengadaan'
+    'kode_barang', 'nama_barang', 'kategori', 'deskripsi', 
+    'stok', 'stok_minimum', 'satuan', 'kondisi', 'lokasi', 'tanggal_pengadaan'
     ];
 
     // Relasi: 1 Barang bisa punya banyak history mutasi stok
