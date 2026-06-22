@@ -70,6 +70,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/manajemen-alat', [AdminController::class, 'storeAlat'])->name('manajemen_alat.store');
         Route::put('/manajemen-alat/{id}', [AdminController::class, 'updateAlat'])->name('manajemen_alat.update');
         Route::delete('/manajemen-alat/{id}', [AdminController::class, 'destroyAlat'])->name('manajemen_alat.destroy');
+        Route::patch('/manajemen-alat/{id}/nonaktifkan', [AdminController::class, 'nonaktifkanAlat'])->name('manajemen_alat.nonaktifkan');
+        Route::patch('/manajemen-alat/{id}/aktifkan', [AdminController::class, 'aktifkanAlat'])->name('manajemen_alat.aktifkan');
 
         Route::get('/peminjaman', [AdminController::class, 'peminjaman'])->name('peminjaman');
         Route::post('/peminjaman/{id}/approve', [AdminController::class, 'approvePeminjaman'])->name('peminjaman.approve');

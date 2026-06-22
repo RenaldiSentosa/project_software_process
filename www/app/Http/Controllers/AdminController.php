@@ -373,6 +373,40 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Alat berhasil dihapus.');
     }
 
+    public function nonaktifkanAlat($id)
+    {
+        $tool = Tool::findOrFail($id);
+        $tool->status_alat = 'Nonaktif';
+        $tool->save();
+
+        Auditlog::create([
+            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
+            'role_pelaku' => auth()->user()->role ?? 'Admin',
+            'modul' => 'Manajemen Alat',
+            'aksi' => 'NONAKTIFKAN',
+            'id_record' => $id
+        ]);
+
+        return redirect()->back()->with('success', 'Alat berhasil dinonaktifkan.');
+    }
+
+    public function aktifkanAlat($id)
+    {
+        $tool = Tool::findOrFail($id);
+        $tool->status_alat = 'Tersedia';
+        $tool->save();
+
+        Auditlog::create([
+            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
+            'role_pelaku' => auth()->user()->role ?? 'Admin',
+            'modul' => 'Manajemen Alat',
+            'aksi' => 'AKTIFKAN',
+            'id_record' => $id
+        ]);
+
+        return redirect()->back()->with('success', 'Alat berhasil diaktifkan kembali.');
+    }
+
     public function storeBarang(Request $request)
     {
         $data = $request->validate([
