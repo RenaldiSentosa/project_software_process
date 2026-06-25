@@ -37,7 +37,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Keranjang
     Route::get('/keranjang', [CartController::class, 'index'])->name('keranjang');
-    Route::post('/keranjang/tambah', [CartController::class, 'store'])->name('keranjang.store');  // ← FIX: route yang hilang
+    Route::post('/keranjang/tambah', [CartController::class, 'store'])->name('keranjang.store');
     Route::delete('/keranjang/hapus/{id}', [CartController::class, 'destroy'])->name('keranjang.hapus');
 
     // Peminjaman
@@ -85,7 +85,11 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/manajemen-barang/{id}', [AdminController::class, 'destroyBarang'])->name('manajemen_barang.destroy');
         Route::post('/manajemen-barang/{id}/mutasi', [AdminController::class, 'mutasiStok'])->name('manajemen_barang.mutasi');
 
+        // ── Laporan ──────────────────────────────────────────────────────
         Route::get('/laporan', [AdminController::class, 'laporan'])->name('laporan');
+        Route::get('/laporan/export', [AdminController::class, 'exportLaporan'])->name('laporan.export');
+        // ─────────────────────────────────────────────────────────────────
+
         Route::get('/audit-trail', [AdminController::class, 'auditTrail'])->name('audit_trail');
 
         Route::get('/manajemen-user', [AdminController::class, 'manajemenUser'])->name('manajemen_user');

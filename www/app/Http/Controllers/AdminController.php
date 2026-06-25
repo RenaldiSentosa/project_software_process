@@ -129,28 +129,27 @@ class AdminController extends Controller
 
     public function laporan(Request $request)
     {
-        $totalPeminjaman = \App\Models\Borrowing::count();
-        $peminjamanBulanIni = \App\Models\Borrowing::whereMonth('created_at', now()->month)->count();
+        $totalPeminjaman = Borrowing::count();
+        $peminjamanBulanIni = Borrowing::whereMonth('created_at', now()->month)->count();
         
-        $peminjamanAktif = \App\Models\Borrowing::whereIn('status', ['Dipinjam', 'Menunggu'])->count();
-        $peminjamanMenungguBulanIni = \App\Models\Borrowing::whereIn('status', ['Dipinjam', 'Menunggu'])->whereMonth('created_at', now()->month)->count();
+        $peminjamanAktif = Borrowing::whereIn('status', ['Dipinjam', 'Menunggu'])->count();
+        $peminjamanMenungguBulanIni = Borrowing::whereIn('status', ['Dipinjam', 'Menunggu'])->whereMonth('created_at', now()->month)->count();
         
-        $alatRusak = \App\Models\Item::where('kondisi', '!=', 'Baik')->count();
-        $alatRusakBulanIni = \App\Models\Item::where('kondisi', '!=', 'Baik')->whereMonth('updated_at', now()->month)->count();
+        $alatRusak = Item::where('kondisi', '!=', 'Baik')->count();
+        $alatRusakBulanIni = Item::where('kondisi', '!=', 'Baik')->whereMonth('updated_at', now()->month)->count();
         
-        $totalMahasiswa = \App\Models\User::where('role', 'mahasiswa')->count();
-        $mahasiswaBaruBulanIni = \App\Models\User::where('role', 'mahasiswa')->whereMonth('created_at', now()->month)->count();
+        $totalMahasiswa = User::where('role', 'mahasiswa')->count();
+        $mahasiswaBaruBulanIni = User::where('role', 'mahasiswa')->whereMonth('created_at', now()->month)->count();
 
         $alatSeringDipinjam = \Illuminate\Support\Facades\DB::table('borrowing_items')
             ->join('tools', 'borrowing_items.tool_id', '=', 'tools.id')
             ->select('tools.nama_alat', \Illuminate\Support\Facades\DB::raw('SUM(borrowing_items.jumlah_unit) as total'))
             ->groupBy('tools.id', 'tools.nama_alat')
             ->orderBy('total', 'desc')
-            ->take(5)
+            ->take(7)
             ->get();
 
-        $queryPeminjaman = \App\Models\Borrowing::with('mahasiswa', 'items.tool')->orderBy('created_at', 'desc');
-        
+        $queryPeminjaman = Borrowing::with('mahasiswa', 'items.tool')->orderBy('created_at', 'desc');
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $queryPeminjaman->whereBetween('created_at', [
                 $request->start_date . ' 00:00:00',
@@ -159,21 +158,186 @@ class AdminController extends Controller
         }
         $rekapPeminjaman = $queryPeminjaman->get();
 
-        $inventarisList = \App\Models\Item::all();
+        $inventarisList = Item::all();
         $mutasiList = \App\Models\ItemMutation::with('item')->orderBy('created_at', 'desc')->get();
-        $rekapMahasiswa = \App\Models\User::where('role', 'Mahasiswa')->withCount([
+        $rekapMahasiswa = User::where('role', 'mahasiswa')->withCount([
             'borrowings as total_pengajuan',
-            'borrowings as menunggu' => function($query) { $query->where('status', 'Menunggu'); },
-            'borrowings as disetujui' => function($query) { $query->where('status', 'Disetujui'); },
-            'borrowings as dipinjam' => function($query) { $query->whereIn('status', ['Diproses', 'Dipinjam']); },
-            'borrowings as ditolak' => function($query) { $query->where('status', 'Ditolak'); },
+            'borrowings as menunggu'  => fn($q) => $q->where('status', 'Menunggu'),
+            'borrowings as disetujui' => fn($q) => $q->where('status', 'Disetujui'),
+            'borrowings as dipinjam'  => fn($q) => $q->whereIn('status', ['Diproses', 'Dipinjam']),
+            'borrowings as ditolak'   => fn($q) => $q->where('status', 'Ditolak'),
         ])->get();
 
         return view('admin.laporan', compact(
             'totalPeminjaman', 'peminjamanBulanIni', 'peminjamanAktif', 'peminjamanMenungguBulanIni',
-            'alatRusak', 'alatRusakBulanIni', 'totalMahasiswa', 'mahasiswaBaruBulanIni', 'alatSeringDipinjam',
-            'rekapPeminjaman', 'inventarisList', 'mutasiList', 'rekapMahasiswa'
+            'alatRusak', 'alatRusakBulanIni', 'totalMahasiswa', 'mahasiswaBaruBulanIni',
+            'alatSeringDipinjam', 'rekapPeminjaman', 'inventarisList', 'mutasiList', 'rekapMahasiswa'
         ));
+    }
+
+    public function exportLaporan(Request $request)
+    {
+        $jenis  = $request->query('jenis', 'semua');
+        $status = $request->query('status', '');
+        $dari   = $request->query('dari', '');
+        $sampai = $request->query('sampai', '');
+
+        if ($dari && $sampai && $dari > $sampai) {
+            abort(422, 'Rentang tanggal tidak valid.');
+        }
+
+        $rows       = [];
+        $filename   = 'laporan-' . $jenis . '-' . now()->format('Ymd-His') . '.csv';
+        $isGabungan = ($jenis === 'semua'); // hanya tampilkan judul section kalau export gabungan
+
+        // ── Rekap Peminjaman ──────────────────────────────────
+        if (in_array($jenis, ['semua', 'peminjaman'])) {
+            $query = Borrowing::with(['mahasiswa', 'items.tool'])
+                ->orderBy('id', 'asc'); // urut PJM-001, 002, 003, ...
+
+            // hanya terapkan filter status kalau nilainya memang status milik peminjaman
+            // (mencegah filter "Masuk"/"Keluar" dari tab mutasi ikut menyaring tab ini saat jenis=semua)
+            $statusPeminjaman = ['Dipinjam', 'Dikembalikan', 'Ditolak', 'Menunggu', 'Disetujui', 'Diproses'];
+            if ($status && in_array($status, $statusPeminjaman)) {
+                $query->where('status', $status);
+            }
+            if ($dari)   $query->whereDate('tgl_rencana_pinjam', '>=', $dari);
+            if ($sampai) $query->whereDate('tgl_rencana_pinjam', '<=', $sampai);
+
+            if ($isGabungan) {
+                $rows[] = ['REKAP PEMINJAMAN'];
+            }
+            $rows[] = ['ID Peminjaman', 'Nama Mahasiswa', 'NIM', 'Program Studi', 'Jumlah Alat', 'Tanggal Pinjam', 'Tanggal Kembali', 'Status'];
+
+            foreach ($query->get() as $pjm) {
+                $rows[] = [
+                    'PJM-' . str_pad($pjm->id, 3, '0', STR_PAD_LEFT),
+                    $pjm->mahasiswa->nama_lengkap ?? ($pjm->mahasiswa->name ?? '-'),
+                    $pjm->mahasiswa->nim ?? '-',
+                    $pjm->mahasiswa->program_studi ?? '-',
+                    $pjm->items->sum('jumlah_unit'),
+                    $pjm->tgl_rencana_pinjam  ? \Carbon\Carbon::parse($pjm->tgl_rencana_pinjam)->format('d/m/Y')  : '-',
+                    $pjm->tgl_rencana_kembali ? \Carbon\Carbon::parse($pjm->tgl_rencana_kembali)->format('d/m/Y') : '-',
+                    $pjm->status,
+                ];
+            }
+            if ($isGabungan) {
+                $rows[] = array_fill(0, 8, ''); // baris kosong tapi tetap 8 kolom, biar align
+            }
+        }
+
+        // ── Status Inventaris (model: Item) ───────────────────
+        if (in_array($jenis, ['semua', 'inventaris'])) {
+            $query = Item::orderBy('nama_barang');
+            // hanya terapkan filter status kalau nilainya memang status kondisi milik inventaris
+            $statusInventaris = ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Tidak Layak'];
+            if ($status && in_array($status, $statusInventaris)) {
+                $query->where('kondisi', $status);
+            }
+
+            if ($isGabungan) {
+                $rows[] = ['STATUS INVENTARIS'];
+            }
+            $rows[] = ['Kode', 'Nama Barang', 'Kategori', 'Stok', 'Min Stok', 'Kondisi', 'Lokasi'];
+
+            foreach ($query->get() as $inv) {
+                $rows[] = [
+                    'BRG-' . str_pad($inv->id, 3, '0', STR_PAD_LEFT),
+                    $inv->nama_barang,
+                    $inv->kategori     ?? '-',
+                    $inv->stok,
+                    $inv->stok_minimum ?? 10,
+                    $inv->kondisi      ?? 'Baik',
+                    $inv->lokasi       ?? '-',
+                ];
+            }
+            if ($isGabungan) {
+                $rows[] = array_fill(0, 7, '');
+            }
+        }
+
+        // ── Log Mutasi Stok (model: ItemMutation) ─────────────
+        if (in_array($jenis, ['semua', 'mutasi'])) {
+            $query = \App\Models\ItemMutation::with('item')->orderBy('created_at', 'asc');
+            // filter status untuk mutasi pakai nilai 'Masuk' / 'Keluar' (kolom tipe_mutasi),
+            // beda dengan filter status punya peminjaman ('Dipinjam', 'Ditolak', dst)
+            if ($status && in_array($status, ['Masuk', 'Keluar'])) {
+                $query->where('tipe_mutasi', $status);
+            }
+            if ($dari)   $query->whereDate('created_at', '>=', $dari);
+            if ($sampai) $query->whereDate('created_at', '<=', $sampai);
+
+            if ($isGabungan) {
+                $rows[] = ['LOG MUTASI STOK'];
+            }
+            $rows[] = ['ID Mutasi', 'Tanggal', 'Nama Barang', 'Tipe Mutasi', 'Jumlah', 'Stok Sebelum', 'Stok Sesudah', 'Keterangan', 'Operator'];
+
+            foreach ($query->get() as $mutasi) {
+                $user     = $mutasi->dilakukan_oleh ? User::find($mutasi->dilakukan_oleh) : null;
+                $operator = $user ? ($user->nama_lengkap ?? $user->name) : 'Admin Lab';
+                $rows[]   = [
+                    'MUT-' . str_pad($mutasi->id, 3, '0', STR_PAD_LEFT),
+                    $mutasi->created_at ? $mutasi->created_at->format('d/m/Y H:i') : '-',
+                    $mutasi->item->nama_barang ?? '-',
+                    $mutasi->tipe_mutasi ?? '-',
+                    $mutasi->jumlah,
+                    $mutasi->stok_sebelum ?? '-',
+                    $mutasi->stok_sesudah ?? '-',
+                    $mutasi->keterangan   ?? '-',
+                    $operator,
+                ];
+            }
+            if ($isGabungan) {
+                $rows[] = array_fill(0, 9, '');
+            }
+        }
+
+        // ── Rekap Mahasiswa ───────────────────────────────────
+        if (in_array($jenis, ['semua', 'mahasiswa'])) {
+            $data = User::where('role', 'mahasiswa')->withCount([
+                'borrowings as total_pengajuan',
+                'borrowings as dipinjam'     => fn($q) => $q->whereIn('status', ['Diproses', 'Dipinjam']),
+                'borrowings as menunggu'     => fn($q) => $q->where('status', 'Menunggu'),
+                'borrowings as ditolak'      => fn($q) => $q->where('status', 'Ditolak'),
+                'borrowings as dikembalikan' => fn($q) => $q->where('status', 'Dikembalikan'),
+            ])->orderBy('nama_lengkap')->get();
+
+            if ($isGabungan) {
+                $rows[] = ['REKAP MAHASISWA'];
+            }
+            $rows[] = ['Nama Mahasiswa', 'NIM', 'Program Studi', 'Total Pengajuan', 'Aktif/Dipinjam', 'Menunggu', 'Dikembalikan', 'Ditolak'];
+
+            foreach ($data as $mhs) {
+                $rows[] = [
+                    $mhs->nama_lengkap ?? $mhs->name,
+                    $mhs->nim           ?? '-',
+                    $mhs->program_studi ?? '-',
+                    $mhs->total_pengajuan,
+                    $mhs->dipinjam,
+                    $mhs->menunggu,
+                    $mhs->dikembalikan,
+                    $mhs->ditolak,
+                ];
+            }
+        }
+
+        // ── Stream CSV ────────────────────────────────────────
+        $callback = function () use ($rows) {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8 agar Excel terbaca
+            foreach ($rows as $row) {
+                fputcsv($handle, $row);
+            }
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
+            'Pragma'              => 'no-cache',
+            'Expires'             => '0',
+        ]);
     }
 
     public function auditTrail()
