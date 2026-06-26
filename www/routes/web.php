@@ -90,7 +90,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/laporan/export', [AdminController::class, 'exportLaporan'])->name('laporan.export');
         // ─────────────────────────────────────────────────────────────────
 
+        // ── Audit Trail ──────────────────────────────────────────────────
         Route::get('/audit-trail', [AdminController::class, 'auditTrail'])->name('audit_trail');
+        Route::get('/audit-trail/export', [AdminController::class, 'exportAuditTrail'])->name('audit_trail.export');
+        // ─────────────────────────────────────────────────────────────────
 
         Route::get('/manajemen-user', [AdminController::class, 'manajemenUser'])->name('manajemen_user');
         Route::post('/manajemen-user', [AdminController::class, 'storeUser'])->name('manajemen_user.store');

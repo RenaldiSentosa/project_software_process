@@ -5,162 +5,423 @@
 @section('styles')
 <style>
 body {
-            font-family: 'Inter', sans-serif;
-            background-color: #F8FAFC;
-        }
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
+    font-family: 'Inter', sans-serif;
+    background-color: #F8FAFC;
+}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+.badge-create  { background:#ECFDF5; color:#059669; }
+.badge-update  { background:#EFF6FF; color:#2563EB; }
+.badge-delete  { background:#FEF2F2; color:#DC2626; }
+.badge-approve { background:#F0FDF4; color:#16A34A; }
+.badge-reject  { background:#FFF7ED; color:#EA580C; }
+.badge-login   { background:#F5F3FF; color:#7C3AED; }
+.badge-logout  { background:#EFF6FF; color:#0284C7; }
+.badge-export  { background:#F0FDFA; color:#0D9488; }
+.badge-default { background:#F8FAFC; color:#64748B; }
+
+.dot-create  { background:#059669; }
+.dot-update  { background:#2563EB; }
+.dot-delete  { background:#DC2626; }
+.dot-approve { background:#16A34A; }
+.dot-reject  { background:#EA580C; }
+.dot-login   { background:#7C3AED; }
+.dot-logout  { background:#0284C7; }
+.dot-export  { background:#0D9488; }
+.dot-default { background:#64748B; }
+
+.panel-before { background:#FEF2F2; border:1px solid #FECACA; border-radius:10px; }
+.panel-after  { background:#F0FDF4; border:1px solid #A7F3D0; border-radius:10px; }
+.panel-header-before { border-bottom:1px solid #FECACA; padding:10px 14px; display:flex; align-items:center; gap:6px; }
+.panel-header-after  { border-bottom:1px solid #A7F3D0; padding:10px 14px; display:flex; align-items:center; gap:6px; }
+.panel-body { padding:12px 14px; }
+.panel-field-label { color:#94A3B8; font-size:10px; margin-bottom:2px; }
+.panel-field-value { font-weight:600; color:#1E293B; font-size:12px; }
 </style>
 @endsection
 
 @section('content')
-            
+
+<div>
+    <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Audit Trail</h2>
+    <p class="text-slate-500 text-sm mt-1">Pantau seluruh riwayat aktivitas dan perubahan data yang terjadi di dalam sistem.</p>
+</div>
+
+{{-- Search bar --}}
+<form method="GET" action="{{ route('admin.audit_trail') }}" id="filter-form" class="mt-4 space-y-3">
+
+    <div class="relative">
+        <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-4 top-3.5 text-xs"></i>
+        <input type="text" name="search" value="{{ request('search') }}"
+            placeholder="Cari user, module, aksi, record ID dll..."
+            class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 transition shadow-sm">
+    </div>
+
+    {{-- Filter row --}}
+    <div class="flex flex-wrap gap-3 items-center">
+
+        {{-- Tanggal --}}
+        <input type="date" name="date" value="{{ request('date') }}"
+            onchange="document.getElementById('filter-form').submit()"
+            class="bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[150px]">
+
+        {{-- Role --}}
+        <div class="relative">
+            <select name="role" onchange="document.getElementById('filter-form').submit()"
+                class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[160px]">
+                <option value="">Semua Role</option>
+                <option value="Admin Laboratorium" {{ request('role') == 'Admin Laboratorium' ? 'selected' : '' }}>Admin Laboratorium</option>
+                <option value="mahasiswa"          {{ request('role') == 'mahasiswa'          ? 'selected' : '' }}>Mahasiswa</option>
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-[10px] text-slate-400 pointer-events-none"></i>
+        </div>
+
+        {{-- Modul --}}
+        <div class="relative">
+            <select name="modul" onchange="document.getElementById('filter-form').submit()"
+                class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[160px]">
+                <option value="">Semua Module</option>
+                <option value="Manajemen Alat"   {{ request('modul') == 'Manajemen Alat'   ? 'selected' : '' }}>Manajemen Alat</option>
+                <option value="Manajemen Barang" {{ request('modul') == 'Manajemen Barang' ? 'selected' : '' }}>Manajemen Barang</option>
+                <option value="Peminjaman"       {{ request('modul') == 'Peminjaman'       ? 'selected' : '' }}>Peminjaman</option>
+                <option value="Manajemen User"   {{ request('modul') == 'Manajemen User'   ? 'selected' : '' }}>Manajemen User</option>
+                <option value="Laporan"          {{ request('modul') == 'Laporan'          ? 'selected' : '' }}>Laporan</option>
+                <option value="Login"            {{ request('modul') == 'Login'            ? 'selected' : '' }}>Login</option>
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-[10px] text-slate-400 pointer-events-none"></i>
+        </div>
+
+        {{-- Aksi --}}
+        <div class="relative">
+            <select name="aksi" onchange="document.getElementById('filter-form').submit()"
+                class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[160px]">
+                <option value="">Semua Aksi</option>
+                <option value="CREATE"  {{ request('aksi') == 'CREATE'  ? 'selected' : '' }}>Create</option>
+                <option value="UPDATE"  {{ request('aksi') == 'UPDATE'  ? 'selected' : '' }}>Update</option>
+                <option value="DELETE"  {{ request('aksi') == 'DELETE'  ? 'selected' : '' }}>Hapus</option>
+                <option value="APPROVE" {{ request('aksi') == 'APPROVE' ? 'selected' : '' }}>Disetujui</option>
+                <option value="REJECT"  {{ request('aksi') == 'REJECT'  ? 'selected' : '' }}>Ditolak</option>
+                <option value="LOGIN"   {{ request('aksi') == 'LOGIN'   ? 'selected' : '' }}>Login</option>
+                <option value="LOGOUT"  {{ request('aksi') == 'LOGOUT'  ? 'selected' : '' }}>Logout</option>
+                <option value="EXPORT"  {{ request('aksi') == 'EXPORT'  ? 'selected' : '' }}>Export</option>
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-[10px] text-slate-400 pointer-events-none"></i>
+        </div>
+
+        {{-- Reset filter --}}
+        @if(request()->hasAny(['search','date','role','modul','aksi']))
+        <a href="{{ route('admin.audit_trail') }}"
+            class="text-xs text-slate-400 hover:text-slate-600 underline transition">
+            Reset filter
+        </a>
+        @endif
+
+        {{-- Export CSV — kirim filter aktif juga --}}
+        <div class="ml-auto">
+            <a href="{{ route('admin.audit_trail.export', request()->only(['search','date','role','modul','aksi'])) }}"
+                class="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold transition shadow-sm">
+                <i class="fa-solid fa-file-csv"></i>
+                Export CSV
+            </a>
+        </div>
+
+    </div>
+
+</form>
+
+{{-- Tabel --}}
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mt-2">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+            <thead>
+                <tr class="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider">
+                    <th class="py-4 px-5">Timestamp</th>
+                    <th class="py-4 px-5">User</th>
+                    <th class="py-4 px-5">Role</th>
+                    <th class="py-4 px-5">Modul</th>
+                    <th class="py-4 px-5">Aksi</th>
+                    <th class="py-4 px-5">Record ID</th>
+                    <th class="py-4 px-5">IP Address</th>
+                    <th class="py-4 px-5 text-center">Aksi</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
+                @forelse($logs as $log)
+                @php
+                    $aksi = strtoupper($log->aksi ?? '');
+                    $badgeMap = [
+                        'CREATE'  => 'badge-create',
+                        'UPDATE'  => 'badge-update',
+                        'DELETE'  => 'badge-delete',
+                        'APPROVE' => 'badge-approve',
+                        'REJECT'  => 'badge-reject',
+                        'LOGIN'   => 'badge-login',
+                        'LOGOUT'  => 'badge-logout',
+                        'EXPORT'  => 'badge-export',
+                    ];
+                    $labelMap = [
+                        'CREATE'  => 'CREATE',
+                        'UPDATE'  => 'UPDATE',
+                        'DELETE'  => 'HAPUS',
+                        'APPROVE' => 'DISETUJUI',
+                        'REJECT'  => 'DITOLAK',
+                        'LOGIN'   => 'LOGIN',
+                        'LOGOUT'  => 'LOGOUT',
+                        'EXPORT'  => 'EXPORT',
+                    ];
+                    $badgeClass = $badgeMap[$aksi] ?? 'badge-default';
+                    $aksiLabel  = $labelMap[$aksi]  ?? $aksi;
+                @endphp
+                <tr class="hover:bg-slate-50/50 transition">
+                    <td class="py-4 px-5 text-slate-500 whitespace-nowrap">
+                        {{ \Carbon\Carbon::parse($log->created_at)->format('Y-m-d H:i:s') }}
+                    </td>
+                    <td class="py-4 px-5 text-blue-600 font-semibold cursor-pointer hover:underline"
+                        onclick="openModal('modal-{{ $log->id }}')">
+                        {{ $log->nama_pelaku ?? 'System' }}
+                    </td>
+                    <td class="py-4 px-5 text-slate-500">{{ $log->role_pelaku ?? '-' }}</td>
+                    <td class="py-4 px-5 text-slate-800">{{ $log->modul }}</td>
+                    <td class="py-4 px-5">
+                        <span class="px-2.5 py-0.5 rounded-full {{ $badgeClass }} text-[10px] font-bold">
+                            {{ $aksiLabel }}
+                        </span>
+                    </td>
+                    <td class="py-4 px-5 text-slate-700 font-mono">{{ $log->id_record ?? '-' }}</td>
+                    <td class="py-4 px-5 text-slate-500 font-mono">{{ $log->ip_address ?? '-' }}</td>
+                    <td class="py-4 px-5 text-center">
+                        <button onclick="openModal('modal-{{ $log->id }}')"
+                            class="text-slate-400 hover:text-slate-600 transition">
+                            <i class="fa-regular fa-eye text-sm"></i>
+                        </button>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="8" class="text-center py-10 text-slate-400">
+                        <i class="fa-regular fa-folder-open text-2xl mb-2 block"></i>
+                        Belum ada riwayat audit trail.
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+
+    <div class="p-5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 flex-wrap gap-2">
+        <span>
+            Menampilkan {{ $logs->firstItem() ?? 0 }}–{{ $logs->lastItem() ?? 0 }}
+            dari {{ number_format($logs->total()) }} entri
+        </span>
+        {{ $logs->links() }}
+    </div>
+</div>
+
+{{-- ============================================================
+     MODAL DETAIL — satu per log, render di luar tabel
+     ============================================================ --}}
+@foreach($logs as $log)
+@php
+    $aksi2 = strtoupper($log->aksi ?? '');
+    $badgeMap2 = [
+        'CREATE'  => 'badge-create',
+        'UPDATE'  => 'badge-update',
+        'DELETE'  => 'badge-delete',
+        'APPROVE' => 'badge-approve',
+        'REJECT'  => 'badge-reject',
+        'LOGIN'   => 'badge-login',
+        'LOGOUT'  => 'badge-logout',
+        'EXPORT'  => 'badge-export',
+    ];
+    $dotMap2 = [
+        'CREATE'  => 'dot-create',
+        'UPDATE'  => 'dot-update',
+        'DELETE'  => 'dot-delete',
+        'APPROVE' => 'dot-approve',
+        'REJECT'  => 'dot-reject',
+        'LOGIN'   => 'dot-login',
+        'LOGOUT'  => 'dot-logout',
+        'EXPORT'  => 'dot-export',
+    ];
+    $labelMap2 = [
+        'CREATE'  => 'Create',
+        'UPDATE'  => 'Update',
+        'DELETE'  => 'Hapus',
+        'APPROVE' => 'Disetujui',
+        'REJECT'  => 'Ditolak',
+        'LOGIN'   => 'Login',
+        'LOGOUT'  => 'Logout',
+        'EXPORT'  => 'Export',
+    ];
+    $badgeClass2 = $badgeMap2[$aksi2] ?? 'badge-default';
+    $dotClass2   = $dotMap2[$aksi2]   ?? 'dot-default';
+    $aksiLabel2  = $labelMap2[$aksi2]  ?? $aksi2;
+
+    $dataBefore = is_string($log->data_before) ? json_decode($log->data_before, true) : (array)($log->data_before ?? []);
+    $dataAfter  = is_string($log->data_after)  ? json_decode($log->data_after, true)  : (array)($log->data_after  ?? []);
+@endphp
+
+<div id="modal-{{ $log->id }}"
+    class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg transform scale-95 transition-transform duration-300 overflow-hidden">
+
+        {{-- Header: ID Audit --}}
+        <div class="px-6 pt-6 pb-4 border-b border-slate-100">
+            <p class="text-xs text-slate-400 uppercase tracking-widest font-semibold">ID Audit</p>
+            <p class="text-lg font-bold text-slate-900 mt-0.5">AUD-{{ str_pad($log->id, 3, '0', STR_PAD_LEFT) }}</p>
+        </div>
+
+        <div class="px-6 py-5 space-y-5 max-h-[72vh] overflow-y-auto">
+
+            {{-- Badge aksi + timestamp --}}
+            <div class="flex items-center gap-3 flex-wrap">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full {{ $badgeClass2 }} text-xs font-bold">
+                    <span class="w-2 h-2 rounded-full {{ $dotClass2 }} inline-block"></span>
+                    {{ $aksiLabel2 }}
+                </span>
+                <span class="flex items-center gap-1.5 text-xs text-slate-400">
+                    <i class="fa-regular fa-clock"></i>
+                    {{ \Carbon\Carbon::parse($log->created_at)->format('Y-m-d H:i:s') }}
+                </span>
+            </div>
+
+            {{-- 2×2 info cards --}}
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-50 rounded-xl p-3.5">
+                    <p class="text-[10px] text-slate-400 mb-1">Pengguna</p>
+                    <p class="text-xs font-bold text-slate-900 leading-tight">{{ $log->nama_pelaku ?? 'System' }}</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">{{ $log->role_pelaku ?? '-' }}</p>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3.5">
+                    <p class="text-[10px] text-slate-400 mb-1">Alamat IP</p>
+                    <p class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                        <i class="fa-solid fa-wifi text-slate-400 text-[10px]"></i>
+                        {{ $log->ip_address ?? '-' }}
+                    </p>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3.5">
+                    <p class="text-[10px] text-slate-400 mb-1">Modul</p>
+                    <p class="text-xs font-bold text-slate-900">{{ $log->modul }}</p>
+                </div>
+                <div class="bg-slate-50 rounded-xl p-3.5">
+                    <p class="text-[10px] text-slate-400 mb-1">Record ID</p>
+                    <p class="text-xs font-bold text-slate-900 font-mono">{{ $log->id_record ?? '-' }}</p>
+                </div>
+            </div>
+
+            {{-- Deskripsi Aktivitas --}}
             <div>
-                <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Audit Trail</h2>
-                <p class="text-slate-500 text-sm mt-1">Pantau rekaman jejak aktivitas sistem dan perubahan data secara berkala.</p>
-            </div>
-
-            <div class="flex flex-col sm:flex-row gap-3">
-                <div class="relative flex-1">
-                    <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-4 top-3.5 text-xs"></i>
-                    <input type="text" placeholder="Cari aktivitas, nama user, atau modul..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 transition shadow-sm">
-                </div>
-                <div class="relative">
-                    <select class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[160px]">
-                        <option>Semua Aksi</option>
-                    </select>
-                    <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-[10px] text-slate-400 pointer-events-none"></i>
+                <p class="text-xs font-semibold text-slate-700 mb-2">Deskripsi Aktivitas</p>
+                <div class="bg-slate-50 rounded-xl px-4 py-3 text-xs text-slate-600 leading-relaxed">
+                    {{ $log->deskripsi ?? '-' }}
                 </div>
             </div>
 
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50/70 border-b border-slate-100 text-slate-400 font-semibold uppercase tracking-wider">
-                                <th class="py-4 px-6">Waktu</th>
-                                <th class="py-4 px-6">User</th>
-                                <th class="py-4 px-6">Peran</th>
-                                <th class="py-4 px-6">Modul</th>
-                                <th class="py-4 px-6">Aksi</th>
-                                <th class="py-4 px-6">Aktivitas</th>
-                                <th class="py-4 px-6 text-center">Detail</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
-                            @forelse($logs ?? [] as $log)
-                            <tr class="hover:bg-slate-50/50 transition">
-                                <td class="py-4 px-6 text-slate-500">{{ \Carbon\Carbon::parse($log->created_at)->translatedFormat('d M Y, H:i') }}</td>
-                                <td class="py-4 px-6 text-slate-900 font-bold">{{ $log->nama_pelaku ?? 'System' }}</td>
-                                <td class="py-4 px-6 text-slate-500">{{ $log->role_pelaku ?? '-' }}</td>
-                                <td class="py-4 px-6 text-slate-800">{{ $log->modul }}</td>
-                                <td class="py-4 px-6">
-                                    @php
-                                        $aksiColor = 'bg-slate-50 text-slate-600';
-                                        if($log->aksi == 'CREATE') $aksiColor = 'bg-emerald-50 text-emerald-600';
-                                        elseif($log->aksi == 'UPDATE') $aksiColor = 'bg-amber-50 text-amber-600';
-                                        elseif($log->aksi == 'DELETE') $aksiColor = 'bg-rose-50 text-rose-600';
-                                        elseif($log->aksi == 'APPROVE') $aksiColor = 'bg-blue-50 text-blue-600';
-                                        elseif($log->aksi == 'REJECT') $aksiColor = 'bg-red-50 text-red-600';
-                                        elseif($log->aksi == 'LOGIN') $aksiColor = 'bg-teal-50 text-teal-600';
-                                        elseif($log->aksi == 'EXPORT') $aksiColor = 'bg-purple-50 text-purple-600';
-                                    @endphp
-                                    <span class="px-2.5 py-0.5 rounded-full {{ $aksiColor }} text-[10px] font-bold">{{ $log->aksi }}</span>
-                                </td>
-                                <td class="py-4 px-6 text-slate-600">{{ $log->id_record ? $log->modul . ' ID: ' . $log->id_record : '-' }}</td>
-                                <td class="py-4 px-6 text-center">
-                                    <button onclick="toggleModal('modal-audit-detail-{{ $log->id }}')" class="text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye text-sm"></i></button>
-                                </td>
-                                
-                                <!-- Modal Detail Audit -->
-                                <div id="modal-audit-detail-{{ $log->id }}" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm transition-opacity opacity-0 flex items-center justify-center p-4">
-                                    <div class="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform scale-95 transition-transform duration-300">
-                                        <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                                            <h3 class="font-bold text-slate-800 text-base">Detail Aktivitas Audit</h3>
-                                            <button onclick="toggleModal('modal-audit-detail-{{ $log->id }}')" class="text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
-                                        </div>
-                                        <div class="p-6">
-                                            <div class="space-y-4 text-xs text-slate-700">
-                                                <div class="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
-                                                    <div class="font-semibold text-slate-500">Waktu</div>
-                                                    <div class="col-span-2">{{ \Carbon\Carbon::parse($log->created_at)->translatedFormat('d F Y, H:i:s') }}</div>
-                                                </div>
-                                                <div class="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
-                                                    <div class="font-semibold text-slate-500">Pelaku (User)</div>
-                                                    <div class="col-span-2 font-bold">{{ $log->nama_pelaku ?? 'System' }} <span class="text-slate-400 font-normal">({{ $log->role_pelaku ?? '-' }})</span></div>
-                                                </div>
-                                                <div class="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
-                                                    <div class="font-semibold text-slate-500">Modul</div>
-                                                    <div class="col-span-2">{{ $log->modul }}</div>
-                                                </div>
-                                                <div class="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
-                                                    <div class="font-semibold text-slate-500">Jenis Aksi</div>
-                                                    <div class="col-span-2">
-                                                        <span class="px-2.5 py-0.5 rounded-full {{ $aksiColor }} text-[10px] font-bold">{{ $log->aksi }}</span>
-                                                    </div>
-                                                </div>
-                                                <div class="grid grid-cols-3 gap-2 border-b border-slate-100 pb-3">
-                                                    <div class="font-semibold text-slate-500">ID Record</div>
-                                                    <div class="col-span-2">{{ $log->id_record ?? '-' }}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
-                                            <button onclick="toggleModal('modal-audit-detail-{{ $log->id }}')" class="px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition">Tutup</button>
-                                        </div>
-                                    </div>
-                                </div>
+            {{-- Perubahan Data --}}
+            @if(!empty($dataBefore) || !empty($dataAfter))
+            <div>
+                <p class="text-xs font-semibold text-slate-700 mb-2">Perubahan Data</p>
+                <div class="grid gap-3 {{ ($aksi2 === 'CREATE' || $aksi2 === 'DELETE') ? 'grid-cols-1' : 'grid-cols-2' }}">
 
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="7" class="text-center py-8 text-slate-500">Belum ada riwayat audit trail.</td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                <div class="p-5 border-t border-slate-100">
-                    {{ $logs->links() }}
+                    {{-- Data Sebelum — sembunyikan untuk CREATE --}}
+                    @if($aksi2 !== 'CREATE' && !empty($dataBefore))
+                    <div class="panel-before">
+                        <div class="panel-header-before">
+                            <i class="fa-solid fa-arrow-left text-red-400 text-[10px]"></i>
+                            <span class="text-xs font-bold text-red-600">Data Sebelum</span>
+                        </div>
+                        <div class="panel-body space-y-2">
+                            @foreach($dataBefore as $key => $val)
+                            <div>
+                                <p class="panel-field-label">{{ ucwords(str_replace('_', ' ', $key)) }}</p>
+                                <p class="panel-field-value">{{ $val ?? '-' }}</p>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Data Sesudah — sembunyikan untuk DELETE --}}
+                    @if($aksi2 !== 'DELETE' && !empty($dataAfter))
+                    <div class="panel-after">
+                        <div class="panel-header-after">
+                            <i class="fa-solid fa-arrow-right text-green-500 text-[10px]"></i>
+                            <span class="text-xs font-bold text-green-600">Data Sesudah</span>
+                        </div>
+                        <div class="panel-body space-y-2">
+                            @foreach($dataAfter as $key => $val)
+                            <div>
+                                <p class="panel-field-label">{{ ucwords(str_replace('_', ' ', $key)) }}</p>
+                                <p class="panel-field-value">{{ $val ?? '-' }}</p>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
+
                 </div>
             </div>
+            @endif
+
+        </div>
+
+        {{-- Footer --}}
+        <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+            <button onclick="closeModal('modal-{{ $log->id }}')"
+                class="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold transition">
+                Tutup
+            </button>
+        </div>
+
+    </div>
+</div>
+@endforeach
+
 @endsection
 
 @section('scripts')
 <script>
-function toggleModal(modalId) {
-            const modal = document.getElementById(modalId);
-            if (!modal) return;
-            const modalContent = modal.querySelector('div');
+function openModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+        modal.querySelector('div').classList.remove('scale-95');
+    });
+}
 
-            if (modal.classList.contains('hidden')) {
-                modal.classList.remove('hidden');
-                setTimeout(() => {
-                    modal.classList.remove('opacity-0');
-                    modalContent.classList.remove('scale-95');
-                }, 20);
-            } else {
-                modal.classList.add('opacity-0');
-                modalContent.classList.add('scale-95');
-                setTimeout(() => {
-                    modal.classList.add('hidden');
-                }, 300);
-            }
-        }
+function closeModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.classList.add('opacity-0');
+    modal.querySelector('div').classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 300);
+}
 
-        // Menutup modal ketika mengeklik backdrop kosong di luar modal box
-        window.onclick = function(event) {
-            if (event.target.attributes.id && event.target.attributes.id.value.startsWith('modal-')) {
-                toggleModal(event.target.id);
-            }
-        }
+// Tutup modal klik backdrop
+document.addEventListener('click', function (e) {
+    if (e.target.id && e.target.id.startsWith('modal-')) {
+        closeModal(e.target.id);
+    }
+});
+
+// Tutup modal ESC
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        document.querySelectorAll('[id^="modal-"]:not(.hidden)').forEach(m => closeModal(m.id));
+    }
+});
+
+// Submit form saat ketik di search (delay 500ms biar ga spam)
+let searchTimer;
+document.querySelector('input[name="search"]').addEventListener('input', function () {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+        document.getElementById('filter-form').submit();
+    }, 500);
+});
 </script>
 @endsection

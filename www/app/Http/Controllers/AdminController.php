@@ -12,13 +12,52 @@ use App\Services\N8NWebhookService;
 
 class AdminController extends Controller
 {
+    // =========================================================================
+    // HELPER PRIVAT — buat Auditlog::create lebih ringkas & konsisten
+    // =========================================================================
+
+    /**
+     * Simpan satu entri audit log.
+     *
+     * @param string      $aksi        Aksi (CREATE, UPDATE, DELETE, APPROVE, REJECT, LOGIN, LOGOUT, EXPORT)
+     * @param string      $modul       Nama modul
+     * @param int|string|null $idRecord ID record yang terpengaruh
+     * @param string|null $deskripsi   Kalimat narasi aktivitas (tampil di modal detail)
+     * @param array|null  $before      Data sebelum perubahan   (key-value)
+     * @param array|null  $after       Data sesudah perubahan   (key-value)
+     */
+    private function log(
+        string $aksi,
+        string $modul,
+        $idRecord    = null,
+        ?string $deskripsi = null,
+        ?array $before = null,
+        ?array $after  = null
+    ): void {
+        Auditlog::create([
+            'nama_pelaku'  => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'System',
+            'role_pelaku'  => auth()->user()->role ?? '-',
+            'modul'        => $modul,
+            'aksi'         => $aksi,
+            'id_record'    => $idRecord,
+            'ip_address'   => request()->ip(),
+            'deskripsi'    => $deskripsi,
+            'data_before'  => $before ? json_encode($before) : null,
+            'data_after'   => $after  ? json_encode($after)  : null,
+        ]);
+    }
+
+    // =========================================================================
+    // DASHBOARD
+    // =========================================================================
+
     public function dashboard()
     {
         $totalAlat = Tool::count();
         $peminjamanAktif = Borrowing::whereIn('status', ['Menunggu', 'Disetujui'])->count();
         $rendahStok = Tool::where('stok_tersedia', '<', 5)->count();
         $rendahStokBulanIni = Tool::where('stok_tersedia', '<', 5)->whereMonth('updated_at', now()->month)->count();
-        
+
         $totalMahasiswa = User::where('role', 'mahasiswa')->count();
         $alatBaruBulanIni = Tool::whereMonth('created_at', now()->month)->count();
         $peminjamanBulanIni = Borrowing::whereMonth('created_at', now()->month)->count();
@@ -26,7 +65,7 @@ class AdminController extends Controller
 
         $statusFilter = request('status', 'Semua');
         $query = Borrowing::with('mahasiswa', 'items.tool')->orderBy('created_at', 'desc');
-        
+
         if ($statusFilter == 'Menunggu') {
             $query->where('status', 'Menunggu');
         } elseif ($statusFilter == 'Aktif') {
@@ -36,63 +75,59 @@ class AdminController extends Controller
         }
 
         $permintaanData = $query->take(5)->get();
-        
-        $peminjamanList = $permintaanData->map(function($p) {
+
+        $peminjamanList = $permintaanData->map(function ($p) {
             $alat_nama = $p->items->first()->tool->nama_alat ?? 'Multiple/Tidak Diketahui';
             return [
-                'uid' => 'PJM-' . str_pad($p->id, 4, '0', STR_PAD_LEFT),
-                'mhs_nama' => $p->mahasiswa->nama_lengkap ?? $p->mahasiswa->name,
-                'mhs_nim' => $p->mahasiswa->nim ?? '-',
-                'jurusan' => $p->mahasiswa->program_studi ?? '-',
-                'alat_nama' => $alat_nama,
-                'tgl_mulai' => \Carbon\Carbon::parse($p->tgl_rencana_pinjam)->format('d M Y'),
-                'tgl_selesai' => \Carbon\Carbon::parse($p->tgl_rencana_kembali)->format('d M Y'),
-                'status' => $p->status
+                'uid'        => 'PJM-' . str_pad($p->id, 4, '0', STR_PAD_LEFT),
+                'mhs_nama'   => $p->mahasiswa->nama_lengkap ?? $p->mahasiswa->name,
+                'mhs_nim'    => $p->mahasiswa->nim ?? '-',
+                'jurusan'    => $p->mahasiswa->program_studi ?? '-',
+                'alat_nama'  => $alat_nama,
+                'tgl_mulai'  => \Carbon\Carbon::parse($p->tgl_rencana_pinjam)->format('d M Y'),
+                'tgl_selesai'=> \Carbon\Carbon::parse($p->tgl_rencana_kembali)->format('d M Y'),
+                'status'     => $p->status,
             ];
         });
 
-        $aktivitasTerbaru = Auditlog::orderBy('created_at', 'desc')->take(5)->get()->map(function($log) {
-            $pesan = $log->aksi . ' ' . $log->modul;
-            
-            if ($log->modul == 'Manajemen Alat') {
-                $alat = \App\Models\Tool::find($log->id_record);
-                $nama_alat = $alat ? $alat->nama_alat : 'Alat tidak diketahui';
-                if ($log->aksi == 'CREATE') {
-                    $pesan = "menambah alat '$nama_alat'";
-                } elseif ($log->aksi == 'UPDATE') {
-                    $pesan = "memperbarui alat '$nama_alat'";
-                } elseif ($log->aksi == 'DELETE') {
-                    $pesan = "menghapus alat";
-                }
-            } elseif ($log->modul == 'Manajemen Barang') {
-                $barang = \App\Models\Item::find($log->id_record);
-                $nama_barang = $barang ? $barang->nama_barang : 'Barang tidak diketahui';
-                if ($log->aksi == 'CREATE') {
-                    $pesan = "menambah barang '$nama_barang'";
-                } elseif ($log->aksi == 'UPDATE') {
-                    $pesan = "memperbarui barang '$nama_barang'";
-                } elseif ($log->aksi == 'DELETE') {
-                    $pesan = "menghapus barang";
+        $aktivitasTerbaru = Auditlog::orderBy('created_at', 'desc')->take(5)->get()->map(function ($log) {
+            $pesan = $log->deskripsi ?? ($log->aksi . ' ' . $log->modul);
+
+            if (!$log->deskripsi) {
+                if ($log->modul == 'Manajemen Alat') {
+                    $alat = \App\Models\Tool::find($log->id_record);
+                    $nama_alat = $alat ? $alat->nama_alat : 'Alat tidak diketahui';
+                    if ($log->aksi == 'CREATE')      $pesan = "Menambah alat '{$nama_alat}'";
+                    elseif ($log->aksi == 'UPDATE')  $pesan = "Memperbarui alat '{$nama_alat}'";
+                    elseif ($log->aksi == 'DELETE')  $pesan = "Menghapus alat";
+                } elseif ($log->modul == 'Manajemen Barang') {
+                    $barang = \App\Models\Item::find($log->id_record);
+                    $nama_barang = $barang ? $barang->nama_barang : 'Barang tidak diketahui';
+                    if ($log->aksi == 'CREATE')      $pesan = "Menambah barang '{$nama_barang}'";
+                    elseif ($log->aksi == 'UPDATE')  $pesan = "Memperbarui barang '{$nama_barang}'";
+                    elseif ($log->aksi == 'DELETE')  $pesan = "Menghapus barang";
                 }
             }
 
             return [
-                'nama' => $log->nama_pelaku ?? 'System',
+                'nama'  => $log->nama_pelaku ?? 'System',
                 'pesan' => $pesan,
-                'waktu' => $log->created_at ? $log->created_at->diffForHumans() : 'Baru saja'
+                'waktu' => $log->created_at ? $log->created_at->diffForHumans() : 'Baru saja',
             ];
         });
 
-        $stokRendahList = Tool::where('stok_tersedia', '<', 5)->take(4)->get()->map(function($tool) {
-            $persentase = $tool->stok_total > 0 ? round(($tool->stok_tersedia / $tool->stok_total) * 100) : 0;
+        $stokRendahList = Tool::where('stok_tersedia', '<', 5)->take(4)->get()->map(function ($tool) {
+            $persentase = $tool->stok_total > 0
+                ? round(($tool->stok_tersedia / $tool->stok_total) * 100)
+                : 0;
             return [
-                'nama' => $tool->nama_alat,
-                'kategori' => $tool->kategori ?? 'Umum',
-                'lokasi' => $tool->lokasi ?? 'Lab',
-                'stok' => $tool->stok_tersedia,
-                'max_stok' => $tool->stok_total,
-                'satuan' => 'Unit',
-                'persentase' => $persentase
+                'nama'      => $tool->nama_alat,
+                'kategori'  => $tool->kategori ?? 'Umum',
+                'lokasi'    => $tool->lokasi ?? 'Lab',
+                'stok'      => $tool->stok_tersedia,
+                'max_stok'  => $tool->stok_total,
+                'satuan'    => 'Unit',
+                'persentase'=> $persentase,
             ];
         });
 
@@ -103,23 +138,273 @@ class AdminController extends Controller
         ));
     }
 
+    // =========================================================================
+    // MANAJEMEN ALAT
+    // =========================================================================
+
     public function manajemenAlat()
     {
-        $statusTersedia = Tool::where('status_alat', 'Tersedia')->count();
-        $statusDipinjam = Tool::where('status_alat', 'Dipinjam')->count();
-        $statusRusak = Tool::where('status_alat', 'Rusak')->count();
+        $statusTersedia  = Tool::where('status_alat', 'Tersedia')->count();
+        $statusDipinjam  = Tool::where('status_alat', 'Dipinjam')->count();
+        $statusRusak     = Tool::where('status_alat', 'Rusak')->count();
         $statusPerbaikan = Tool::where('status_alat', 'Dalam Perbaikan')->count();
-        
-        $alatList = Tool::paginate(10);
+        $alatList        = Tool::paginate(10);
 
-        return view('admin.manajemen-alat', compact('alatList', 'statusTersedia', 'statusDipinjam', 'statusRusak', 'statusPerbaikan'));
+        return view('admin.manajemen-alat', compact(
+            'alatList', 'statusTersedia', 'statusDipinjam', 'statusRusak', 'statusPerbaikan'
+        ));
     }
+
+    public function storeAlat(Request $request)
+    {
+        $data = $request->validate([
+            'kode_alat'  => 'required|string|max:50',
+            'nama_alat'  => 'required|string|max:100',
+            'kategori'   => 'required|string|max:50',
+            'deskripsi'  => 'nullable|string',
+            'stok_total' => 'required|integer|min:0',
+            'status_alat'=> 'required|string',
+            'lokasi'     => 'required|string|max:100',
+        ]);
+
+        $data['stok_tersedia'] = $data['stok_total'];
+        $tool = Tool::create($data);
+
+        $this->log(
+            'CREATE', 'Manajemen Alat', $tool->id,
+            "Menambah alat baru '{$tool->nama_alat}'",
+            null,
+            ['nama_alat' => $tool->nama_alat, 'stok' => $tool->stok_total, 'status' => $tool->status_alat]
+        );
+
+        return redirect()->back()->with('success', 'Alat berhasil ditambahkan.');
+    }
+
+    public function updateAlat(Request $request, $id)
+    {
+        $tool = Tool::findOrFail($id);
+
+        $data = $request->validate([
+            'nama_alat'  => 'required|string|max:100',
+            'kategori'   => 'required|string|max:50',
+            'deskripsi'  => 'nullable|string',
+            'stok_total' => 'required|integer|min:0',
+            'status_alat'=> 'required|string',
+            'lokasi'     => 'required|string|max:100',
+        ]);
+
+        $before = [
+            'nama_alat'  => $tool->nama_alat,
+            'stok_total' => $tool->stok_total,
+            'status_alat'=> $tool->status_alat,
+            'lokasi'     => $tool->lokasi,
+        ];
+
+        $diffStok = $data['stok_total'] - $tool->stok_total;
+        $data['stok_tersedia'] = $tool->stok_tersedia + $diffStok;
+        $tool->update($data);
+
+        $this->log(
+            'UPDATE', 'Manajemen Alat', $id,
+            "Memperbarui data alat '{$tool->nama_alat}'",
+            $before,
+            ['nama_alat' => $tool->nama_alat, 'stok_total' => $tool->stok_total, 'status_alat' => $tool->status_alat, 'lokasi' => $tool->lokasi]
+        );
+
+        return redirect()->back()->with('success', 'Alat berhasil diperbarui.');
+    }
+
+    public function destroyAlat($id)
+    {
+        $tool = Tool::findOrFail($id);
+        $before = ['nama_alat' => $tool->nama_alat, 'stok_total' => $tool->stok_total];
+        $tool->delete();
+
+        $this->log(
+            'DELETE', 'Manajemen Alat', $id,
+            "Menghapus alat '{$before['nama_alat']}'",
+            $before,
+            null
+        );
+
+        return redirect()->back()->with('success', 'Alat berhasil dihapus.');
+    }
+
+    public function nonaktifkanAlat($id)
+    {
+        $tool = Tool::findOrFail($id);
+        $before = ['Status Alat' => $tool->status_alat];
+        $tool->status_alat = 'Nonaktif';
+        $tool->save();
+
+        $this->log(
+            'UPDATE', 'Manajemen Alat', $id,
+            "Menonaktifkan alat '{$tool->nama_alat}'",
+            $before,
+            ['Status Alat' => 'Nonaktif']
+        );
+
+        return redirect()->back()->with('success', 'Alat berhasil dinonaktifkan.');
+    }
+
+    public function aktifkanAlat($id)
+    {
+        $tool = Tool::findOrFail($id);
+        $before = ['Status Alat' => $tool->status_alat];
+        $tool->status_alat = 'Tersedia';
+        $tool->save();
+
+        $this->log(
+            'UPDATE', 'Manajemen Alat', $id,
+            "Mengaktifkan kembali alat '{$tool->nama_alat}'",
+            $before,
+            ['Status Alat' => 'Tersedia']
+        );
+
+        return redirect()->back()->with('success', 'Alat berhasil diaktifkan kembali.');
+    }
+
+    // =========================================================================
+    // PEMINJAMAN
+    // =========================================================================
 
     public function peminjaman()
     {
-        $borrowings = Borrowing::with('mahasiswa', 'items.tool')->orderBy('created_at', 'desc')->paginate(10);
+        $borrowings = Borrowing::with('mahasiswa', 'items.tool')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
         return view('admin.peminjaman', compact('borrowings'));
     }
+
+    public function approvePeminjaman($id)
+    {
+        $borrowing = Borrowing::with('mahasiswa')->findOrFail($id);
+        $before = ['Status' => $borrowing->status];
+
+        $borrowing->status        = 'Disetujui';
+        $borrowing->diproses_oleh = auth()->id();
+        $borrowing->tgl_diproses  = now();
+        $borrowing->save();
+
+        $namaMhs = $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? '-';
+        $this->log(
+            'APPROVE', 'Peminjaman',
+            'PIN-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+            "Menyetujui peminjaman oleh {$namaMhs}",
+            $before,
+            ['Status' => 'Disetujui']
+        );
+
+        N8NWebhookService::sendBorrowingEvent('borrowing.approved', $borrowing);
+
+        return redirect()->back()->with('success', 'Peminjaman berhasil disetujui.');
+    }
+
+    public function rejectPeminjaman(Request $request, $id)
+    {
+        $request->validate([
+            'catatan_admin' => 'required|string|max:1000',
+        ], [
+            'catatan_admin.required' => 'Catatan penolakan wajib diisi.',
+        ]);
+
+        $borrowing = Borrowing::with('mahasiswa')->findOrFail($id);
+        $before = ['Status' => $borrowing->status];
+
+        $borrowing->status        = 'Ditolak';
+        $borrowing->diproses_oleh = auth()->id();
+        $borrowing->tgl_diproses  = now();
+        $borrowing->catatan_admin = $request->catatan_admin;
+        $borrowing->save();
+
+        foreach ($borrowing->items as $item) {
+            $tool = $item->tool;
+            if ($tool) {
+                $tool->stok_tersedia += $item->jumlah_unit;
+                $tool->save();
+            }
+        }
+
+        $namaMhs = $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? '-';
+        $this->log(
+            'REJECT', 'Peminjaman',
+            'PIN-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+            "Menolak peminjaman oleh {$namaMhs} — {$request->catatan_admin}",
+            $before,
+            ['Status' => 'Ditolak']
+        );
+
+        N8NWebhookService::sendBorrowingEvent('borrowing.rejected', $borrowing);
+
+        return redirect()->back()->with('success', 'Peminjaman telah ditolak.');
+    }
+
+    public function borrowPeminjaman($id)
+    {
+        $borrowing = Borrowing::with('mahasiswa')->findOrFail($id);
+        $before = ['Status' => $borrowing->status];
+
+        $borrowing->status = 'Dipinjam';
+        $borrowing->save();
+
+        $namaMhs = $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? '-';
+        $this->log(
+            'UPDATE', 'Peminjaman',
+            'PIN-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+            "Mengubah status peminjaman {$namaMhs} menjadi Dipinjam",
+            $before,
+            ['Status' => 'Dipinjam']
+        );
+
+        return redirect()->back()->with('success', 'Status peminjaman diubah menjadi Dipinjam.');
+    }
+
+    public function returnPeminjaman(Request $request, $id)
+    {
+        $borrowing = Borrowing::with(['mahasiswa', 'items.tool'])->findOrFail($id);
+        $before = ['Status' => $borrowing->status];
+
+        $borrowing->status                   = 'Dikembalikan';
+        $borrowing->tgl_pengembalian_aktual  = now();
+        $borrowing->save();
+
+        $kondisiArray = $request->input('kondisi', []);
+
+        foreach ($borrowing->items as $item) {
+            $tool    = $item->tool;
+            $kondisi = $kondisiArray[$item->id] ?? 'Baik';
+
+            $item->kondisi_saat_kembali = $kondisi;
+            $item->save();
+
+            if ($tool) {
+                if ($kondisi === 'Baik') {
+                    $tool->stok_tersedia += $item->jumlah_unit;
+                } elseif (in_array($kondisi, ['Rusak Ringan', 'Rusak Berat'])) {
+                    $tool->stok_total -= $item->jumlah_unit;
+                }
+                $tool->save();
+            }
+        }
+
+        $namaMhs = $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? '-';
+        $this->log(
+            'UPDATE', 'Peminjaman',
+            'PIN-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+            "Pengembalian alat oleh {$namaMhs}",
+            $before,
+            ['Status' => 'Dikembalikan']
+        );
+
+        N8NWebhookService::sendBorrowingEvent('borrowing.returned', $borrowing);
+
+        return redirect()->back()->with('success', 'Alat berhasil dikembalikan dan stok diperbarui.');
+    }
+
+    // =========================================================================
+    // MANAJEMEN BARANG
+    // =========================================================================
 
     public function manajemenBarang()
     {
@@ -127,19 +412,134 @@ class AdminController extends Controller
         return view('admin.manajemen-barang', compact('items'));
     }
 
+    public function storeBarang(Request $request)
+    {
+        $data = $request->validate([
+            'kode_barang'  => 'required|string|max:50',
+            'nama_barang'  => 'required|string|max:100',
+            'kategori'     => 'required|string|max:50',
+            'deskripsi'    => 'nullable|string',
+            'stok'         => 'required|integer|min:0',
+            'stok_minimum' => 'required|integer|min:0',
+            'satuan'       => 'required|string|max:20',
+            'kondisi'      => 'required|string',
+            'lokasi'       => 'required|string|max:100',
+        ]);
+
+        $item = Item::create($data);
+
+        $this->log(
+            'CREATE', 'Manajemen Barang', 'BRG-' . str_pad($item->id, 3, '0', STR_PAD_LEFT),
+            "Menambah barang baru '{$item->nama_barang}'",
+            null,
+            ['Nama Barang' => $item->nama_barang, 'Stok' => $item->stok, 'Kondisi' => $item->kondisi]
+        );
+
+        return redirect()->back()->with('success', 'Barang berhasil ditambahkan.');
+    }
+
+    public function updateBarang(Request $request, $id)
+    {
+        $item = Item::findOrFail($id);
+
+        $data = $request->validate([
+            'nama_barang'  => 'required|string|max:100',
+            'kategori'     => 'required|string|max:50',
+            'deskripsi'    => 'nullable|string',
+            'stok'         => 'required|integer|min:0',
+            'stok_minimum' => 'required|integer|min:0',
+            'satuan'       => 'required|string|max:20',
+            'kondisi'      => 'required|string',
+            'lokasi'       => 'required|string|max:100',
+        ]);
+
+        $before = ['Nama Barang' => $item->nama_barang, 'Stok' => $item->stok, 'Kondisi' => $item->kondisi];
+        $item->update($data);
+
+        $this->log(
+            'UPDATE', 'Manajemen Barang', 'BRG-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+            "Memperbarui data barang '{$item->nama_barang}'",
+            $before,
+            ['Nama Barang' => $item->nama_barang, 'Stok' => $item->stok, 'Kondisi' => $item->kondisi]
+        );
+
+        return redirect()->back()->with('success', 'Barang berhasil diperbarui.');
+    }
+
+    public function destroyBarang($id)
+    {
+        $item   = Item::findOrFail($id);
+        $before = ['ID' => 'BRG-' . str_pad($id, 3, '0', STR_PAD_LEFT), 'Nama Barang' => $item->nama_barang];
+        $item->delete();
+
+        $this->log(
+            'DELETE', 'Manajemen Barang', 'BRG-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+            "Menghapus barang '{$before['Nama Barang']}' karena tidak layak pakai",
+            $before,
+            null
+        );
+
+        return redirect()->back()->with('success', 'Barang berhasil dihapus.');
+    }
+
+    public function mutasiStok(Request $request, $id)
+    {
+        $item = Item::findOrFail($id);
+
+        $request->validate([
+            'tipe_mutasi' => 'required|in:masuk,keluar',
+            'jumlah'      => 'required|integer|min:1',
+            'keterangan'  => 'nullable|string',
+        ]);
+
+        if ($request->tipe_mutasi == 'keluar' && $item->stok < $request->jumlah) {
+            return redirect()->back()->with('error', 'Stok tidak mencukupi untuk dikeluarkan.');
+        }
+
+        $stok_sebelum = $item->stok;
+        $tipe         = ucfirst($request->tipe_mutasi);
+
+        if ($request->tipe_mutasi == 'masuk') {
+            $item->stok += $request->jumlah;
+        } else {
+            $item->stok -= $request->jumlah;
+        }
+        $item->save();
+
+        \App\Models\ItemMutation::create([
+            'item_id'        => $item->id,
+            'tipe_mutasi'    => $tipe,
+            'jumlah'         => $request->jumlah,
+            'stok_sebelum'   => $stok_sebelum,
+            'stok_sesudah'   => $item->stok,
+            'keterangan'     => $request->keterangan,
+            'dilakukan_oleh' => auth()->id(),
+        ]);
+
+        $this->log(
+            'UPDATE', 'Manajemen Barang', 'BRG-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+            "Mutasi stok {$tipe} barang '{$item->nama_barang}' sejumlah {$request->jumlah}",
+            ['Stok' => $stok_sebelum],
+            ['Stok' => $item->stok]
+        );
+
+        return redirect()->back()->with('success', 'Mutasi stok berhasil.');
+    }
+
+    // =========================================================================
+    // LAPORAN
+    // =========================================================================
+
     public function laporan(Request $request)
     {
-        $totalPeminjaman = Borrowing::count();
-        $peminjamanBulanIni = Borrowing::whereMonth('created_at', now()->month)->count();
-
-        $peminjamanAktif = Borrowing::whereIn('status', ['Dipinjam', 'Menunggu'])->count();
+        $totalPeminjaman          = Borrowing::count();
+        $peminjamanBulanIni       = Borrowing::whereMonth('created_at', now()->month)->count();
+        $peminjamanAktif          = Borrowing::whereIn('status', ['Dipinjam', 'Menunggu'])->count();
         $peminjamanMenungguBulanIni = Borrowing::whereIn('status', ['Dipinjam', 'Menunggu'])->whereMonth('created_at', now()->month)->count();
-
-        $alatRusak = Item::where('kondisi', '!=', 'Baik')->count();
-        $alatRusakBulanIni = Item::where('kondisi', '!=', 'Baik')->whereMonth('updated_at', now()->month)->count();
-
-        $totalMahasiswa = User::where('role', 'mahasiswa')->count();
-        $mahasiswaBaruBulanIni = User::where('role', 'mahasiswa')->whereMonth('created_at', now()->month)->count();
+        $alatRusak                = Item::where('kondisi', '!=', 'Baik')->count();
+        $alatRusakBulanIni        = Item::where('kondisi', '!=', 'Baik')->whereMonth('updated_at', now()->month)->count();
+        $totalMahasiswa           = User::where('role', 'mahasiswa')->count();
+        $mahasiswaBaruBulanIni    = User::where('role', 'mahasiswa')->whereMonth('created_at', now()->month)->count();
 
         $alatSeringDipinjam = \Illuminate\Support\Facades\DB::table('borrowing_items')
             ->join('tools', 'borrowing_items.tool_id', '=', 'tools.id')
@@ -149,9 +549,6 @@ class AdminController extends Controller
             ->take(7)
             ->get();
 
-        // ===================== FILTER YANG DIPAKAI BERSAMA (Jenis, Status, Tanggal) =====================
-        // Filter ini dikirim sebagai query string (?jenis=...&status=...&dari=...&sampai=...)
-        // supaya saat pindah halaman pagination di salah satu tab, filter yang sedang aktif tidak hilang.
         $jenisFilter  = $request->query('jenis', 'semua');
         $statusFilter = $request->query('status', '');
         $dariFilter   = $request->query('dari', '');
@@ -161,51 +558,28 @@ class AdminController extends Controller
         $statusInventaris = ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Tidak Layak'];
         $statusMutasi     = ['Masuk', 'Keluar'];
 
-        // ===================== TAB 1: Rekap Peminjaman (paginate 10) =====================
         $queryPeminjaman = Borrowing::with('mahasiswa', 'items.tool')->orderBy('created_at', 'desc');
-
         if (in_array($jenisFilter, ['semua', 'peminjaman'])) {
-            if ($statusFilter && in_array($statusFilter, $statusPeminjaman)) {
-                $queryPeminjaman->where('status', $statusFilter);
-            }
+            if ($statusFilter && in_array($statusFilter, $statusPeminjaman)) $queryPeminjaman->where('status', $statusFilter);
             if ($dariFilter)   $queryPeminjaman->whereDate('tgl_rencana_pinjam', '>=', $dariFilter);
             if ($sampaiFilter) $queryPeminjaman->whereDate('tgl_rencana_pinjam', '<=', $sampaiFilter);
         }
         $rekapPeminjaman = $queryPeminjaman->paginate(10, ['*'], 'page_pjm')->withQueryString();
 
-        // ===================== TAB 2: Status Inventaris (paginate 10) =====================
         $queryInventaris = Item::orderBy('nama_barang');
-
         if (in_array($jenisFilter, ['semua', 'inventaris'])) {
-            if ($statusFilter && in_array($statusFilter, $statusInventaris)) {
-                $queryInventaris->where('kondisi', $statusFilter);
-            }
+            if ($statusFilter && in_array($statusFilter, $statusInventaris)) $queryInventaris->where('kondisi', $statusFilter);
         }
         $inventarisList = $queryInventaris->paginate(10, ['*'], 'page_inv')->withQueryString();
 
-        // ===================== TAB 3: Log Mutasi Stok (paginate 10) =====================
-        // PENTING: relasi yang benar adalah 'item' (belongsTo Item::class), bukan 'barang'.
-        // Sebelumnya blade memanggil $mutasi->barang->nama_barang yang selalu null karena
-        // relasi tersebut tidak pernah di-load (controller hanya load 'item') -> makanya
-        // nama barang & tampilannya selalu kosong/'-' di tab Log Mutasi Stok.
         $queryMutasi = \App\Models\ItemMutation::with('item')->orderBy('created_at', 'desc');
-
         if (in_array($jenisFilter, ['semua', 'mutasi'])) {
-            if ($statusFilter && in_array($statusFilter, $statusMutasi)) {
-                $queryMutasi->where('tipe_mutasi', $statusFilter);
-            }
+            if ($statusFilter && in_array($statusFilter, $statusMutasi)) $queryMutasi->where('tipe_mutasi', $statusFilter);
             if ($dariFilter)   $queryMutasi->whereDate('created_at', '>=', $dariFilter);
             if ($sampaiFilter) $queryMutasi->whereDate('created_at', '<=', $sampaiFilter);
         }
         $mutasiList = $queryMutasi->paginate(10, ['*'], 'page_mut')->withQueryString();
 
-        // ===================== TAB 4: Rekap Mahasiswa & Dosen (paginate 10) =====================
-        // CATATAN PENTING: di database, kolom `role` SELALU bernilai 'mahasiswa' baik untuk
-        // mahasiswa maupun dosen (role hanya membedakan 'admin' vs non-admin). Status "dosen"
-        // sebenarnya disimpan di kolom `name` (berisi label seperti 'Dosen', 'Mahasiswa', dst),
-        // BUKAN di kolom role. Jadi query ini tetap where('role','mahasiswa') -- itu sudah
-        // mencakup dosen juga -- dan untuk membedakan tampilan dosen vs mahasiswa di blade,
-        // dicek dari kolom `name`, lihat helper isDosen() di compact di bawah.
         $queryMahasiswa = User::where('role', 'mahasiswa')->withCount([
             'borrowings as total_pengajuan',
             'borrowings as menunggu'     => fn($q) => $q->where('status', 'Menunggu'),
@@ -216,9 +590,6 @@ class AdminController extends Controller
         ])->orderBy('nama_lengkap');
 
         $rekapMahasiswa = $queryMahasiswa->paginate(10, ['*'], 'page_mhs')->withQueryString();
-
-        // Tambahkan field 'aktif' (menunggu+disetujui+dipinjam) dan 'selesai' (dikembalikan)
-        // dihitung di controller (bukan di blade) agar konsisten dipakai untuk badge warna.
         $rekapMahasiswa->getCollection()->transform(function ($mhs) {
             $mhs->aktif   = ($mhs->menunggu ?? 0) + ($mhs->disetujui ?? 0) + ($mhs->dipinjam ?? 0);
             $mhs->selesai = ($mhs->dikembalikan ?? 0);
@@ -246,25 +617,16 @@ class AdminController extends Controller
 
         $rows       = [];
         $filename   = 'laporan-' . $jenis . '-' . now()->format('Ymd-His') . '.csv';
-        $isGabungan = ($jenis === 'semua'); // hanya tampilkan judul section kalau export gabungan
+        $isGabungan = ($jenis === 'semua');
 
-        // ── Rekap Peminjaman ──────────────────────────────────
         if (in_array($jenis, ['semua', 'peminjaman'])) {
-            $query = Borrowing::with(['mahasiswa', 'items.tool'])
-                ->orderBy('id', 'asc'); // urut PJM-001, 002, 003, ...
-
-            // hanya terapkan filter status kalau nilainya memang status milik peminjaman
-            // (mencegah filter "Masuk"/"Keluar" dari tab mutasi ikut menyaring tab ini saat jenis=semua)
+            $query = Borrowing::with(['mahasiswa', 'items.tool'])->orderBy('id', 'asc');
             $statusPeminjaman = ['Dipinjam', 'Dikembalikan', 'Ditolak', 'Menunggu', 'Disetujui', 'Diproses'];
-            if ($status && in_array($status, $statusPeminjaman)) {
-                $query->where('status', $status);
-            }
+            if ($status && in_array($status, $statusPeminjaman)) $query->where('status', $status);
             if ($dari)   $query->whereDate('tgl_rencana_pinjam', '>=', $dari);
             if ($sampai) $query->whereDate('tgl_rencana_pinjam', '<=', $sampai);
 
-            if ($isGabungan) {
-                $rows[] = ['REKAP PEMINJAMAN'];
-            }
+            if ($isGabungan) $rows[] = ['REKAP PEMINJAMAN'];
             $rows[] = ['ID Peminjaman', 'Nama Mahasiswa', 'NIM', 'Program Studi', 'Jumlah Alat', 'Tanggal Pinjam', 'Tanggal Kembali', 'Status'];
 
             foreach ($query->get() as $pjm) {
@@ -279,23 +641,15 @@ class AdminController extends Controller
                     $pjm->status,
                 ];
             }
-            if ($isGabungan) {
-                $rows[] = array_fill(0, 8, ''); // baris kosong tapi tetap 8 kolom, biar align
-            }
+            if ($isGabungan) $rows[] = array_fill(0, 8, '');
         }
 
-        // ── Status Inventaris (model: Item) ───────────────────
         if (in_array($jenis, ['semua', 'inventaris'])) {
             $query = Item::orderBy('nama_barang');
-            // hanya terapkan filter status kalau nilainya memang status kondisi milik inventaris
             $statusInventaris = ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Tidak Layak'];
-            if ($status && in_array($status, $statusInventaris)) {
-                $query->where('kondisi', $status);
-            }
+            if ($status && in_array($status, $statusInventaris)) $query->where('kondisi', $status);
 
-            if ($isGabungan) {
-                $rows[] = ['STATUS INVENTARIS'];
-            }
+            if ($isGabungan) $rows[] = ['STATUS INVENTARIS'];
             $rows[] = ['Kode', 'Nama Barang', 'Kategori', 'Stok', 'Min Stok', 'Kondisi', 'Lokasi'];
 
             foreach ($query->get() as $inv) {
@@ -309,25 +663,16 @@ class AdminController extends Controller
                     $inv->lokasi       ?? '-',
                 ];
             }
-            if ($isGabungan) {
-                $rows[] = array_fill(0, 7, '');
-            }
+            if ($isGabungan) $rows[] = array_fill(0, 7, '');
         }
 
-        // ── Log Mutasi Stok (model: ItemMutation) ─────────────
         if (in_array($jenis, ['semua', 'mutasi'])) {
             $query = \App\Models\ItemMutation::with('item')->orderBy('created_at', 'asc');
-            // filter status untuk mutasi pakai nilai 'Masuk' / 'Keluar' (kolom tipe_mutasi),
-            // beda dengan filter status punya peminjaman ('Dipinjam', 'Ditolak', dst)
-            if ($status && in_array($status, ['Masuk', 'Keluar'])) {
-                $query->where('tipe_mutasi', $status);
-            }
+            if ($status && in_array($status, ['Masuk', 'Keluar'])) $query->where('tipe_mutasi', $status);
             if ($dari)   $query->whereDate('created_at', '>=', $dari);
             if ($sampai) $query->whereDate('created_at', '<=', $sampai);
 
-            if ($isGabungan) {
-                $rows[] = ['LOG MUTASI STOK'];
-            }
+            if ($isGabungan) $rows[] = ['LOG MUTASI STOK'];
             $rows[] = ['ID Mutasi', 'Tanggal', 'Nama Barang', 'Tipe Mutasi', 'Jumlah', 'Stok Sebelum', 'Stok Sesudah', 'Keterangan', 'Operator'];
 
             foreach ($query->get() as $mutasi) {
@@ -345,14 +690,9 @@ class AdminController extends Controller
                     $operator,
                 ];
             }
-            if ($isGabungan) {
-                $rows[] = array_fill(0, 9, '');
-            }
+            if ($isGabungan) $rows[] = array_fill(0, 9, '');
         }
 
-        // ── Rekap Mahasiswa & Dosen ───────────────────────────
-        // Sama seperti di method laporan(): role selalu 'mahasiswa' untuk dosen maupun mahasiswa.
-        // Status dosen dideteksi dari kolom `name`, bukan `role`.
         if (in_array($jenis, ['semua', 'mahasiswa'])) {
             $data = User::where('role', 'mahasiswa')->withCount([
                 'borrowings as total_pengajuan',
@@ -362,9 +702,7 @@ class AdminController extends Controller
                 'borrowings as dikembalikan' => fn($q) => $q->where('status', 'Dikembalikan'),
             ])->orderBy('nama_lengkap')->get();
 
-            if ($isGabungan) {
-                $rows[] = ['REKAP MAHASISWA & DOSEN'];
-            }
+            if ($isGabungan) $rows[] = ['REKAP MAHASISWA & DOSEN'];
             $rows[] = ['Nama', 'NIM/NIDN', 'Program Studi', 'Total Pengajuan', 'Aktif/Dipinjam', 'Menunggu', 'Dikembalikan', 'Ditolak'];
 
             foreach ($data as $mhs) {
@@ -381,10 +719,9 @@ class AdminController extends Controller
             }
         }
 
-        // ── Stream CSV ────────────────────────────────────────
         $callback = function () use ($rows) {
             $handle = fopen('php://output', 'w');
-            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM UTF-8 agar Excel terbaca
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
             foreach ($rows as $row) {
                 fputcsv($handle, $row);
             }
@@ -400,11 +737,110 @@ class AdminController extends Controller
         ]);
     }
 
-    public function auditTrail()
+    // =========================================================================
+    // AUDIT TRAIL
+    // =========================================================================
+
+    public function auditTrail(Request $request)
     {
-        $logs = Auditlog::orderBy('created_at', 'desc')->paginate(10);
+        $query = Auditlog::orderBy('created_at', 'desc');
+
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        if ($request->filled('role')) {
+            $query->where('role_pelaku', $request->role);
+        }
+
+        if ($request->filled('modul')) {
+            $query->where('modul', $request->modul);
+        }
+
+        if ($request->filled('aksi')) {
+            $query->where('aksi', $request->aksi);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_pelaku', 'like', "%{$search}%")
+                  ->orWhere('modul', 'like', "%{$search}%")
+                  ->orWhere('aksi', 'like', "%{$search}%")
+                  ->orWhere('id_record', 'like', "%{$search}%")
+                  ->orWhere('deskripsi', 'like', "%{$search}%");
+            });
+        }
+
+        $logs = $query->paginate(10)->withQueryString();
+
         return view('admin.audit-trail', compact('logs'));
     }
+
+    public function exportAuditTrail(Request $request)
+    {
+        $query = Auditlog::orderBy('created_at', 'desc');
+
+        if ($request->filled('date'))   $query->whereDate('created_at', $request->date);
+        if ($request->filled('role'))   $query->where('role_pelaku', $request->role);
+        if ($request->filled('modul'))  $query->where('modul', $request->modul);
+        if ($request->filled('aksi'))   $query->where('aksi', $request->aksi);
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_pelaku', 'like', "%{$search}%")
+                  ->orWhere('modul', 'like', "%{$search}%")
+                  ->orWhere('aksi', 'like', "%{$search}%")
+                  ->orWhere('id_record', 'like', "%{$search}%");
+            });
+        }
+
+        $logs     = $query->get();
+        $filename = 'audit_trail_' . now()->format('Ymd_His') . '.csv';
+
+        // Catat aksi export ini ke audit log
+        $this->log(
+            'EXPORT', 'Laporan',
+            null,
+            'Mengekspor audit trail ke CSV',
+            null,
+            ['Jumlah Ekport' => $logs->count()]
+        );
+
+        $callback = function () use ($logs) {
+            $handle = fopen('php://output', 'w');
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            fputcsv($handle, ['ID Audit', 'Timestamp', 'User', 'Role', 'Modul', 'Aksi', 'Record ID', 'IP Address', 'Deskripsi']);
+
+            foreach ($logs as $log) {
+                fputcsv($handle, [
+                    'AUD-' . str_pad($log->id, 3, '0', STR_PAD_LEFT),
+                    $log->created_at?->format('Y-m-d H:i:s') ?? '-',
+                    $log->nama_pelaku  ?? 'System',
+                    $log->role_pelaku  ?? '-',
+                    $log->modul,
+                    $log->aksi,
+                    $log->id_record    ?? '-',
+                    $log->ip_address   ?? '-',
+                    $log->deskripsi    ?? '-',
+                ]);
+            }
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
+            'Pragma'              => 'no-cache',
+            'Expires'             => '0',
+        ]);
+    }
+
+    // =========================================================================
+    // MANAJEMEN USER
+    // =========================================================================
 
     public function manajemenUser()
     {
@@ -412,370 +848,34 @@ class AdminController extends Controller
         return view('admin.manajemen-user', compact('users'));
     }
 
-    public function approvePeminjaman($id)
-    {
-        $borrowing = Borrowing::findOrFail($id);
-        $borrowing->status = 'Disetujui';
-        $borrowing->diproses_oleh = auth()->id();
-        $borrowing->tgl_diproses = now();
-        $borrowing->save();
-        
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Peminjaman',
-            'aksi' => 'APPROVE',
-            'id_record' => $id
-        ]);
-        
-        N8NWebhookService::sendBorrowingEvent('borrowing.approved', $borrowing);
-        
-        return redirect()->back()->with('success', 'Peminjaman berhasil disetujui.');
-    }
-
-    public function rejectPeminjaman(Request $request, $id)
-    {
-        $request->validate([
-            'catatan_admin' => 'required|string|max:1000'
-        ], [
-            'catatan_admin.required' => 'Catatan penolakan wajib diisi.'
-        ]);
-
-        $borrowing = Borrowing::findOrFail($id);
-        $borrowing->status = 'Ditolak';
-        $borrowing->diproses_oleh = auth()->id();
-        $borrowing->tgl_diproses = now();
-        $borrowing->catatan_admin = $request->catatan_admin;
-        $borrowing->save();
-        
-        foreach($borrowing->items as $item) {
-            $tool = $item->tool;
-            if($tool) {
-                $tool->stok_tersedia += $item->jumlah_unit;
-                $tool->save();
-            }
-        }
-        
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Peminjaman',
-            'aksi' => 'REJECT',
-            'id_record' => $id
-        ]);
-        
-        N8NWebhookService::sendBorrowingEvent('borrowing.rejected', $borrowing);
-        
-        return redirect()->back()->with('success', 'Peminjaman telah ditolak.');
-    }
-
-    public function borrowPeminjaman($id)
-    {
-        $borrowing = Borrowing::findOrFail($id);
-        $borrowing->status = 'Dipinjam';
-        $borrowing->save();
-        
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Peminjaman',
-            'aksi' => 'UPDATE',
-            'id_record' => $id
-        ]);
-        
-        return redirect()->back()->with('success', 'Status peminjaman diubah menjadi Dipinjam.');
-    }
-
-    public function returnPeminjaman(Request $request, $id)
-    {
-        $borrowing = Borrowing::with('items.tool')->findOrFail($id);
-        $borrowing->status = 'Dikembalikan';
-        $borrowing->tgl_pengembalian_aktual = now();
-        $borrowing->save();
-        
-        $kondisiArray = $request->input('kondisi', []);
-
-        foreach($borrowing->items as $item) {
-            $tool = $item->tool;
-            $kondisi = $kondisiArray[$item->id] ?? 'Baik';
-            
-            $item->kondisi_saat_kembali = $kondisi;
-            $item->save();
-
-            if($tool) {
-                if ($kondisi === 'Baik') {
-                    $tool->stok_tersedia += $item->jumlah_unit;
-                } else if ($kondisi === 'Rusak Ringan' || $kondisi === 'Rusak Berat') {
-                    $tool->stok_total -= $item->jumlah_unit;
-                }
-                $tool->save();
-            }
-        }
-        
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Peminjaman',
-            'aksi' => 'UPDATE',
-            'id_record' => $id
-        ]);
-        
-        N8NWebhookService::sendBorrowingEvent('borrowing.returned', $borrowing);
-        
-        return redirect()->back()->with('success', 'Alat berhasil dikembalikan dan stok diperbarui.');
-    }
-
-    public function storeAlat(Request $request)
-    {
-        $data = $request->validate([
-            'kode_alat' => 'required|string|max:50',
-            'nama_alat' => 'required|string|max:100',
-            'kategori' => 'required|string|max:50',
-            'deskripsi' => 'nullable|string',
-            'stok_total' => 'required|integer|min:0',
-            'status_alat' => 'required|string',
-            'lokasi' => 'required|string|max:100',
-        ]);
-        
-        $data['stok_tersedia'] = $data['stok_total'];
-
-        $tool = Tool::create($data);
-
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Manajemen Alat',
-            'aksi' => 'CREATE',
-            'id_record' => $tool->id
-        ]);
-
-        return redirect()->back()->with('success', 'Alat berhasil ditambahkan.');
-    }
-
-    public function updateAlat(Request $request, $id)
-    {
-        $tool = Tool::findOrFail($id);
-        
-        $data = $request->validate([
-            'nama_alat' => 'required|string|max:100',
-            'kategori' => 'required|string|max:50',
-            'deskripsi' => 'nullable|string',
-            'stok_total' => 'required|integer|min:0',
-            'status_alat' => 'required|string',
-            'lokasi' => 'required|string|max:100',
-        ]);
-
-        $diffStok = $data['stok_total'] - $tool->stok_total;
-        $data['stok_tersedia'] = $tool->stok_tersedia + $diffStok;
-
-        $tool->update($data);
-
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Manajemen Alat',
-            'aksi' => 'UPDATE',
-            'id_record' => $id
-        ]);
-
-        return redirect()->back()->with('success', 'Alat berhasil diperbarui.');
-    }
-
-    public function destroyAlat($id)
-    {
-        $tool = Tool::findOrFail($id);
-        $tool->delete();
-
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Manajemen Alat',
-            'aksi' => 'DELETE',
-            'id_record' => $id
-        ]);
-
-        return redirect()->back()->with('success', 'Alat berhasil dihapus.');
-    }
-
-    public function nonaktifkanAlat($id)
-    {
-        $tool = Tool::findOrFail($id);
-        $tool->status_alat = 'Nonaktif';
-        $tool->save();
-
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Manajemen Alat',
-            'aksi' => 'NONAKTIFKAN',
-            'id_record' => $id
-        ]);
-
-        return redirect()->back()->with('success', 'Alat berhasil dinonaktifkan.');
-    }
-
-    public function aktifkanAlat($id)
-    {
-        $tool = Tool::findOrFail($id);
-        $tool->status_alat = 'Tersedia';
-        $tool->save();
-
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Manajemen Alat',
-            'aksi' => 'AKTIFKAN',
-            'id_record' => $id
-        ]);
-
-        return redirect()->back()->with('success', 'Alat berhasil diaktifkan kembali.');
-    }
-
-    public function storeBarang(Request $request)
-    {
-        $data = $request->validate([
-            'kode_barang'   => 'required|string|max:50',
-            'nama_barang'   => 'required|string|max:100',
-            'kategori'      => 'required|string|max:50',
-            'deskripsi'     => 'nullable|string',
-            'stok'          => 'required|integer|min:0',
-            'stok_minimum'  => 'required|integer|min:0',
-            'satuan'        => 'required|string|max:20',
-            'kondisi'       => 'required|string',
-            'lokasi'        => 'required|string|max:100',
-        ]);
-
-        $item = Item::create($data);
-
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul'       => 'Manajemen Barang',
-            'aksi'        => 'CREATE',
-            'id_record'   => $item->id
-        ]);
-
-        return redirect()->back()->with('success', 'Barang berhasil ditambahkan.');
-    }
-
-    public function updateBarang(Request $request, $id)
-    {
-        $item = Item::findOrFail($id);
-        
-        $data = $request->validate([
-            'nama_barang'   => 'required|string|max:100',
-            'kategori'      => 'required|string|max:50',
-            'deskripsi'     => 'nullable|string',
-            'stok'          => 'required|integer|min:0',
-            'stok_minimum'  => 'required|integer|min:0',
-            'satuan'        => 'required|string|max:20',
-            'kondisi'       => 'required|string',
-            'lokasi'        => 'required|string|max:100',
-        ]);
-
-        $item->update($data);
-
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul'       => 'Manajemen Barang',
-            'aksi'        => 'UPDATE',
-            'id_record'   => $id
-        ]);
-
-        return redirect()->back()->with('success', 'Barang berhasil diperbarui.');
-    }
-
-    public function destroyBarang($id)
-    {
-        $item = Item::findOrFail($id);
-        $item->delete();
-
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Manajemen Barang',
-            'aksi' => 'DELETE',
-            'id_record' => $id
-        ]);
-
-        return redirect()->back()->with('success', 'Barang berhasil dihapus.');
-    }
-
-    public function mutasiStok(Request $request, $id)
-    {
-        $item = Item::findOrFail($id);
-        
-        $request->validate([
-            'tipe_mutasi' => 'required|in:masuk,keluar',
-            'jumlah' => 'required|integer|min:1',
-            'keterangan' => 'nullable|string'
-        ]);
-
-        if ($request->tipe_mutasi == 'keluar' && $item->stok < $request->jumlah) {
-            return redirect()->back()->with('error', 'Stok tidak mencukupi untuk dikeluarkan.');
-        }
-
-        $stok_sebelum = $item->stok;
-
-        if ($request->tipe_mutasi == 'masuk') {
-            $item->stok += $request->jumlah;
-        } else {
-            $item->stok -= $request->jumlah;
-        }
-        
-        $item->save();
-
-        \App\Models\ItemMutation::create([
-            'item_id' => $item->id,
-            'tipe_mutasi' => ucfirst($request->tipe_mutasi),
-            'jumlah' => $request->jumlah,
-            'stok_sebelum' => $stok_sebelum,
-            'stok_sesudah' => $item->stok,
-            'keterangan' => $request->keterangan,
-            'dilakukan_oleh' => auth()->id()
-        ]);
-
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Manajemen Barang',
-            'aksi' => 'Mutasi Stok ' . ucfirst($request->tipe_mutasi),
-            'id_record' => $id
-        ]);
-
-        return redirect()->back()->with('success', 'Mutasi stok berhasil.');
-    }
-
     public function storeUser(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
-            'role' => 'required|in:Admin,Mahasiswa',
-            'nim' => 'nullable|string',
-            'ProgramStudi' => 'nullable|string'
+            'name'         => 'required|string|max:255',
+            'email'        => 'required|string|email|max:255|unique:users',
+            'password'     => 'required|string|min:8',
+            'role'         => 'required|in:Admin,Mahasiswa',
+            'nim'          => 'nullable|string',
+            'ProgramStudi' => 'nullable|string',
         ]);
 
         $user = User::create([
-            'name' => $request->name,
-            'nama_lengkap' => $request->name,
-            'email' => $request->email,
-            'password' => \Illuminate\Support\Facades\Hash::make($request->password),
-            'role' => strtolower($request->role),
-            'nim' => $request->nim,
+            'name'          => $request->name,
+            'nama_lengkap'  => $request->name,
+            'email'         => $request->email,
+            'password'      => \Illuminate\Support\Facades\Hash::make($request->password),
+            'role'          => strtolower($request->role),
+            'nim'           => $request->nim,
             'program_studi' => $request->ProgramStudi,
-            'is_active' => $request->has('is_active') ? 1 : 0
+            'is_active'     => $request->has('is_active') ? 1 : 0,
         ]);
 
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Manajemen User',
-            'aksi' => 'CREATE',
-            'id_record' => $user->id
-        ]);
+        $this->log(
+            'CREATE', 'Manajemen User', 'USR-' . str_pad($user->id, 3, '0', STR_PAD_LEFT),
+            "Menambah user baru '{$user->name}' dengan role {$user->role}",
+            null,
+            ['Nama' => $user->name, 'Email' => $user->email, 'Role' => $user->role]
+        );
 
         return redirect()->back()->with('success', 'User berhasil ditambahkan.');
     }
@@ -785,34 +885,35 @@ class AdminController extends Controller
         $user = User::findOrFail($id);
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,'.$id,
-            'role' => 'required|in:Admin,Mahasiswa',
-            'nim' => 'nullable|string',
-            'ProgramStudi' => 'nullable|string'
+            'name'         => 'required|string|max:255',
+            'email'        => 'required|string|email|max:255|unique:users,email,' . $id,
+            'role'         => 'required|in:Admin,Mahasiswa',
+            'nim'          => 'nullable|string',
+            'ProgramStudi' => 'nullable|string',
         ]);
 
+        $before = ['Nama' => $user->name, 'Email' => $user->email, 'Role' => $user->role];
+
         $user->update([
-            'name' => $request->name,
-            'nama_lengkap' => $request->name,
-            'email' => $request->email,
-            'role' => strtolower($request->role),
-            'nim' => $request->nim,
+            'name'          => $request->name,
+            'nama_lengkap'  => $request->name,
+            'email'         => $request->email,
+            'role'          => strtolower($request->role),
+            'nim'           => $request->nim,
             'program_studi' => $request->ProgramStudi,
-            'is_active' => $request->has('is_active') ? 1 : 0
+            'is_active'     => $request->has('is_active') ? 1 : 0,
         ]);
 
         if ($request->filled('password')) {
             $user->update(['password' => \Illuminate\Support\Facades\Hash::make($request->password)]);
         }
 
-        Auditlog::create([
-            'nama_pelaku' => auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Admin',
-            'role_pelaku' => auth()->user()->role ?? 'Admin',
-            'modul' => 'Manajemen User',
-            'aksi' => 'UPDATE',
-            'id_record' => $id
-        ]);
+        $this->log(
+            'UPDATE', 'Manajemen User', 'USR-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+            "Memperbarui data user '{$user->name}'",
+            $before,
+            ['Nama' => $user->name, 'Email' => $user->email, 'Role' => $user->role]
+        );
 
         return redirect()->back()->with('success', 'Data user berhasil diperbarui.');
     }

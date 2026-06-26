@@ -136,10 +136,10 @@
         transition: background 0.2s;
         margin-top: 20px;
     }
-    .btn-export { background: #1d4ed8; }
-    .btn-export:hover { background: #1e40af; }
-    .btn-apply { background: #374151; }
-    .btn-apply:hover { background: #1f2937; }
+    .btn-export { background: #217346; }
+    .btn-export:hover { background: #1a5c38; }
+    .btn-apply { background: #1d4ed8; }
+    .btn-apply:hover { background: #1e40af; }
 
     /* ===================== TABS ===================== */
     .tabs-nav {
