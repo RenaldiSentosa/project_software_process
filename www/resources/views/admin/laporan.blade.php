@@ -120,9 +120,8 @@
         border-color: #3b82f6;
         box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
     }
-    .btn-export {
+    .btn-export, .btn-apply {
         height: 38px;
-        background: #1d4ed8;
         color: #fff;
         font-size: 13px;
         font-weight: 600;
@@ -137,7 +136,10 @@
         transition: background 0.2s;
         margin-top: 20px;
     }
+    .btn-export { background: #1d4ed8; }
     .btn-export:hover { background: #1e40af; }
+    .btn-apply { background: #374151; }
+    .btn-apply:hover { background: #1f2937; }
 
     /* ===================== TABS ===================== */
     .tabs-nav {
@@ -234,6 +236,10 @@
     .badge-masuk  { background: #d1fae5; color: #065f46; }
     .badge-keluar { background: #fee2e2; color: #991b1b; }
 
+    /* badge untuk kolom Aktif & Selesai di tab Rekap Mahasiswa */
+    .badge-aktif-mhs   { background: #ede9fe; color: #7c3aed; }
+    .badge-selesai-mhs { background: #d1fae5; color: #065f46; }
+
     .tag-kategori {
         display: inline-block;
         padding: 2px 10px;
@@ -253,6 +259,13 @@
         border-top: 1px solid #e5e7eb;
         font-size: 12px;
         color: #6b7280;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .pagination-wrap nav > div {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
     }
     .pagination-wrap a, .pagination-wrap span {
         display: inline-flex;
@@ -364,57 +377,74 @@
     </div>
 
     {{-- ===================== FILTER BAR ===================== --}}
-    <div class="filter-bar">
-        <div class="flex flex-wrap items-end gap-4">
-            {{-- Jenis Laporan --}}
-            <div class="flex-1 min-w-[150px]">
-                <label>Jenis Laporan</label>
-                <select id="filterJenis" class="filter-select" onchange="handleFilterChange()">
-                    <option value="semua">Semua Laporan</option>
-                    <option value="peminjaman">Rekap Peminjaman</option>
-                    <option value="inventaris">Status Inventaris</option>
-                    <option value="mutasi">Log Mutasi Stok</option>
-                    <option value="mahasiswa">Rekap Mahasiswa</option>
-                </select>
-            </div>
-            {{-- Status (opsinya berubah otomatis ikut Jenis Laporan) --}}
-            <div class="flex-1 min-w-[140px] filter-status-wrap" id="filterStatusWrap">
-                <label>Status</label>
-                <select id="filterStatus" class="filter-select">
-                    <option value="">Semua</option>
-                </select>
-            </div>
-            {{-- Dari Tanggal --}}
-            <div class="flex-1 min-w-[140px]">
-                <label>Dari Tanggal</label>
-                <input type="date" id="filterDari" class="filter-input">
-            </div>
-            {{-- Sampai Tanggal --}}
-            <div class="flex-1 min-w-[140px]">
-                <label>Sampai Tanggal</label>
-                <input type="date" id="filterSampai" class="filter-input">
-            </div>
-            {{-- Export CSV --}}
-            <div>
-                <button class="btn-export" onclick="exportCSV()">
-                    <i class="fa-solid fa-file-csv"></i> Export CSV
-                </button>
+    {{--
+        Filter ini sekarang berfungsi 2 mode:
+        1. Tombol "Terapkan" -> reload halaman dengan query string (?jenis=...&status=...&dari=...&sampai=...)
+           sehingga tabel & pagination di 4 tab semua ikut ke-filter sesuai pilihan.
+        2. Tombol "Export CSV" -> kirim parameter yang sama ke route export, men-download CSV
+           sesuai jenis laporan, status, dan rentang tanggal yang sedang dipilih.
+        Value awal select/input diisi dari $jenisFilter, $statusFilter, $dariFilter, $sampaiFilter
+        (dikirim dari controller) supaya filter yang aktif tidak hilang saat pindah halaman pagination.
+    --}}
+    <form id="filterForm" method="GET" action="{{ route('admin.laporan') }}">
+        <div class="filter-bar">
+            <div class="flex flex-wrap items-end gap-4">
+                {{-- Jenis Laporan --}}
+                <div class="flex-1 min-w-[150px]">
+                    <label>Jenis Laporan</label>
+                    <select name="jenis" id="filterJenis" class="filter-select" onchange="handleFilterChange()">
+                        <option value="semua" {{ $jenisFilter === 'semua' ? 'selected' : '' }}>Semua Laporan</option>
+                        <option value="peminjaman" {{ $jenisFilter === 'peminjaman' ? 'selected' : '' }}>Rekap Peminjaman</option>
+                        <option value="inventaris" {{ $jenisFilter === 'inventaris' ? 'selected' : '' }}>Status Inventaris</option>
+                        <option value="mutasi" {{ $jenisFilter === 'mutasi' ? 'selected' : '' }}>Log Mutasi Stok</option>
+                        <option value="mahasiswa" {{ $jenisFilter === 'mahasiswa' ? 'selected' : '' }}>Rekap Mahasiswa & Dosen</option>
+                    </select>
+                </div>
+                {{-- Status (opsinya berubah otomatis ikut Jenis Laporan) --}}
+                <div class="flex-1 min-w-[140px] filter-status-wrap" id="filterStatusWrap">
+                    <label>Status</label>
+                    <select name="status" id="filterStatus" class="filter-select">
+                        <option value="">Semua</option>
+                    </select>
+                </div>
+                {{-- Dari Tanggal --}}
+                <div class="flex-1 min-w-[140px]">
+                    <label>Dari Tanggal</label>
+                    <input type="date" name="dari" id="filterDari" class="filter-input" value="{{ $dariFilter }}">
+                </div>
+                {{-- Sampai Tanggal --}}
+                <div class="flex-1 min-w-[140px]">
+                    <label>Sampai Tanggal</label>
+                    <input type="date" name="sampai" id="filterSampai" class="filter-input" value="{{ $sampaiFilter }}">
+                </div>
+                {{-- Terapkan Filter --}}
+                <div>
+                    <button type="submit" class="btn-apply" title="Terapkan filter ke tabel di bawah">
+                        <i class="fa-solid fa-filter"></i> Terapkan
+                    </button>
+                </div>
+                {{-- Export CSV --}}
+                <div>
+                    <button type="button" class="btn-export" onclick="exportCSV()">
+                        <i class="fa-solid fa-file-csv"></i> Export CSV
+                    </button>
+                </div>
             </div>
         </div>
-    </div>
+    </form>
 
     {{-- ===================== TABS + TABLE ===================== --}}
     <div class="table-card">
         {{-- Tab Nav --}}
         <div class="tabs-nav px-2 pt-1">
-            <button class="tab-btn active" onclick="switchTab('tab-peminjaman', this)" id="btn-peminjaman">Rekap Peminjaman</button>
-            <button class="tab-btn" onclick="switchTab('tab-inventaris', this)" id="btn-inventaris">Status Inventaris</button>
-            <button class="tab-btn" onclick="switchTab('tab-mutasi', this)" id="btn-mutasi">Log Mutasi Stok</button>
-            <button class="tab-btn" onclick="switchTab('tab-mahasiswa', this)" id="btn-mahasiswa">Rekap Mahasiswa</button>
+            <button class="tab-btn {{ $jenisFilter === 'semua' || $jenisFilter === 'peminjaman' ? 'active' : '' }}" onclick="switchTab('tab-peminjaman', this)" id="btn-peminjaman">Rekap Peminjaman</button>
+            <button class="tab-btn {{ $jenisFilter === 'inventaris' ? 'active' : '' }}" onclick="switchTab('tab-inventaris', this)" id="btn-inventaris">Status Inventaris</button>
+            <button class="tab-btn {{ $jenisFilter === 'mutasi' ? 'active' : '' }}" onclick="switchTab('tab-mutasi', this)" id="btn-mutasi">Log Mutasi Stok</button>
+            <button class="tab-btn {{ $jenisFilter === 'mahasiswa' ? 'active' : '' }}" onclick="switchTab('tab-mahasiswa', this)" id="btn-mahasiswa">Rekap Mahasiswa & Dosen</button>
         </div>
 
         {{-- ===== TAB 1: Rekap Peminjaman ===== --}}
-        <div id="tab-peminjaman" class="tab-content active">
+        <div id="tab-peminjaman" class="tab-content {{ $jenisFilter === 'semua' || $jenisFilter === 'peminjaman' ? 'active' : '' }}">
             <div class="overflow-x-auto">
                 <table class="data-table">
                     <thead>
@@ -436,7 +466,13 @@
                                 <div class="font-semibold text-slate-800">{{ $pjm->mahasiswa->nama_lengkap ?? ($pjm->mahasiswa->name ?? '-') }}</div>
                                 <div class="text-xs text-slate-400">{{ $pjm->mahasiswa->nim ?? '' }}</div>
                             </td>
-                            <td class="text-slate-600">{{ $pjm->mahasiswa->prodi ?? 'Informatika' }}</td>
+                            <td class="text-slate-600">
+                                @if(strtolower($pjm->mahasiswa->name ?? '') === 'dosen')
+                                    <span class="text-slate-300">-</span>
+                                @else
+                                    {{ $pjm->mahasiswa->prodi ?? ($pjm->mahasiswa->program_studi ?? 'Informatika') }}
+                                @endif
+                            </td>
                             <td class="text-center font-semibold text-slate-800">{{ $pjm->items->sum('jumlah_unit') }}</td>
                             <td class="text-slate-600 text-xs">{{ \Carbon\Carbon::parse($pjm->tgl_rencana_pinjam)->format('d M Y') }}</td>
                             <td>
@@ -486,16 +522,16 @@
                     </tbody>
                 </table>
             </div>
-            @if(method_exists($rekapPeminjaman, 'links'))
+            @if($rekapPeminjaman->hasPages())
             <div class="pagination-wrap">
                 <span>Menampilkan {{ $rekapPeminjaman->firstItem() }}–{{ $rekapPeminjaman->lastItem() }} dari {{ $rekapPeminjaman->total() }} data</span>
-                <div>{{ $rekapPeminjaman->links('vendor.pagination.simple-tailwind') }}</div>
+                <div>{{ $rekapPeminjaman->onEachSide(1)->links() }}</div>
             </div>
             @endif
         </div>
 
         {{-- ===== TAB 2: Status Inventaris ===== --}}
-        <div id="tab-inventaris" class="tab-content">
+        <div id="tab-inventaris" class="tab-content {{ $jenisFilter === 'inventaris' ? 'active' : '' }}">
             <div class="overflow-x-auto">
                 <table class="data-table">
                     <thead>
@@ -516,7 +552,7 @@
                             <td class="font-medium text-slate-800">{{ $inv->nama_barang }}</td>
                             <td><span class="tag-kategori">{{ $inv->kategori ?? '-' }}</span></td>
                             <td class="font-bold text-slate-900">{{ $inv->stok }}</td>
-                            <td class="text-slate-500">{{ $inv->min_stok ?? 10 }}</td>
+                            <td class="text-slate-500">{{ $inv->stok_minimum ?? 10 }}</td>
                             <td>
                                 @php
                                     $kondisi = $inv->kondisi ?? 'Baik';
@@ -560,23 +596,23 @@
                     </tbody>
                 </table>
             </div>
-            @if(method_exists($inventarisList, 'links'))
+            @if($inventarisList->hasPages())
             <div class="pagination-wrap">
                 <span>Menampilkan {{ $inventarisList->firstItem() }}–{{ $inventarisList->lastItem() }} dari {{ $inventarisList->total() }} data</span>
-                <div>{{ $inventarisList->links('vendor.pagination.simple-tailwind') }}</div>
+                <div>{{ $inventarisList->onEachSide(1)->links() }}</div>
             </div>
             @endif
         </div>
 
         {{-- ===== TAB 3: Log Mutasi Stok ===== --}}
-        <div id="tab-mutasi" class="tab-content">
+        <div id="tab-mutasi" class="tab-content {{ $jenisFilter === 'mutasi' ? 'active' : '' }}">
             <div class="overflow-x-auto">
                 <table class="data-table">
                     <thead>
                         <tr>
                             <th>Id Mutasi</th>
                             <th>Tanggal Mutasi</th>
-                            <th>nama barang</th>
+                            <th>Nama Barang</th>
                             <th>Tipe Mutasi</th>
                             <th>Jumlah</th>
                             <th>Keterangan</th>
@@ -588,13 +624,19 @@
                         <tr>
                             <td class="font-semibold text-slate-800">MUT-{{ str_pad($mutasi->id, 3, '0', STR_PAD_LEFT) }}</td>
                             <td class="text-slate-600 text-xs">
-                                {{ $mutasi->created_at ? $mutasi->created_at->format('Y-m-d') : '-' }}<br>
-                                <span class="text-slate-400">{{ $mutasi->created_at ? $mutasi->created_at->format('H:i') : '' }}</span>
+                                @if($mutasi->created_at)
+                                    {{ $mutasi->created_at->format('d M Y') }}<br>
+                                    <span class="text-slate-400">{{ $mutasi->created_at->format('H:i') }}</span>
+                                @else
+                                    <span class="text-slate-300">-</span>
+                                @endif
                             </td>
-                            <td class="font-medium text-slate-800">{{ $mutasi->nama_barang ?? ($mutasi->barang->nama_barang ?? '-') }}</td>
+                            {{-- relasi yang benar adalah 'item' (lihat ItemMutation::item() -> belongsTo Item),
+                                 bukan 'barang'. Sebelumnya selalu '-' karena 'barang' tidak pernah ke-load --}}
+                            <td class="font-medium text-slate-800">{{ $mutasi->item->nama_barang ?? '-' }}</td>
                             <td>
                                 @php
-                                    $isMasuk = str_contains(strtolower($mutasi->aksi ?? $mutasi->tipe ?? ''), 'masuk');
+                                    $isMasuk = strtolower($mutasi->tipe_mutasi ?? '') === 'masuk';
                                 @endphp
                                 @if($isMasuk)
                                 <span class="badge badge-masuk">
@@ -606,11 +648,20 @@
                                 </span>
                                 @endif
                             </td>
-                            <td class="font-bold text-slate-800">{{ $mutasi->jumlah ?? $mutasi->qty ?? '-' }}</td>
-                            <td class="text-slate-500 text-xs max-w-[160px] truncate" title="{{ $mutasi->keterangan ?? $mutasi->aksi ?? '' }}">
-                                {{ Str::limit($mutasi->keterangan ?? $mutasi->aksi ?? '-', 22) }}
+                            <td class="font-bold text-slate-800">{{ $mutasi->jumlah ?? '-' }}</td>
+                            <td class="text-slate-500 text-xs max-w-[160px] truncate" title="{{ $mutasi->keterangan ?? '' }}">
+                                {{ Str::limit($mutasi->keterangan ?? '-', 22) }}
                             </td>
-                            <td class="text-slate-600">{{ $mutasi->nama_pelaku ?? $mutasi->operator ?? 'Admin Lab' }}</td>
+                            <td class="text-slate-600">
+                                @php
+                                    $operatorNama = 'Admin Lab';
+                                    if ($mutasi->dilakukan_oleh) {
+                                        $userOperator = \App\Models\User::find($mutasi->dilakukan_oleh);
+                                        $operatorNama = $userOperator->nama_lengkap ?? $userOperator->name ?? 'Admin Lab';
+                                    }
+                                @endphp
+                                {{ $operatorNama }}
+                            </td>
                         </tr>
                         @empty
                         <tr>
@@ -625,22 +676,22 @@
                     </tbody>
                 </table>
             </div>
-            @if(method_exists($mutasiList, 'links'))
+            @if($mutasiList->hasPages())
             <div class="pagination-wrap">
                 <span>Menampilkan {{ $mutasiList->firstItem() }}–{{ $mutasiList->lastItem() }} dari {{ $mutasiList->total() }} data</span>
-                <div>{{ $mutasiList->links('vendor.pagination.simple-tailwind') }}</div>
+                <div>{{ $mutasiList->onEachSide(1)->links() }}</div>
             </div>
             @endif
         </div>
 
         {{-- ===== TAB 4: Rekap Mahasiswa ===== --}}
-        <div id="tab-mahasiswa" class="tab-content">
+        <div id="tab-mahasiswa" class="tab-content {{ $jenisFilter === 'mahasiswa' ? 'active' : '' }}">
             <div class="overflow-x-auto">
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>Mahasiswa</th>
-                            <th>NIM</th>
+                            <th>Nama</th>
+                            <th>NIM/NIDN</th>
                             <th>Prodi</th>
                             <th class="text-center">Total</th>
                             <th class="text-center">Aktif</th>
@@ -650,19 +701,29 @@
                     <tbody>
                         @forelse($rekapMahasiswa as $mhs)
                         <tr>
-                            <td class="font-semibold text-slate-800">{{ $mhs->nama_lengkap ?? $mhs->name }}</td>
+                            <td class="font-semibold text-slate-800">{{ $mhs->nama_lengkap ?? '-' }}</td>
                             <td class="text-slate-500 text-xs">{{ $mhs->nim ?? '-' }}</td>
-                            <td class="text-slate-600">{{ $mhs->prodi ?? 'Teknik Informatika' }}</td>
+                            <td class="text-slate-600">
+                                @if(strtolower($mhs->name ?? '') === 'dosen')
+                                    <span class="text-slate-300">-</span>
+                                @else
+                                    {{ $mhs->prodi ?? ($mhs->program_studi ?? 'Teknik Informatika') }}
+                                @endif
+                            </td>
                             <td class="text-center font-bold text-slate-900">{{ $mhs->total_pengajuan }}</td>
-                            <td class="text-center font-bold text-blue-500">{{ $mhs->dipinjam }}</td>
-                            <td class="text-center font-bold text-emerald-500">{{ ($mhs->total_pengajuan ?? 0) - ($mhs->dipinjam ?? 0) - ($mhs->ditolak ?? 0) - ($mhs->menunggu ?? 0) }}</td>
+                            <td class="text-center">
+                                <span class="badge badge-aktif-mhs">{{ $mhs->aktif ?? 0 }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge badge-selesai-mhs">{{ $mhs->selesai ?? 0 }}</span>
+                            </td>
                         </tr>
                         @empty
                         <tr>
                             <td colspan="6">
                                 <div class="empty-state">
                                     <i class="fa-solid fa-user-graduate"></i>
-                                    <p>Belum ada data mahasiswa</p>
+                                    <p>Belum ada data mahasiswa atau dosen</p>
                                 </div>
                             </td>
                         </tr>
@@ -670,10 +731,10 @@
                     </tbody>
                 </table>
             </div>
-            @if(method_exists($rekapMahasiswa, 'links'))
+            @if($rekapMahasiswa->hasPages())
             <div class="pagination-wrap">
                 <span>Menampilkan {{ $rekapMahasiswa->firstItem() }}–{{ $rekapMahasiswa->lastItem() }} dari {{ $rekapMahasiswa->total() }} data</span>
-                <div>{{ $rekapMahasiswa->links('vendor.pagination.simple-tailwind') }}</div>
+                <div>{{ $rekapMahasiswa->onEachSide(1)->links() }}</div>
             </div>
             @endif
         </div>
@@ -718,8 +779,12 @@ const STATUS_OPTIONS = {
     mahasiswa: [], // tidak ada status untuk rekap mahasiswa
 };
 
+/* Status yang sedang aktif (dikirim dari controller via query string), dipakai untuk
+   menjaga pilihan status tetap ter-set kembali setelah opsi di-render ulang. */
+const STATUS_AKTIF = @json($statusFilter);
+
 /* ===================== RENDER OPSI STATUS ===================== */
-function renderStatusOptions(jenis) {
+function renderStatusOptions(jenis, statusTerpilih) {
     const select = document.getElementById('filterStatus');
     const wrap   = document.getElementById('filterStatusWrap');
     const opsi   = STATUS_OPTIONS[jenis] || STATUS_OPTIONS.semua;
@@ -739,6 +804,11 @@ function renderStatusOptions(jenis) {
         opt.textContent = o.label;
         select.appendChild(opt);
     });
+
+    // pertahankan status yang sedang aktif kalau memang valid untuk jenis ini
+    if (statusTerpilih && opsi.some(o => o.value === statusTerpilih)) {
+        select.value = statusTerpilih;
+    }
 
     // kalau jenis = mahasiswa, sembunyikan filter status sepenuhnya (tidak relevan)
     if (jenis === 'mahasiswa') {
@@ -768,18 +838,23 @@ function handleFilterChange() {
     if (map[val]) {
         const btn = document.getElementById(map[val].btn);
         switchTab(map[val].tab, btn);
+    } else {
+        // jenis = semua -> tampilkan tab peminjaman sebagai default
+        const btn = document.getElementById('btn-peminjaman');
+        switchTab('tab-peminjaman', btn);
     }
 
     // setiap kali jenis laporan berganti, opsi status ikut berganti
     // dan otomatis di-reset ke "Semua" supaya tidak ada nilai status lama
     // yang nyangkut dan tidak sesuai dengan jenis laporan yang baru dipilih
-    renderStatusOptions(val);
+    renderStatusOptions(val, null);
 }
 
 /* ===================== INIT SAAT HALAMAN DIMUAT ===================== */
 document.addEventListener('DOMContentLoaded', function () {
     const jenisAwal = document.getElementById('filterJenis').value || 'semua';
-    renderStatusOptions(jenisAwal);
+    // pertahankan status yang sedang aktif (hasil filter sebelumnya) saat halaman baru dimuat
+    renderStatusOptions(jenisAwal, STATUS_AKTIF);
 });
 
 /* ===================== EXPORT CSV ===================== */
@@ -847,7 +922,7 @@ function getJenisLabel(val) {
         peminjaman : 'Rekap Peminjaman',
         inventaris : 'Status Inventaris',
         mutasi     : 'Log Mutasi Stok',
-        mahasiswa  : 'Rekap Mahasiswa',
+        mahasiswa  : 'Rekap Mahasiswa & Dosen',
     };
     return labels[val] || 'Semua Laporan';
 }

@@ -131,13 +131,13 @@ class AdminController extends Controller
     {
         $totalPeminjaman = Borrowing::count();
         $peminjamanBulanIni = Borrowing::whereMonth('created_at', now()->month)->count();
-        
+
         $peminjamanAktif = Borrowing::whereIn('status', ['Dipinjam', 'Menunggu'])->count();
         $peminjamanMenungguBulanIni = Borrowing::whereIn('status', ['Dipinjam', 'Menunggu'])->whereMonth('created_at', now()->month)->count();
-        
+
         $alatRusak = Item::where('kondisi', '!=', 'Baik')->count();
         $alatRusakBulanIni = Item::where('kondisi', '!=', 'Baik')->whereMonth('updated_at', now()->month)->count();
-        
+
         $totalMahasiswa = User::where('role', 'mahasiswa')->count();
         $mahasiswaBaruBulanIni = User::where('role', 'mahasiswa')->whereMonth('created_at', now()->month)->count();
 
@@ -149,29 +149,87 @@ class AdminController extends Controller
             ->take(7)
             ->get();
 
-        $queryPeminjaman = Borrowing::with('mahasiswa', 'items.tool')->orderBy('created_at', 'desc');
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $queryPeminjaman->whereBetween('created_at', [
-                $request->start_date . ' 00:00:00',
-                $request->end_date . ' 23:59:59'
-            ]);
-        }
-        $rekapPeminjaman = $queryPeminjaman->get();
+        // ===================== FILTER YANG DIPAKAI BERSAMA (Jenis, Status, Tanggal) =====================
+        // Filter ini dikirim sebagai query string (?jenis=...&status=...&dari=...&sampai=...)
+        // supaya saat pindah halaman pagination di salah satu tab, filter yang sedang aktif tidak hilang.
+        $jenisFilter  = $request->query('jenis', 'semua');
+        $statusFilter = $request->query('status', '');
+        $dariFilter   = $request->query('dari', '');
+        $sampaiFilter = $request->query('sampai', '');
 
-        $inventarisList = Item::all();
-        $mutasiList = \App\Models\ItemMutation::with('item')->orderBy('created_at', 'desc')->get();
-        $rekapMahasiswa = User::where('role', 'mahasiswa')->withCount([
+        $statusPeminjaman = ['Dipinjam', 'Dikembalikan', 'Ditolak', 'Menunggu', 'Disetujui', 'Diproses'];
+        $statusInventaris = ['Baik', 'Rusak Ringan', 'Rusak Berat', 'Tidak Layak'];
+        $statusMutasi     = ['Masuk', 'Keluar'];
+
+        // ===================== TAB 1: Rekap Peminjaman (paginate 10) =====================
+        $queryPeminjaman = Borrowing::with('mahasiswa', 'items.tool')->orderBy('created_at', 'desc');
+
+        if (in_array($jenisFilter, ['semua', 'peminjaman'])) {
+            if ($statusFilter && in_array($statusFilter, $statusPeminjaman)) {
+                $queryPeminjaman->where('status', $statusFilter);
+            }
+            if ($dariFilter)   $queryPeminjaman->whereDate('tgl_rencana_pinjam', '>=', $dariFilter);
+            if ($sampaiFilter) $queryPeminjaman->whereDate('tgl_rencana_pinjam', '<=', $sampaiFilter);
+        }
+        $rekapPeminjaman = $queryPeminjaman->paginate(10, ['*'], 'page_pjm')->withQueryString();
+
+        // ===================== TAB 2: Status Inventaris (paginate 10) =====================
+        $queryInventaris = Item::orderBy('nama_barang');
+
+        if (in_array($jenisFilter, ['semua', 'inventaris'])) {
+            if ($statusFilter && in_array($statusFilter, $statusInventaris)) {
+                $queryInventaris->where('kondisi', $statusFilter);
+            }
+        }
+        $inventarisList = $queryInventaris->paginate(10, ['*'], 'page_inv')->withQueryString();
+
+        // ===================== TAB 3: Log Mutasi Stok (paginate 10) =====================
+        // PENTING: relasi yang benar adalah 'item' (belongsTo Item::class), bukan 'barang'.
+        // Sebelumnya blade memanggil $mutasi->barang->nama_barang yang selalu null karena
+        // relasi tersebut tidak pernah di-load (controller hanya load 'item') -> makanya
+        // nama barang & tampilannya selalu kosong/'-' di tab Log Mutasi Stok.
+        $queryMutasi = \App\Models\ItemMutation::with('item')->orderBy('created_at', 'desc');
+
+        if (in_array($jenisFilter, ['semua', 'mutasi'])) {
+            if ($statusFilter && in_array($statusFilter, $statusMutasi)) {
+                $queryMutasi->where('tipe_mutasi', $statusFilter);
+            }
+            if ($dariFilter)   $queryMutasi->whereDate('created_at', '>=', $dariFilter);
+            if ($sampaiFilter) $queryMutasi->whereDate('created_at', '<=', $sampaiFilter);
+        }
+        $mutasiList = $queryMutasi->paginate(10, ['*'], 'page_mut')->withQueryString();
+
+        // ===================== TAB 4: Rekap Mahasiswa & Dosen (paginate 10) =====================
+        // CATATAN PENTING: di database, kolom `role` SELALU bernilai 'mahasiswa' baik untuk
+        // mahasiswa maupun dosen (role hanya membedakan 'admin' vs non-admin). Status "dosen"
+        // sebenarnya disimpan di kolom `name` (berisi label seperti 'Dosen', 'Mahasiswa', dst),
+        // BUKAN di kolom role. Jadi query ini tetap where('role','mahasiswa') -- itu sudah
+        // mencakup dosen juga -- dan untuk membedakan tampilan dosen vs mahasiswa di blade,
+        // dicek dari kolom `name`, lihat helper isDosen() di compact di bawah.
+        $queryMahasiswa = User::where('role', 'mahasiswa')->withCount([
             'borrowings as total_pengajuan',
-            'borrowings as menunggu'  => fn($q) => $q->where('status', 'Menunggu'),
-            'borrowings as disetujui' => fn($q) => $q->where('status', 'Disetujui'),
-            'borrowings as dipinjam'  => fn($q) => $q->whereIn('status', ['Diproses', 'Dipinjam']),
-            'borrowings as ditolak'   => fn($q) => $q->where('status', 'Ditolak'),
-        ])->get();
+            'borrowings as menunggu'     => fn($q) => $q->where('status', 'Menunggu'),
+            'borrowings as disetujui'    => fn($q) => $q->where('status', 'Disetujui'),
+            'borrowings as dipinjam'     => fn($q) => $q->whereIn('status', ['Diproses', 'Dipinjam']),
+            'borrowings as ditolak'      => fn($q) => $q->where('status', 'Ditolak'),
+            'borrowings as dikembalikan' => fn($q) => $q->where('status', 'Dikembalikan'),
+        ])->orderBy('nama_lengkap');
+
+        $rekapMahasiswa = $queryMahasiswa->paginate(10, ['*'], 'page_mhs')->withQueryString();
+
+        // Tambahkan field 'aktif' (menunggu+disetujui+dipinjam) dan 'selesai' (dikembalikan)
+        // dihitung di controller (bukan di blade) agar konsisten dipakai untuk badge warna.
+        $rekapMahasiswa->getCollection()->transform(function ($mhs) {
+            $mhs->aktif   = ($mhs->menunggu ?? 0) + ($mhs->disetujui ?? 0) + ($mhs->dipinjam ?? 0);
+            $mhs->selesai = ($mhs->dikembalikan ?? 0);
+            return $mhs;
+        });
 
         return view('admin.laporan', compact(
             'totalPeminjaman', 'peminjamanBulanIni', 'peminjamanAktif', 'peminjamanMenungguBulanIni',
             'alatRusak', 'alatRusakBulanIni', 'totalMahasiswa', 'mahasiswaBaruBulanIni',
-            'alatSeringDipinjam', 'rekapPeminjaman', 'inventarisList', 'mutasiList', 'rekapMahasiswa'
+            'alatSeringDipinjam', 'rekapPeminjaman', 'inventarisList', 'mutasiList', 'rekapMahasiswa',
+            'jenisFilter', 'statusFilter', 'dariFilter', 'sampaiFilter'
         ));
     }
 
@@ -292,7 +350,9 @@ class AdminController extends Controller
             }
         }
 
-        // ── Rekap Mahasiswa ───────────────────────────────────
+        // ── Rekap Mahasiswa & Dosen ───────────────────────────
+        // Sama seperti di method laporan(): role selalu 'mahasiswa' untuk dosen maupun mahasiswa.
+        // Status dosen dideteksi dari kolom `name`, bukan `role`.
         if (in_array($jenis, ['semua', 'mahasiswa'])) {
             $data = User::where('role', 'mahasiswa')->withCount([
                 'borrowings as total_pengajuan',
@@ -303,15 +363,15 @@ class AdminController extends Controller
             ])->orderBy('nama_lengkap')->get();
 
             if ($isGabungan) {
-                $rows[] = ['REKAP MAHASISWA'];
+                $rows[] = ['REKAP MAHASISWA & DOSEN'];
             }
-            $rows[] = ['Nama Mahasiswa', 'NIM', 'Program Studi', 'Total Pengajuan', 'Aktif/Dipinjam', 'Menunggu', 'Dikembalikan', 'Ditolak'];
+            $rows[] = ['Nama', 'NIM/NIDN', 'Program Studi', 'Total Pengajuan', 'Aktif/Dipinjam', 'Menunggu', 'Dikembalikan', 'Ditolak'];
 
             foreach ($data as $mhs) {
                 $rows[] = [
-                    $mhs->nama_lengkap ?? $mhs->name,
+                    $mhs->nama_lengkap ?? '-',
                     $mhs->nim           ?? '-',
-                    $mhs->program_studi ?? '-',
+                    strtolower($mhs->name ?? '') === 'dosen' ? '-' : ($mhs->program_studi ?? '-'),
                     $mhs->total_pengajuan,
                     $mhs->dipinjam,
                     $mhs->menunggu,
