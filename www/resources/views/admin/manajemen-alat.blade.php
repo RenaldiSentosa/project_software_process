@@ -516,10 +516,7 @@ body {
                                             <input type="number" name="stok_tersedia_display" min="0"
                                                    value="{{ $dTersedia }}"
                                                    class="input-status-unit w-full bg-transparent text-emerald-700 font-bold text-sm focus:outline-none" data-status="tersedia">
-                                            <div class="flex flex-col">
-                                                <button type="button" class="stepper-btn stepper-up text-emerald-600 text-[10px]"><i class="fa-solid fa-chevron-up"></i></button>
-                                                <button type="button" class="stepper-btn stepper-down text-emerald-600 text-[10px]"><i class="fa-solid fa-chevron-down"></i></button>
-                                            </div>
+
                                         </div>
                                     </div>
                                     <div class="border border-purple-200 bg-purple-50/40 rounded-xl p-3">
@@ -528,10 +525,7 @@ body {
                                             <input type="number" name="stok_dipinjam_display" min="0"
                                                    value="{{ $dDipinjam }}"
                                                    class="input-status-unit w-full bg-transparent text-purple-700 font-bold text-sm focus:outline-none" data-status="dipinjam">
-                                            <div class="flex flex-col">
-                                                <button type="button" class="stepper-btn stepper-up text-purple-600 text-[10px]"><i class="fa-solid fa-chevron-up"></i></button>
-                                                <button type="button" class="stepper-btn stepper-down text-purple-600 text-[10px]"><i class="fa-solid fa-chevron-down"></i></button>
-                                            </div>
+
                                         </div>
                                     </div>
                                     <div class="border border-rose-200 bg-rose-50/40 rounded-xl p-3">
@@ -540,10 +534,7 @@ body {
                                             <input type="number" name="stok_rusak_display" min="0"
                                                    value="{{ $dRusak }}"
                                                    class="input-status-unit w-full bg-transparent text-rose-700 font-bold text-sm focus:outline-none" data-status="rusak">
-                                            <div class="flex flex-col">
-                                                <button type="button" class="stepper-btn stepper-up text-rose-600 text-[10px]"><i class="fa-solid fa-chevron-up"></i></button>
-                                                <button type="button" class="stepper-btn stepper-down text-rose-600 text-[10px]"><i class="fa-solid fa-chevron-down"></i></button>
-                                            </div>
+
                                         </div>
                                     </div>
                                     <div class="border border-amber-200 bg-amber-50/40 rounded-xl p-3">
@@ -552,10 +543,7 @@ body {
                                             <input type="number" name="stok_perbaikan_display" min="0"
                                                    value="{{ $dPerbaikan }}"
                                                    class="input-status-unit w-full bg-transparent text-amber-700 font-bold text-sm focus:outline-none" data-status="perbaikan">
-                                            <div class="flex flex-col">
-                                                <button type="button" class="stepper-btn stepper-up text-amber-600 text-[10px]"><i class="fa-solid fa-chevron-up"></i></button>
-                                                <button type="button" class="stepper-btn stepper-down text-amber-600 text-[10px]"><i class="fa-solid fa-chevron-down"></i></button>
-                                            </div>
+
                                         </div>
                                     </div>
                                 </div>

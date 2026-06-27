@@ -130,7 +130,7 @@ body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
                             </button>
                             <button onclick="toggleModal('modal-mutasi-{{ $item->id }}')"
                                     class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition" title="Mutasi Stok">
-                                <i class="fa-solid fa-arrows-rotate text-sm"></i>
+                                <i class="fa-solid fa-right-left text-sm"></i>
                             </button>
                             <button type="button"
                                     onclick="konfirmasiHapus({{ $item->id }}, '{{ addslashes($item->nama_barang) }}')"

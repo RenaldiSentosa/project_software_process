@@ -94,11 +94,9 @@
         }
 
         .logo-text {
-            font-size: 12.5px;
+            font-size: 15px;
             font-weight: 700;
-            line-height: 1.25;
-            letter-spacing: 0.07em;
-            text-transform: uppercase;
+            line-height: 1.2;
             color: #ffffff;
         }
 
@@ -175,36 +173,33 @@
         .tabs {
             display: flex;
             width: fit-content;
-            border: 1.5px solid #c9cdd4;
+            background: #f1f5f9;
             border-radius: 50px;
-            overflow: hidden;
-            background: #fff;
+            padding: 4px;
         }
 
         .tab {
-            padding: 7px 22px;
+            padding: 6px 20px;
             font-size: 14px;
-            font-weight: 400;
+            font-weight: 500;
             color: #6b7280;
             text-decoration: none;
             display: inline-block;
             font-family: 'Plus Jakarta Sans', sans-serif;
             background: transparent;
             border: none;
+            border-radius: 50px;
             cursor: pointer;
             line-height: 1.5;
-            transition: color 0.15s;
+            transition: all 0.2s;
             white-space: nowrap;
-        }
-
-        .tab:not(:last-child) {
-            border-right: 1.5px solid #c9cdd4;
         }
 
         .tab.active {
             color: #111827;
-            font-weight: 700;
+            font-weight: 600;
             background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         /* LABEL */
@@ -393,12 +388,12 @@
             <div class="logo-icon">
                 <img src="{{ asset('images/logo.png') }}" alt="Logo IPWIJA">
             </div>
-            <div class="logo-text">IPWIJA<br>SMARTLAB</div>
+            <div class="logo-text">UniLab<br>LMS IPWIJA</div>
         </div>
 
         {{-- B. KONTEN TENGAH --}}
         <div class="left-body">
-            <h2>Bergabung dengan SmartLab IPWIJA</h2>
+            <h2>Bergabung dengan UniLab</h2>
             <p>Daftar sekarang untuk mengakses katalog alat lab dan mengajukan peminjaman secara online.</p>
             <div class="badges">
                 <span class="badge">500+ Alat Lab</span>
@@ -448,8 +443,10 @@
                     <label class="field-label" for="nim">NIM</label>
                     <div class="input-wrap">
                         <svg class="ico" viewBox="0 0 24 24">
-                            <rect x="3" y="4" width="18" height="16" rx="2"/>
-                            <path d="M7 8h10M7 12h6"/>
+                            <rect x="3" y="4" width="18" height="16" rx="2" ry="2"/>
+                            <rect x="7" y="8" width="4" height="3"/>
+                            <line x1="13" y1="8" x2="17" y2="8"/>
+                            <line x1="13" y1="11" x2="17" y2="11"/>
                         </svg>
                         <input type="text" id="nim" name="nim"
                             placeholder="Nomor induk mahasiswa"
@@ -458,7 +455,6 @@
                             pattern="[0-9]*"
                             autocomplete="off">
                     </div>
-                    <p class="hint-msg">NIM harus 12 digit angka.</p>
                 </div>
 
                 <div class="field">
@@ -469,7 +465,7 @@
                             <polyline points="22,6 12,13 2,6"/>
                         </svg>
                         <input type="email" id="email" name="email"
-                            placeholder="nama@ipwija.ac.id"
+                            placeholder="Nama@gmail.com"
                             autocomplete="email">
                     </div>
                 </div>
@@ -517,6 +513,7 @@
                     <div class="input-wrap">
                         <svg class="ico" viewBox="0 0 24 24">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            <polyline points="9 12 11 14 15 10"/>
                         </svg>
                         <input type="password" id="password_confirmation" name="password_confirmation"
                             placeholder="Ulangi Password"
@@ -565,8 +562,10 @@
                     <label class="field-label" for="nuptk">NUPTK</label>
                     <div class="input-wrap">
                         <svg class="ico" viewBox="0 0 24 24">
-                            <rect x="3" y="4" width="18" height="16" rx="2"/>
-                            <path d="M7 8h10M7 12h6"/>
+                            <rect x="3" y="4" width="18" height="16" rx="2" ry="2"/>
+                            <rect x="7" y="8" width="4" height="3"/>
+                            <line x1="13" y1="8" x2="17" y2="8"/>
+                            <line x1="13" y1="11" x2="17" y2="11"/>
                         </svg>
                         <input type="text" id="nuptk" name="nim"
                             placeholder="Nomor Unik Pendidik Tenaga Kependidikan"
@@ -575,7 +574,6 @@
                             pattern="[0-9]*"
                             autocomplete="off">
                     </div>
-                    <p class="hint-msg">NUPTK harus 16 digit angka.</p>
                 </div>
 
                 <div class="field">
@@ -586,7 +584,7 @@
                             <polyline points="22,6 12,13 2,6"/>
                         </svg>
                         <input type="email" id="email_dosen" name="email"
-                            placeholder="nama@ipwija.ac.id"
+                            placeholder="Nama@gmail.com"
                             autocomplete="email">
                     </div>
                 </div>
@@ -615,6 +613,7 @@
                     <div class="input-wrap">
                         <svg class="ico" viewBox="0 0 24 24">
                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            <polyline points="9 12 11 14 15 10"/>
                         </svg>
                         <input type="password" id="password_confirmation_dosen" name="password_confirmation"
                             placeholder="Ulangi Password"

@@ -32,13 +32,13 @@ body {
 .dot-export  { background:#0D9488; }
 .dot-default { background:#64748B; }
 
-.panel-before { background:#FEF2F2; border:1px solid #FECACA; border-radius:10px; }
-.panel-after  { background:#F0FDF4; border:1px solid #A7F3D0; border-radius:10px; }
-.panel-header-before { border-bottom:1px solid #FECACA; padding:10px 14px; display:flex; align-items:center; gap:6px; }
-.panel-header-after  { border-bottom:1px solid #A7F3D0; padding:10px 14px; display:flex; align-items:center; gap:6px; }
-.panel-body { padding:12px 14px; }
-.panel-field-label { color:#94A3B8; font-size:10px; margin-bottom:2px; }
-.panel-field-value { font-weight:600; color:#1E293B; font-size:12px; }
+.panel-before { background:#F8FAFC; border:1px solid #FCA5A5; border-radius:12px; overflow:hidden; }
+.panel-after  { background:#F8FAFC; border:1px solid #6EE7B7; border-radius:12px; overflow:hidden; }
+.panel-header-before { background:#FEF2F2; border-bottom:1px solid #FCA5A5; padding:12px 16px; display:flex; align-items:center; gap:8px; }
+.panel-header-after  { background:#ECFDF5; border-bottom:1px solid #6EE7B7; padding:12px 16px; display:flex; align-items:center; gap:8px; }
+.panel-body { padding:16px; }
+.panel-field-label { color:#94A3B8; font-size:11px; margin-bottom:4px; font-weight:500; }
+.panel-field-value { font-weight:600; color:#0F172A; font-size:13px; line-height:1.4; }
 </style>
 @endsection
 
@@ -332,11 +332,11 @@ body {
                             <i class="fa-solid fa-arrow-left text-red-400 text-[10px]"></i>
                             <span class="text-xs font-bold text-red-600">Data Sebelum</span>
                         </div>
-                        <div class="panel-body space-y-2">
+                        <div class="panel-body space-y-4">
                             @foreach($dataBefore as $key => $val)
                             <div>
                                 <p class="panel-field-label">{{ ucwords(str_replace('_', ' ', $key)) }}</p>
-                                <p class="panel-field-value">{{ $val ?? '-' }}</p>
+                                <p class="panel-field-value">{{ $val === null || $val === '' ? 'null' : $val }}</p>
                             </div>
                             @endforeach
                         </div>
@@ -350,11 +350,11 @@ body {
                             <i class="fa-solid fa-arrow-right text-green-500 text-[10px]"></i>
                             <span class="text-xs font-bold text-green-600">Data Sesudah</span>
                         </div>
-                        <div class="panel-body space-y-2">
+                        <div class="panel-body space-y-4">
                             @foreach($dataAfter as $key => $val)
                             <div>
                                 <p class="panel-field-label">{{ ucwords(str_replace('_', ' ', $key)) }}</p>
-                                <p class="panel-field-value">{{ $val ?? '-' }}</p>
+                                <p class="panel-field-value">{{ $val === null || $val === '' ? 'null' : $val }}</p>
                             </div>
                             @endforeach
                         </div>

@@ -68,7 +68,7 @@ body {
                                 <td class="py-4 px-6 text-slate-600 font-mono">{{ $u->nim ?? '-' }}</td>
                                 <td class="py-4 px-6 text-slate-900 font-bold">{{ $u->nama_lengkap ?? $u->name }}</td>
                                 <td class="py-4 px-6 text-slate-500">{{ $u->email }}</td>
-                                <td class="py-4 px-6 text-slate-800">{{ $u->ProgramStudi ?? '-' }}</td>
+                                <td class="py-4 px-6 text-slate-800">{{ $u->program_studi ?? '-' }}</td>
                                 <td class="py-4 px-6">
                                     @if(strtolower($u->role) == 'admin')
                                         <span class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold">ADMIN</span>
@@ -122,7 +122,7 @@ body {
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Program Studi</label>
-                                    <input type="text" name="ProgramStudi" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
+                                    <input type="text" name="program_studi" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-4 mb-5">
@@ -151,39 +151,89 @@ body {
             <!-- Modals Edit & Detail User -->
             @foreach($users as $u)
             <div id="modal-detail-{{ $u->id }}" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm transition-opacity opacity-0 flex items-center justify-center p-4">
-                <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-300">
-                    <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                        <h3 class="font-bold text-slate-800 text-base">Detail User</h3>
+                <div class="bg-white rounded-2xl shadow-xl w-full max-w-3xl overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col max-h-[95vh]">
+                    
+                    <div class="px-8 pt-8 pb-6 border-b border-slate-100 flex justify-between items-start">
+                        <div>
+                            <h3 class="font-bold text-slate-900 text-lg">{{ $u->nama_lengkap ?? $u->name }}</h3>
+                            <p class="text-xs text-slate-500 mt-1">{{ $u->nim ? $u->nim . ' - ' : '' }}{{ $u->email }}</p>
+                        </div>
                         <button onclick="toggleModal('modal-detail-{{ $u->id }}')" class="text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
                     </div>
-                    <div class="p-6">
-                        <div class="mb-4">
-                            <p class="text-xs text-slate-500 mb-1">Nama Lengkap</p>
-                            <p class="text-sm font-semibold text-slate-800">{{ $u->nama_lengkap ?? $u->name }}</p>
+
+                    <div class="p-8 overflow-y-auto">
+                        <div class="mb-8">
+                            <h4 class="text-sm font-bold text-slate-800 mb-4">Detail Akun</h4>
+                            <div class="grid grid-cols-4 gap-4">
+                                <div class="bg-slate-50 rounded-xl p-5 text-center flex flex-col justify-center border border-slate-100">
+                                    <p class="text-xs text-slate-500 mb-2 font-medium">Total Peminjaman</p>
+                                    <p class="text-2xl font-bold text-slate-900">{{ $u->borrowings ? $u->borrowings->count() : 0 }}</p>
+                                </div>
+                                <div class="bg-slate-50 rounded-xl p-5 text-center flex flex-col justify-center border border-slate-100">
+                                    <p class="text-xs text-slate-500 mb-2 font-medium">Aktif</p>
+                                    <p class="text-2xl font-bold text-purple-600">{{ $u->borrowings ? $u->borrowings->whereIn('status', ['Dipinjam', 'Disetujui', 'Menunggu', 'Diproses'])->count() : 0 }}</p>
+                                </div>
+                                <div class="bg-slate-50 rounded-xl p-5 text-center flex flex-col justify-center border border-slate-100">
+                                    <p class="text-xs text-slate-500 mb-2 font-medium">Selesai</p>
+                                    <p class="text-2xl font-bold text-emerald-600">{{ $u->borrowings ? $u->borrowings->where('status', 'Dikembalikan')->count() : 0 }}</p>
+                                </div>
+                                <div class="bg-slate-50 rounded-xl p-5 text-center flex flex-col justify-center border border-slate-100">
+                                    <p class="text-xs text-slate-500 mb-2 font-medium">Role</p>
+                                    <p class="text-lg font-bold text-blue-600 mt-1">{{ ucfirst(strtolower($u->role)) }}</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-4">
-                            <p class="text-xs text-slate-500 mb-1">Email</p>
-                            <p class="text-sm font-semibold text-slate-800">{{ $u->email }}</p>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4 mb-4">
+
+                        <div class="grid grid-cols-2 gap-y-6 gap-x-6 mb-8">
                             <div>
-                                <p class="text-xs text-slate-500 mb-1">NIM / NIDN</p>
-                                <p class="text-sm font-semibold text-slate-800">{{ $u->nim ?? '-' }}</p>
+                                <p class="text-xs text-slate-400 font-medium mb-1.5">Nama Lengkap</p>
+                                <p class="text-sm font-bold text-slate-900">{{ $u->nama_lengkap ?? $u->name }}</p>
                             </div>
                             <div>
-                                <p class="text-xs text-slate-500 mb-1">Program Studi</p>
-                                <p class="text-sm font-semibold text-slate-800">{{ $u->ProgramStudi ?? '-' }}</p>
+                                <p class="text-xs text-slate-400 font-medium mb-1.5">NIM</p>
+                                <p class="text-sm font-bold text-slate-900">{{ $u->nim ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400 font-medium mb-1.5">Email</p>
+                                <p class="text-sm font-bold text-slate-900">{{ $u->email }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400 font-medium mb-1.5">Role</p>
+                                <p class="text-sm font-bold text-slate-900">{{ ucfirst(strtolower($u->role)) }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400 font-medium mb-1.5">Program Studi</p>
+                                <p class="text-sm font-bold text-slate-900">{{ $u->program_studi ?? $u->ProgramStudi ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400 font-medium mb-1.5">Login Terakhir</p>
+                                <p class="text-sm font-bold text-slate-900">-</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-400 font-medium mb-1.5">Tanggal Daftar</p>
+                                <p class="text-sm font-bold text-slate-900">{{ $u->created_at ? $u->created_at->translatedFormat('d M Y') : '-' }}</p>
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-4">
+
+                        <div class="bg-slate-50 rounded-xl p-5 flex items-center justify-between border border-slate-100">
                             <div>
-                                <p class="text-xs text-slate-500 mb-1">Peran</p>
-                                <p class="text-sm font-semibold text-slate-800">{{ $u->role }}</p>
+                                <p class="text-xs font-bold text-slate-900 mb-2">Status Akun</p>
+                                <p class="text-xs text-slate-500 flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full {{ !isset($u->is_active) || $u->is_active !== 0 ? 'bg-emerald-500' : 'bg-red-500' }}"></span>
+                                    Akun saat ini <strong class="{{ !isset($u->is_active) || $u->is_active !== 0 ? 'text-emerald-600' : 'text-red-600' }}">{{ !isset($u->is_active) || $u->is_active !== 0 ? 'AKTIF' : 'NONAKTIF' }}</strong>
+                                </p>
                             </div>
+                            <p class="text-xs text-slate-500">
+                                {{ !isset($u->is_active) || $u->is_active !== 0 ? 'User dapat login dan meminjam alat' : 'User tidak dapat login' }}
+                            </p>
                         </div>
                     </div>
-                    <div class="flex justify-end gap-3 p-4 border-t border-slate-100 bg-slate-50">
-                        <button onclick="toggleModal('modal-detail-{{ $u->id }}')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-semibold transition">Tutup</button>
+
+                    <div class="flex justify-end gap-3 px-8 py-5 border-t border-slate-100 bg-white">
+                        <button type="button" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-xmark"></i> Nonaktifkan
+                        </button>
+                        <button onclick="toggleModal('modal-detail-{{ $u->id }}')" class="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition">Tutup</button>
                     </div>
                 </div>
             </div>
@@ -213,7 +263,7 @@ body {
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1.5">Program Studi</label>
-                                    <input type="text" name="ProgramStudi" value="{{ $u->ProgramStudi }}" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
+                                    <input type="text" name="program_studi" value="{{ $u->program_studi }}" class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-4 mb-5">

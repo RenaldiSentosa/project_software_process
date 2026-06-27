@@ -98,11 +98,9 @@
         }
 
         .logo-text {
-            font-size: 12.5px;
+            font-size: 15px;
             font-weight: 700;
-            line-height: 1.25;
-            letter-spacing: 0.07em;
-            text-transform: uppercase;
+            line-height: 1.2;
             color: #ffffff;
         }
 
@@ -171,35 +169,33 @@
             display: flex;
             width: fit-content;
             margin-bottom: 32px;
-            border: 1.5px solid #c9cdd4;
+            background: #f1f5f9;
             border-radius: 50px;
-            overflow: hidden;
-            background: #fff;
+            padding: 4px;
         }
 
         .tab {
-            padding: 7px 26px;
+            padding: 6px 20px;
             font-size: 14px;
-            font-weight: 400;
+            font-weight: 500;
             color: #6b7280;
             text-decoration: none;
             display: inline-block;
             font-family: 'Plus Jakarta Sans', sans-serif;
             background: transparent;
             border: none;
+            border-radius: 50px;
             cursor: pointer;
             line-height: 1.5;
-            transition: color 0.15s;
-        }
-
-        .tab:not(:last-child) {
-            border-right: 1.5px solid #c9cdd4;
+            transition: all 0.2s;
+            white-space: nowrap;
         }
 
         .tab.active {
             color: #111827;
-            font-weight: 700;
+            font-weight: 600;
             background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         /* LABEL */
@@ -352,7 +348,7 @@
             <div class="logo-icon">
                 <img src="{{ asset('images/logo.png') }}" alt="Logo IPWIJA">
             </div>
-            <div class="logo-text">IPWIJA<br>SMARTLAB</div>
+            <div class="logo-text">UniLab<br>LMS IPWIJA</div>
         </div>
 
         {{-- B. KONTEN TENGAH --}}

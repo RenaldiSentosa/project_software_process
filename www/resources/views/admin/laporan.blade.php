@@ -522,12 +522,12 @@
                     </tbody>
                 </table>
             </div>
-            @if($rekapPeminjaman->hasPages())
-            <div class="pagination-wrap">
-                <span>Menampilkan {{ $rekapPeminjaman->firstItem() }}–{{ $rekapPeminjaman->lastItem() }} dari {{ $rekapPeminjaman->total() }} data</span>
-                <div>{{ $rekapPeminjaman->onEachSide(1)->links() }}</div>
+            <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+                <p class="text-xs text-slate-400">
+                    Menampilkan {{ $rekapPeminjaman->firstItem() }}–{{ $rekapPeminjaman->lastItem() }} dari {{ $rekapPeminjaman->total() }} data
+                </p>
+                {{ $rekapPeminjaman->links() }}
             </div>
-            @endif
         </div>
 
         {{-- ===== TAB 2: Status Inventaris ===== --}}
@@ -596,12 +596,12 @@
                     </tbody>
                 </table>
             </div>
-            @if($inventarisList->hasPages())
-            <div class="pagination-wrap">
-                <span>Menampilkan {{ $inventarisList->firstItem() }}–{{ $inventarisList->lastItem() }} dari {{ $inventarisList->total() }} data</span>
-                <div>{{ $inventarisList->onEachSide(1)->links() }}</div>
+            <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+                <p class="text-xs text-slate-400">
+                    Menampilkan {{ $inventarisList->firstItem() }}–{{ $inventarisList->lastItem() }} dari {{ $inventarisList->total() }} data
+                </p>
+                {{ $inventarisList->links() }}
             </div>
-            @endif
         </div>
 
         {{-- ===== TAB 3: Log Mutasi Stok ===== --}}
@@ -676,12 +676,12 @@
                     </tbody>
                 </table>
             </div>
-            @if($mutasiList->hasPages())
-            <div class="pagination-wrap">
-                <span>Menampilkan {{ $mutasiList->firstItem() }}–{{ $mutasiList->lastItem() }} dari {{ $mutasiList->total() }} data</span>
-                <div>{{ $mutasiList->onEachSide(1)->links() }}</div>
+            <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+                <p class="text-xs text-slate-400">
+                    Menampilkan {{ $mutasiList->firstItem() }}–{{ $mutasiList->lastItem() }} dari {{ $mutasiList->total() }} data
+                </p>
+                {{ $mutasiList->links() }}
             </div>
-            @endif
         </div>
 
         {{-- ===== TAB 4: Rekap Mahasiswa ===== --}}
@@ -731,12 +731,12 @@
                     </tbody>
                 </table>
             </div>
-            @if($rekapMahasiswa->hasPages())
-            <div class="pagination-wrap">
-                <span>Menampilkan {{ $rekapMahasiswa->firstItem() }}–{{ $rekapMahasiswa->lastItem() }} dari {{ $rekapMahasiswa->total() }} data</span>
-                <div>{{ $rekapMahasiswa->onEachSide(1)->links() }}</div>
+            <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
+                <p class="text-xs text-slate-400">
+                    Menampilkan {{ $rekapMahasiswa->firstItem() }}–{{ $rekapMahasiswa->lastItem() }} dari {{ $rekapMahasiswa->total() }} data
+                </p>
+                {{ $rekapMahasiswa->links() }}
             </div>
-            @endif
         </div>
 
     </div>{{-- end table-card --}}

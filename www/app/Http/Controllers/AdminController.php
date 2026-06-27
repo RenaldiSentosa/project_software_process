@@ -55,8 +55,8 @@ class AdminController extends Controller
     {
         $totalAlat = Tool::count();
         $peminjamanAktif = Borrowing::whereIn('status', ['Menunggu', 'Disetujui'])->count();
-        $rendahStok = Tool::where('stok_tersedia', '<', 5)->count();
-        $rendahStokBulanIni = Tool::where('stok_tersedia', '<', 5)->whereMonth('updated_at', now()->month)->count();
+        $rendahStok = Item::whereColumn('stok', '<=', 'stok_minimum')->count();
+        $rendahStokBulanIni = Item::whereColumn('stok', '<=', 'stok_minimum')->whereMonth('updated_at', now()->month)->count();
 
         $totalMahasiswa = User::where('role', 'mahasiswa')->count();
         $alatBaruBulanIni = Tool::whereMonth('created_at', now()->month)->count();
@@ -116,17 +116,17 @@ class AdminController extends Controller
             ];
         });
 
-        $stokRendahList = Tool::where('stok_tersedia', '<', 5)->take(4)->get()->map(function ($tool) {
-            $persentase = $tool->stok_total > 0
-                ? round(($tool->stok_tersedia / $tool->stok_total) * 100)
+        $stokRendahList = Item::whereColumn('stok', '<=', 'stok_minimum')->take(4)->get()->map(function ($item) {
+            $persentase = $item->stok_minimum > 0
+                ? round(($item->stok / $item->stok_minimum) * 100)
                 : 0;
             return [
-                'nama'      => $tool->nama_alat,
-                'kategori'  => $tool->kategori ?? 'Umum',
-                'lokasi'    => $tool->lokasi ?? 'Lab',
-                'stok'      => $tool->stok_tersedia,
-                'max_stok'  => $tool->stok_total,
-                'satuan'    => 'Unit',
+                'nama'      => $item->nama_barang,
+                'kategori'  => $item->kategori ?? 'Umum',
+                'lokasi'    => $item->lokasi ?? 'Lab',
+                'stok'      => $item->stok,
+                'max_stok'  => $item->stok_minimum,
+                'satuan'    => $item->satuan ?? 'pcs',
                 'persentase'=> $persentase,
             ];
         });
@@ -856,7 +856,7 @@ class AdminController extends Controller
             'password'     => 'required|string|min:8',
             'role'         => 'required|in:Admin,Mahasiswa',
             'nim'          => 'nullable|string',
-            'ProgramStudi' => 'nullable|string',
+            'program_studi' => 'nullable|string',
         ]);
 
         $user = User::create([
@@ -866,7 +866,7 @@ class AdminController extends Controller
             'password'      => \Illuminate\Support\Facades\Hash::make($request->password),
             'role'          => strtolower($request->role),
             'nim'           => $request->nim,
-            'program_studi' => $request->ProgramStudi,
+            'program_studi' => $request->program_studi,
             'is_active'     => $request->has('is_active') ? 1 : 0,
         ]);
 
@@ -889,7 +889,7 @@ class AdminController extends Controller
             'email'        => 'required|string|email|max:255|unique:users,email,' . $id,
             'role'         => 'required|in:Admin,Mahasiswa',
             'nim'          => 'nullable|string',
-            'ProgramStudi' => 'nullable|string',
+            'program_studi' => 'nullable|string',
         ]);
 
         $before = ['Nama' => $user->name, 'Email' => $user->email, 'Role' => $user->role];
@@ -900,7 +900,7 @@ class AdminController extends Controller
             'email'         => $request->email,
             'role'          => strtolower($request->role),
             'nim'           => $request->nim,
-            'program_studi' => $request->ProgramStudi,
+            'program_studi' => $request->program_studi,
             'is_active'     => $request->has('is_active') ? 1 : 0,
         ]);
 

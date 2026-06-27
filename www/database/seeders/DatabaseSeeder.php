@@ -78,5 +78,8 @@ class DatabaseSeeder extends Seeder
                 'status_alat' => 'Tersedia'
             ]
         );
+
+        // Memanggil DummySeeder untuk mengisi tabel lainnya agar tidak kosong
+        $this->call(DummySeeder::class);
     }
 }
