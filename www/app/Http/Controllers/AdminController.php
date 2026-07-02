@@ -42,8 +42,8 @@ class AdminController extends Controller
             'id_record'    => $idRecord,
             'ip_address'   => request()->ip(),
             'deskripsi'    => $deskripsi,
-            'data_before'  => $before ? json_encode($before) : null,
-            'data_after'   => $after  ? json_encode($after)  : null,
+            'data_sebelum' => $before,
+            'data_sesudah' => $after,
         ]);
     }
 
@@ -916,5 +916,25 @@ class AdminController extends Controller
         );
 
         return redirect()->back()->with('success', 'Data user berhasil diperbarui.');
+    }
+
+    public function toggleStatusUser($id)
+    {
+        $user = User::findOrFail($id);
+        $before = ['Status' => $user->is_active == 1 ? 'Aktif' : 'Nonaktif'];
+
+        $user->is_active = $user->is_active == 1 ? 0 : 1;
+        $user->save();
+
+        $statusBaru = $user->is_active == 1 ? 'Aktif' : 'Nonaktif';
+
+        $this->log(
+            'UPDATE', 'Manajemen User', 'USR-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+            "Mengubah status user '{$user->name}' menjadi {$statusBaru}",
+            $before,
+            ['Status' => $statusBaru]
+        );
+
+        return redirect()->back()->with('success', "Status user berhasil diubah menjadi {$statusBaru}.");
     }
 }

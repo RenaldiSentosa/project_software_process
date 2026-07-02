@@ -271,6 +271,8 @@
             $stok    = $item->stok_tersedia;
             $status  = $item->status_alat;
             $inCart  = in_array($id, $cartIds);
+            
+            $isTersedia = ($stok > 0 && $status === 'Tersedia');
         @endphp
 
         <div class="card" data-nama="{{ strtolower($nama) }}" data-kategori="{{ strtolower($kategori) }}">
@@ -281,7 +283,13 @@
                 @else
                     <svg class="placeholder-icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                 @endif
-                <span class="card-badge {{ ($stok == 0) ? 'habis' : 'tersedia' }}">{{ $stok == 0 ? 'Stok Habis' : 'Tersedia' }}</span>
+                @if($status !== 'Tersedia')
+                    <span class="card-badge habis">{{ $status }}</span>
+                @elseif($stok == 0)
+                    <span class="card-badge habis">Stok Habis</span>
+                @else
+                    <span class="card-badge tersedia">Tersedia</span>
+                @endif
             </div>
             <div class="card-body">
                 <div class="card-cat">{{ $kategori }}</div>
@@ -301,10 +309,10 @@
                         <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
                         Sudah Ditambah
                     </button>
-                @elseif ($stok == 0)
+                @elseif (!$isTersedia)
                     <button class="btn-keranjang nonaktif" disabled>
                         <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        Stok Habis
+                        {{ $status !== 'Tersedia' ? $status : 'Stok Habis' }}
                     </button>
                 @else
                     <form class="form-tambah-keranjang" action="{{ route('keranjang.store') }}" method="POST" onsubmit="tambahKeranjangAjax(event, this, '{{ $nama }}')">

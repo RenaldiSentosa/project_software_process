@@ -242,13 +242,15 @@
     document.getElementById('borrowForm')?.addEventListener('submit', function(e) {
         let tglPinjamInput  = document.getElementById('tgl_rencana_pinjam');
         let tglKembaliInput = document.getElementById('tgl_rencana_kembali');
+        let keperluanInput  = document.getElementById('keperluan');
+        
         let tglPinjam  = new Date(tglPinjamInput.value);
         let tglKembali = new Date(tglKembaliInput.value);
         let hariIni    = new Date(); hariIni.setHours(0,0,0,0);
 
-        if (!tglPinjamInput.value || !tglKembaliInput.value) {
+        if (!tglPinjamInput.value || !tglKembaliInput.value || !keperluanInput.value.trim()) {
             e.preventDefault();
-            Swal.fire({ icon: 'error', title: 'Data Belum Lengkap', text: 'Tanggal peminjaman dan pengembalian wajib diisi!', confirmButtonColor: '#2563eb' });
+            Swal.fire({ icon: 'error', title: 'Data Belum Lengkap', text: 'Tanggal peminjaman, pengembalian, dan tujuan penggunaan wajib diisi!', confirmButtonColor: '#2563eb' });
             return false;
         }
         if (tglPinjam < hariIni) {

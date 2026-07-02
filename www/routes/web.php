@@ -98,5 +98,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/manajemen-user', [AdminController::class, 'manajemenUser'])->name('manajemen_user');
         Route::post('/manajemen-user', [AdminController::class, 'storeUser'])->name('manajemen_user.store');
         Route::put('/manajemen-user/{id}', [AdminController::class, 'updateUser'])->name('manajemen_user.update');
+        Route::patch('/manajemen-user/{id}/toggle-status', [AdminController::class, 'toggleStatusUser'])->name('manajemen_user.toggle_status');
     });
 });

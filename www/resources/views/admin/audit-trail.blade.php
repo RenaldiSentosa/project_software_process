@@ -259,8 +259,8 @@ body {
     $dotClass2   = $dotMap2[$aksi2]   ?? 'dot-default';
     $aksiLabel2  = $labelMap2[$aksi2]  ?? $aksi2;
 
-    $dataBefore = is_string($log->data_before) ? json_decode($log->data_before, true) : (array)($log->data_before ?? []);
-    $dataAfter  = is_string($log->data_after)  ? json_decode($log->data_after, true)  : (array)($log->data_after  ?? []);
+    $dataBefore = is_string($log->data_sebelum) ? json_decode($log->data_sebelum, true) : (array)($log->data_sebelum ?? []);
+    $dataAfter  = is_string($log->data_sesudah)  ? json_decode($log->data_sesudah, true)  : (array)($log->data_sesudah  ?? []);
 @endphp
 
 <div id="modal-{{ $log->id }}"

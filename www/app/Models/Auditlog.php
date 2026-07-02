@@ -13,7 +13,7 @@ class AuditLog extends Model
 
     protected $fillable = [
         'timestamp', 'dilakukan_oleh', 'nama_pelaku', 'role_pelaku', 
-        'modul', 'aksi', 'id_record', 'data_sebelum', 'data_sesudah', 'ip_address'
+        'modul', 'aksi', 'id_record', 'deskripsi', 'data_sebelum', 'data_sesudah', 'ip_address'
     ];
 
     // Karena data_sebelum dan data_sesudah tipenya JSON, kita cast ke array di Laravel otomatis

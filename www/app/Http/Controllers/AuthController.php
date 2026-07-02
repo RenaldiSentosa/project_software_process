@@ -44,6 +44,16 @@ class AuthController extends Controller
 
             $user = Auth::user();
 
+            \App\Models\Auditlog::create([
+                'nama_pelaku'  => $user->nama_lengkap ?? $user->name ?? 'System',
+                'role_pelaku'  => $user->role ?? '-',
+                'modul'        => 'Login',
+                'aksi'         => 'LOGIN',
+                'id_record'    => $user->id,
+                'ip_address'   => request()->ip(),
+                'deskripsi'    => 'User berhasil login ke sistem',
+            ]);
+
             if ($user->role === 'admin') {
                 return redirect()->intended('/admin/dashboard');
             } else {
@@ -77,7 +87,7 @@ class AuthController extends Controller
         // Aturan digit NIM/NUPTK beda tergantung role:
         // mahasiswa -> NIM harus 12 digit
         // dosen     -> NUPTK harus 9 digit
-        $nimRule = $role === 'dosen' ? 'digits:9' : 'digits:12';
+        $nimRule = $role === 'dosen' ? 'digits:16' : 'digits:12';
 
         $validator = Validator::make($request->all(), [
             'nama_lengkap'  => 'required|string|max:100',
@@ -87,7 +97,7 @@ class AuthController extends Controller
             'program_studi' => $role === 'dosen' ? 'nullable|string|max:100' : 'required|string|max:100',
         ], [
             'nim.required'        => $role === 'dosen' ? 'NUPTK wajib diisi.' : 'NIM wajib diisi.',
-            'nim.digits'          => $role === 'dosen' ? 'NUPTK harus 9 digit angka.' : 'NIM harus 12 digit angka.',
+            'nim.digits'          => $role === 'dosen' ? 'NUPTK harus 16 digit angka.' : 'NIM harus 12 digit angka.',
             'nim.unique'          => $role === 'dosen' ? 'NUPTK ini sudah terdaftar di sistem.' : 'NIM ini sudah terdaftar di sistem.',
             'email.unique'        => 'Email ini sudah terdaftar di sistem.',
             'email.required'      => 'Email wajib diisi.',
@@ -144,6 +154,19 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        $user = Auth::user();
+        if ($user) {
+            \App\Models\Auditlog::create([
+                'nama_pelaku'  => $user->nama_lengkap ?? $user->name ?? 'System',
+                'role_pelaku'  => $user->role ?? '-',
+                'modul'        => 'Login',
+                'aksi'         => 'LOGOUT',
+                'id_record'    => $user->id,
+                'ip_address'   => request()->ip(),
+                'deskripsi'    => 'User berhasil logout dari sistem',
+            ]);
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();

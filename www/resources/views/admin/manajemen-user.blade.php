@@ -77,7 +77,11 @@ body {
                                     @endif
                                 </td>
                                 <td class="py-4 px-6 text-center">
-                                    <span class="mx-auto px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Aktif</span>
+                                    @if(!isset($u->is_active) || $u->is_active !== 0)
+                                        <span class="mx-auto px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>Aktif</span>
+                                    @else
+                                        <span class="mx-auto px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 text-[10px] font-bold flex items-center gap-1 w-fit"><span class="w-1.5 h-1.5 bg-rose-500 rounded-full"></span>Nonaktif</span>
+                                    @endif
                                 </td>
                                 <td class="py-4 px-6 text-center flex items-center justify-center gap-2.5">
                                     <button onclick="toggleModal('modal-detail-{{ $u->id }}')" class="text-slate-400 hover:text-slate-600" title="Detail"><i class="fa-regular fa-eye text-sm"></i></button>
@@ -230,9 +234,19 @@ body {
                     </div>
 
                     <div class="flex justify-end gap-3 px-8 py-5 border-t border-slate-100 bg-white">
-                        <button type="button" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-xmark"></i> Nonaktifkan
-                        </button>
+                        <form action="{{ route('admin.manajemen_user.toggle_status', $u->id) }}" method="POST" class="inline">
+                            @csrf
+                            @method('PATCH')
+                            @if(!isset($u->is_active) || $u->is_active !== 0)
+                                <button type="submit" class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-xmark"></i> Nonaktifkan
+                                </button>
+                            @else
+                                <button type="submit" class="px-5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl text-xs font-bold transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-check"></i> Aktifkan
+                                </button>
+                            @endif
+                        </form>
                         <button onclick="toggleModal('modal-detail-{{ $u->id }}')" class="px-6 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs font-bold transition">Tutup</button>
                     </div>
                 </div>
