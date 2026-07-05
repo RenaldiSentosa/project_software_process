@@ -54,6 +54,9 @@ body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
         </select>
         <i class="fa-solid fa-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none"></i>
     </div>
+    <button id="btn-terapkan-filter" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+        <i class="fa-solid fa-filter"></i> Filter
+    </button>
 </div>
 
 {{-- TABLE --}}
@@ -534,9 +537,8 @@ body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
                 {{-- Stok saat ini --}}
                 <div class="mb-5">
                     <label class="block text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-1.5">Stok saat ini</label>
-                    <div class="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
-                        <span class="text-sm font-bold text-slate-800">{{ $item->stok }}</span>
-                        <span class="text-xs text-slate-500">{{ ucfirst($item->satuan) }}</span>
+                    <div class="flex items-center px-1">
+                        <span class="text-2xl font-black text-slate-800">{{ $item->stok }}</span>
                     </div>
                 </div>
 
@@ -571,8 +573,7 @@ body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
                     <div class="relative">
                         <input type="number" name="jumlah" required min="1"
                                placeholder="Masukan jumlah"
-                               class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition pr-14">
-                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-slate-400 uppercase">{{ $item->satuan }}</span>
+                               class="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition">
                     </div>
                 </div>
 
@@ -696,7 +697,8 @@ document.querySelectorAll('input[name="tipe_mutasi"]').forEach(function(radio) {
     const filterKond   = document.getElementById('filter-kondisi');
     const tbody        = document.getElementById('tbody-barang');
     const pesanKosong  = document.getElementById('pesan-kosong-barang');
-    if (!tbody) return;
+    const btnFilter    = document.getElementById('btn-terapkan-filter');
+    if (!tbody || !btnFilter) return;
 
     const baris = Array.from(tbody.querySelectorAll('tr[data-nama]'));
 
@@ -721,9 +723,10 @@ document.querySelectorAll('input[name="tipe_mutasi"]').forEach(function(radio) {
         if (pesanKosong) pesanKosong.classList.toggle('hidden', ada || baris.length === 0);
     }
 
-    inputCari.addEventListener('input', terapkanFilter);
-    filterKat.addEventListener('change', terapkanFilter);
-    filterKond.addEventListener('change', terapkanFilter);
+    btnFilter.addEventListener('click', terapkanFilter);
+    inputCari.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') terapkanFilter();
+    });
 })();
 </script>
 @endsection

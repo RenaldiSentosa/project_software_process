@@ -265,13 +265,19 @@
 
         <div class="pinjam-list">
             @forelse ($peminjaman ?? [] as $item)
+                @php
+                    $rawStatus = strtolower($item->status ?? 'menunggu');
+                    $mappedStatus = $rawStatus;
+                    if ($rawStatus === 'diproses') $mappedStatus = 'dipinjam';
+                    if ($rawStatus === 'selesai') $mappedStatus = 'dikembalikan';
+                @endphp
                 <div class="pinjam-item">
                     <div class="pinjam-info">
                         <h4>ID Transaksi: #{{ $item->id ?? 'TRX-001' }}</h4>
                         <p class="meta-desc">Keperluan: {{ $item->keperluan ?? 'Praktikum Jaringan Komputer' }} ({{ $item->items_count ?? 3 }} Jenis Alat)</p>
                         <p class="meta-time">Rencana Pinjam: {{ $item->tanggal_pinjam ?? '2026-05-10' }} s/d {{ $item->tanggal_kembali ?? '2026-05-15' }}</p>
                     </div>
-                    <span class="badge {{ strtolower($item->status ?? 'menunggu') }}">
+                    <span class="badge {{ $mappedStatus }}">
                         <span class="badge-dot"></span>
                         {{ ucfirst($item->status ?? 'Menunggu') }}
                     </span>

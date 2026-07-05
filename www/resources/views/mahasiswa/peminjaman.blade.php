@@ -62,8 +62,10 @@
                 <option value="all">Semua Permintaan</option>
                 <option value="menunggu">Menunggu Persetujuan</option>
                 <option value="disetujui">Disetujui</option>
+                <option value="diproses">Sedang Diproses</option>
                 <option value="dipinjam">Sedang Dipinjam</option>
                 <option value="dikembalikan">Sudah Dikembalikan</option>
+                <option value="selesai">Selesai</option>
                 <option value="ditolak">Ditolak</option>
             </select>
         </div>
@@ -84,18 +86,26 @@
             </thead>
             <tbody>
                 @forelse ($peminjaman as $item)
-                @php $statusClean = strtolower($item['status']); @endphp
-                <tr class="table-row row-{{ $statusClean }}" data-status="{{ $statusClean }}">
+                @php 
+                    $statusClean = strtolower($item['status']); 
+                    // Map diproses to dipinjam, selesai to dikembalikan for row styling
+                    $rowStyle = $statusClean;
+                    if ($statusClean === 'diproses') $rowStyle = 'dipinjam';
+                    if ($statusClean === 'selesai') $rowStyle = 'dikembalikan';
+                @endphp
+                <tr class="table-row row-{{ $rowStyle }}" data-status="{{ $statusClean }}">
                     <td style="font-weight: 600; color: #4b5563;">{{ $item['id'] }}</td>
-                    <td style="font-weight: 500;">{{ $item['alat'] }}</td>
-                    <td>{{ $item['tgl_aju'] }}</td>
-                    <td>{{ $item['periode'] }}</td>
+                    <td style="font-weight: 500;">{{ $item['alat'] ?? '-' }}</td>
+                    <td>{{ $item['tgl_aju'] ?? '-' }}</td>
+                    <td>{{ $item['periode'] ?? '-' }}</td>
                     <td>
-                        <span class="badge-pill {{ $statusClean }}">
+                        <span class="badge-pill {{ $rowStyle }}">
                             @if($statusClean == 'menunggu') Menunggu
                             @elseif($statusClean == 'disetujui') Disetujui
+                            @elseif($statusClean == 'diproses') Diproses
                             @elseif($statusClean == 'dipinjam') Dipinjam
                             @elseif($statusClean == 'dikembalikan') Dikembalikan
+                            @elseif($statusClean == 'selesai') Selesai
                             @else Ditolak @endif
                         </span>
                     </td>

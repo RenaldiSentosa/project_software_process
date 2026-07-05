@@ -188,15 +188,14 @@ class AdminController extends Controller
         $nextId = $lastTool ? $lastTool->id + 1 : 1;
         $data['kode_alat'] = 'ALT-' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
 
-
         if ($request->hasFile('foto')) {
             $data['foto_alat'] = $request->file('foto')->store('alat', 'public');
         }
 
-        $data['stok_tersedia'] = $data['stok_total'];
-        if (in_array($data['status_alat'], ['Rusak', 'Dalam Perbaikan'])) {
-            $data['stok_tersedia'] = 0;
-        }
+        $data['stok_tersedia']  = (int) $request->input('stok_tersedia_display', $data['stok_total']);
+        $data['stok_dipinjam']  = (int) $request->input('stok_dipinjam_display', 0);
+        $data['stok_rusak']     = (int) $request->input('stok_rusak_display', 0);
+        $data['stok_perbaikan'] = (int) $request->input('stok_perbaikan_display', 0);
 
         $tool = Tool::create($data);
 
@@ -238,14 +237,10 @@ class AdminController extends Controller
             $data['foto_alat'] = $request->file('foto')->store('alat', 'public');
         }
 
-        $diffStok = $data['stok_total'] - $tool->stok_total;
-        $data['stok_tersedia'] = max(0, $tool->stok_tersedia + $diffStok);
-
-        if (in_array($data['status_alat'], ['Rusak', 'Dalam Perbaikan'])) {
-            $data['stok_tersedia'] = 0;
-        } elseif (in_array($tool->status_alat, ['Rusak', 'Dalam Perbaikan']) && $data['status_alat'] === 'Tersedia') {
-            $data['stok_tersedia'] = $data['stok_total'];
-        }
+        $data['stok_tersedia']  = (int) $request->input('stok_tersedia_display', $tool->stok_tersedia);
+        $data['stok_dipinjam']  = (int) $request->input('stok_dipinjam_display', $tool->stok_dipinjam);
+        $data['stok_rusak']     = (int) $request->input('stok_rusak_display', $tool->stok_rusak);
+        $data['stok_perbaikan'] = (int) $request->input('stok_perbaikan_display', $tool->stok_perbaikan);
 
         $tool->update($data);
 
@@ -391,20 +386,30 @@ class AdminController extends Controller
 
     public function borrowPeminjaman($id)
     {
-        $borrowing = Borrowing::with('mahasiswa')->findOrFail($id);
-        $before = ['Status' => $borrowing->status];
+        DB::transaction(function () use ($id) {
+            $borrowing = Borrowing::with(['mahasiswa', 'items.tool'])->findOrFail($id);
+            $before = ['Status' => $borrowing->status];
 
-        $borrowing->status = 'Dipinjam';
-        $borrowing->save();
+            $borrowing->status = 'Dipinjam';
+            $borrowing->save();
 
-        $namaMhs = $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? '-';
-        $this->log(
-            'UPDATE', 'Peminjaman',
-            'PIN-' . str_pad($id, 3, '0', STR_PAD_LEFT),
-            "Mengubah status peminjaman {$namaMhs} menjadi Dipinjam",
-            $before,
-            ['Status' => 'Dipinjam']
-        );
+            foreach ($borrowing->items as $item) {
+                $tool = $item->tool;
+                if ($tool) {
+                    $tool->stok_dipinjam += $item->jumlah_unit;
+                    $tool->save();
+                }
+            }
+
+            $namaMhs = $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? '-';
+            $this->log(
+                'UPDATE', 'Peminjaman',
+                'PIN-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+                "Mengubah status peminjaman {$namaMhs} menjadi Dipinjam",
+                $before,
+                ['Status' => 'Dipinjam']
+            );
+        });
 
         return redirect()->back()->with('success', 'Status peminjaman diubah menjadi Dipinjam.');
     }
@@ -443,7 +448,9 @@ class AdminController extends Controller
 
                 if ($tool) {
                     $tool->stok_tersedia += $baik;
-                    $tool->stok_total -= ($ringan + $berat);
+                    $tool->stok_dipinjam -= $item->jumlah_unit;
+                    if ($tool->stok_dipinjam < 0) $tool->stok_dipinjam = 0; // fallback in case of negative
+                    $tool->stok_rusak += ($ringan + $berat);
                     $tool->save();
                 }
             }
@@ -606,9 +613,16 @@ class AdminController extends Controller
 
         $alatSeringDipinjam = \Illuminate\Support\Facades\DB::table('borrowing_items')
             ->join('tools', 'borrowing_items.tool_id', '=', 'tools.id')
-            ->select('tools.nama_alat', \Illuminate\Support\Facades\DB::raw('SUM(borrowing_items.jumlah_unit) as total'))
+            ->join('borrowings', 'borrowing_items.borrowing_id', '=', 'borrowings.id')
+            ->whereIn('borrowings.status', ['Disetujui', 'Diproses', 'Dipinjam', 'Dikembalikan', 'Selesai'])
+            ->select(
+                'tools.nama_alat', 
+                \Illuminate\Support\Facades\DB::raw('COUNT(borrowing_items.id) as total'),
+                \Illuminate\Support\Facades\DB::raw('SUM(borrowing_items.jumlah_unit) as total_unit')
+            )
             ->groupBy('tools.id', 'tools.nama_alat')
             ->orderBy('total', 'desc')
+            ->orderBy('total_unit', 'desc')
             ->take(7)
             ->get();
 

@@ -50,8 +50,15 @@ input[type=number].kondisi-input::-webkit-outer-spin-button { opacity: 1; }
     </div>
     <button
         type="button"
+        id="btn-terapkan-filter"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center gap-2"
+    >
+        <i class="fa-solid fa-filter"></i> Filter
+    </button>
+    <button
+        type="button"
         id="btn-reset-filter-peminjaman"
-        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs transition uppercase tracking-wider shadow-sm"
+        class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2.5 rounded-xl text-xs transition shadow-sm"
     >
         Reset
     </button>
@@ -673,7 +680,8 @@ function validasiDanSubmitPengembalian(formId) {
     const btnReset    = document.getElementById('btn-reset-filter-peminjaman');
     const tbody       = document.getElementById('tbody-peminjaman');
     const pesanKosong = document.getElementById('pesan-kosong-filter');
-    if (!tbody) return;
+    const btnFilter   = document.getElementById('btn-terapkan-filter');
+    if (!tbody || !btnFilter) return;
 
     const baris = Array.from(tbody.querySelectorAll('tr[data-id-peminjaman]'));
 
@@ -710,8 +718,10 @@ function validasiDanSubmitPengembalian(formId) {
         }
     }
 
-    inputCari.addEventListener('input', terapkanFilter);
-    selectStat.addEventListener('change', terapkanFilter);
+    btnFilter.addEventListener('click', terapkanFilter);
+    inputCari.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') terapkanFilter();
+    });
     btnReset.addEventListener('click', function () {
         inputCari.value  = '';
         selectStat.value = '';

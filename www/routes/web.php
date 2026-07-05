@@ -38,6 +38,7 @@ Route::middleware(['auth'])->group(function () {
     // Keranjang
     Route::get('/keranjang', [CartController::class, 'index'])->name('keranjang');
     Route::post('/keranjang/tambah', [CartController::class, 'store'])->name('keranjang.store');
+    Route::put('/keranjang/update/{id}', [CartController::class, 'update'])->name('keranjang.update');
     Route::delete('/keranjang/hapus/{id}', [CartController::class, 'destroy'])->name('keranjang.hapus');
 
     // Peminjaman

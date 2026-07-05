@@ -192,31 +192,56 @@
         if (textarea) updateCharCount(textarea);
     });
 
+    function updateCartSession(itemId, qty) {
+        fetch(`/keranjang/update/${itemId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ jumlah_unit: qty })
+        }).catch(err => console.error('Failed to update cart:', err));
+    }
+
     function plus(btn) {
+        let itemDiv = btn.closest('.item');
+        let itemId = itemDiv.dataset.id;
         let input = btn.parentElement.querySelector('.jumlah-input');
-        let maxStok = parseInt(btn.closest('.item').querySelector('.max-stok').innerText) || 10;
+        let maxStok = parseInt(itemDiv.querySelector('.max-stok').innerText) || 10;
         let val = parseInt(input.value) || 0;
         if (val < maxStok) {
             input.value = val + 1;
+            updateCartSession(itemId, val + 1);
         } else {
             Swal.fire({ icon: 'warning', title: 'Stok Tidak Cukup', text: 'Jumlah unit tidak boleh melebihi stok yang tersedia!', confirmButtonColor: '#2563eb' });
         }
     }
 
     function minus(btn) {
+        let itemDiv = btn.closest('.item');
+        let itemId = itemDiv.dataset.id;
         let input = btn.parentElement.querySelector('.jumlah-input');
         let val = parseInt(input.value) || 0;
-        if (val > 1) { input.value = val - 1; }
+        if (val > 1) { 
+            input.value = val - 1; 
+            updateCartSession(itemId, val - 1);
+        }
     }
 
     function validateOnInput(input) {
-        let maxStok = parseInt(input.closest('.item').querySelector('.max-stok').innerText) || 10;
+        let itemDiv = input.closest('.item');
+        let itemId = itemDiv.dataset.id;
+        let maxStok = parseInt(itemDiv.querySelector('.max-stok').innerText) || 10;
         let val = parseInt(input.value);
         if (isNaN(val) || val < 1) {
             input.value = 1;
+            updateCartSession(itemId, 1);
         } else if (val > maxStok) {
             Swal.fire({ icon: 'warning', title: 'Stok Tidak Cukup', text: 'Jumlah unit melebihi stok ketersediaan!', confirmButtonColor: '#2563eb' });
             input.value = maxStok;
+            updateCartSession(itemId, maxStok);
+        } else {
+            updateCartSession(itemId, val);
         }
     }
 

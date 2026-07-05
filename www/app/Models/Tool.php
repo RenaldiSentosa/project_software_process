@@ -15,7 +15,7 @@ class Tool extends Model
 
     protected $fillable = [
         'kode_alat', 'nama_alat', 'kategori', 'deskripsi', 
-        'stok_total', 'stok_tersedia', 'status_alat', 'lokasi', 'foto_alat'
+        'stok_total', 'stok_tersedia', 'stok_dipinjam', 'stok_rusak', 'stok_perbaikan', 'status_alat', 'lokasi', 'foto_alat'
     ];
 
     public function borrowingItems()

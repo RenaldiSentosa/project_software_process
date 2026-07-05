@@ -81,10 +81,9 @@ body {
                 <div class="relative flex-1">
                     <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-4 top-3.5 text-xs"></i>
                     <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama alat, kode, atau lokasi..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 transition shadow-sm">
-                    <button type="submit" class="hidden"></button>
                 </div>
                 <div class="relative">
-                    <select name="kategori" onchange="this.form.submit()" class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[140px]">
+                    <select name="kategori" class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[140px]">
                         <option value="">Semua Kategori</option>
                         <option value="Hardware" {{ request('kategori') == 'Hardware' ? 'selected' : '' }}>Hardware</option>
                         <option value="Network" {{ request('kategori') == 'Network' ? 'selected' : '' }}>Network</option>
@@ -94,7 +93,7 @@ body {
                     <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-[10px] text-slate-400 pointer-events-none"></i>
                 </div>
                 <div class="relative">
-                    <select name="status" onchange="this.form.submit()" class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[140px]">
+                    <select name="status" class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[140px]">
                         <option value="">Semua Status</option>
                         <option value="Tersedia" {{ request('status') == 'Tersedia' ? 'selected' : '' }}>Tersedia</option>
                         <option value="Dipinjam" {{ request('status') == 'Dipinjam' ? 'selected' : '' }}>Dipinjam</option>
@@ -103,6 +102,9 @@ body {
                     </select>
                     <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-[10px] text-slate-400 pointer-events-none"></i>
                 </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-filter"></i> Filter
+                </button>
             </form>
 
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -127,27 +129,10 @@ body {
                             @forelse($alatList ?? [] as $alat)
                                 @php
                                     // ===== Perhitungan tampilan distribusi unit (TIDAK disimpan ke DB) =====
-                                    // Karena tabel alat belum punya kolom per-status, angka di bawah ini
-                                    // hanya disusun dari kolom yang sudah ada (stok_total & stok_tersedia)
-                                    // supaya modal Detail & Edit bisa menampilkan breakdown sesuai mockup.
-                                    $dTersedia = $alat->stok_tersedia ?? 0;
-                                    $sisaUnit  = max(($alat->stok_total ?? 0) - $dTersedia, 0);
-
-                                    // Sisa unit (yang tidak tersedia) dibagi ke Dipinjam/Rusak/Perbaikan
-                                    // berdasarkan status_alat saat ini, sebagai contoh tampilan saja.
-                                    $dDipinjam  = 0;
-                                    $dRusak     = 0;
-                                    $dPerbaikan = 0;
-
-                                    if ($alat->status_alat == 'Dipinjam') {
-                                        $dDipinjam = $sisaUnit;
-                                    } elseif ($alat->status_alat == 'Rusak') {
-                                        $dRusak = $sisaUnit;
-                                    } elseif ($alat->status_alat == 'Dalam Perbaikan') {
-                                        $dPerbaikan = $sisaUnit;
-                                    } else {
-                                        $dDipinjam = $sisaUnit;
-                                    }
+                                    $dTersedia  = $alat->stok_tersedia ?? 0;
+                                    $dDipinjam  = $alat->stok_dipinjam ?? 0;
+                                    $dRusak     = $alat->stok_rusak ?? 0;
+                                    $dPerbaikan = $alat->stok_perbaikan ?? 0;
                                 @endphp
                                 <tr class="hover:bg-slate-50/50 transition">
                                     <td class="py-4 px-6 font-medium text-slate-500">{{ $alat->kode_alat }}</td>
@@ -355,21 +340,10 @@ body {
             <!-- Modals Detail & Edit per Alat -->
             @foreach($alatList ?? [] as $alat)
                 @php
-                    $dTersedia = $alat->stok_tersedia ?? 0;
-                    $sisaUnit  = max(($alat->stok_total ?? 0) - $dTersedia, 0);
-                    $dDipinjam  = 0;
-                    $dRusak     = 0;
-                    $dPerbaikan = 0;
-
-                    if ($alat->status_alat == 'Dipinjam') {
-                        $dDipinjam = $sisaUnit;
-                    } elseif ($alat->status_alat == 'Rusak') {
-                        $dRusak = $sisaUnit;
-                    } elseif ($alat->status_alat == 'Dalam Perbaikan') {
-                        $dPerbaikan = $sisaUnit;
-                    } else {
-                        $dDipinjam = $sisaUnit;
-                    }
+                    $dTersedia  = $alat->stok_tersedia ?? 0;
+                    $dDipinjam  = $alat->stok_dipinjam ?? 0;
+                    $dRusak     = $alat->stok_rusak ?? 0;
+                    $dPerbaikan = $alat->stok_perbaikan ?? 0;
                 @endphp
 
                 <!-- Modal Detail -->

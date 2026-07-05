@@ -107,4 +107,19 @@ class CartController extends Controller
 
         return redirect()->back()->with('error', 'Item tidak ditemukan atau gagal dihapus.');
     }
+
+    // Mengupdate jumlah item di keranjang session via AJAX
+    public function update(Request $request, string $id)
+    {
+        $cart = session()->get('cart', []);
+        
+        if (isset($cart[$id])) {
+            $qty = (int) $request->input('jumlah_unit', 1);
+            $cart[$id]['jumlah_unit'] = $qty;
+            session()->put('cart', $cart);
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['error' => 'Item tidak ditemukan'], 404);
+    }
 }

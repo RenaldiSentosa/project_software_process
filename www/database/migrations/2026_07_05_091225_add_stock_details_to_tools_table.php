@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('tools', function (Blueprint $table) {
+            $table->integer('stok_dipinjam')->default(0)->after('stok_tersedia');
+            $table->integer('stok_rusak')->default(0)->after('stok_dipinjam');
+            $table->integer('stok_perbaikan')->default(0)->after('stok_rusak');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('tools', function (Blueprint $table) {
+            $table->dropColumn(['stok_dipinjam', 'stok_rusak', 'stok_perbaikan']);
+        });
+    }
+};
