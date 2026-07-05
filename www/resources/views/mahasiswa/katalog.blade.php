@@ -129,7 +129,7 @@
         overflow: hidden;
     }
 
-    .card-img img { width: 80%; height: 80%; object-fit: contain; }
+    .card-img img { width: 100%; height: 100%; object-fit: cover; }
     .card-img .placeholder-icon { width: 40px; height: 40px; color: #93c5fd; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 
     .card-badge {

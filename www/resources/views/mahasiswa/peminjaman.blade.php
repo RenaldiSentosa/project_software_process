@@ -114,6 +114,10 @@
             </tbody>
         </table>
     </div>
+    
+    <div style="margin-top: 20px;">
+        {{ $peminjaman->links() }}
+    </div>
 @endsection
 
 @section('scripts')

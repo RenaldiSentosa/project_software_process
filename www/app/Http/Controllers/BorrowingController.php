@@ -14,24 +14,17 @@ use App\Services\N8NWebhookService;
 
 class BorrowingController extends Controller
 {
-    /**
-     * 1. HALAMAN RIWAYAT TABEL: Tampilkan list riwayat "Peminjaman Saya"
-     */
     public function index()
     {
         $user = Auth::user();
-
-        $user = Auth::user();
         $userId = $user->id;
 
-        $dataPeminjaman = Borrowing::with(['items.tool'])
+        $peminjaman = Borrowing::with(['items.tool'])
                             ->where('mahasiswa_id', $userId)
                             ->orderBy('created_at', 'desc')
-                            ->get();
+                            ->paginate(10);
 
-        $peminjaman = [];
-
-        foreach ($dataPeminjaman as $row) {
+        $peminjaman->getCollection()->transform(function ($row) {
             $namaAlat = 'Tidak Diketahui';
             if ($row->items->count() > 0) {
                 $namaAlat = $row->items->first()->tool->nama_alat ?? 'Alat Lab';
@@ -44,7 +37,7 @@ class BorrowingController extends Controller
             $tglPinjam  = Carbon::parse($row->tgl_rencana_pinjam)->translatedFormat('d M Y');
             $tglKembali = Carbon::parse($row->tgl_rencana_kembali)->translatedFormat('d M Y');
 
-            $peminjaman[] = [
+            return [
                 'raw_id'  => $row->id,
                 'id'      => 'PMJ-' . Carbon::parse($row->created_at)->format('Y') . '-' . str_pad($row->id, 3, '0', STR_PAD_LEFT),
                 'alat'    => $namaAlat,
@@ -52,7 +45,7 @@ class BorrowingController extends Controller
                 'periode' => $tglPinjam . ' — ' . $tglKembali,
                 'status'  => strtolower($row->status),
             ];
-        }
+        });
 
         return view('mahasiswa.peminjaman', compact('peminjaman', 'user'));
     }

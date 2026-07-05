@@ -9,6 +9,7 @@ use App\Models\Borrowing;
 use App\Models\User;
 use App\Models\Auditlog;
 use App\Services\N8NWebhookService;
+use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
@@ -174,7 +175,6 @@ class AdminController extends Controller
     public function storeAlat(Request $request)
     {
         $data = $request->validate([
-            'kode_alat'  => 'required|string|max:50',
             'nama_alat'  => 'required|string|max:100',
             'kategori'   => 'required|string|max:50',
             'deskripsi'  => 'nullable|string',
@@ -183,6 +183,11 @@ class AdminController extends Controller
             'lokasi'     => 'required|string|max:100',
             'foto'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
+
+        $lastTool = Tool::orderBy('id', 'desc')->first();
+        $nextId = $lastTool ? $lastTool->id + 1 : 1;
+        $data['kode_alat'] = 'ALT-' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
+
 
         if ($request->hasFile('foto')) {
             $data['foto_alat'] = $request->file('foto')->store('alat', 'public');
@@ -319,24 +324,26 @@ class AdminController extends Controller
 
     public function approvePeminjaman($id)
     {
-        $borrowing = Borrowing::with('mahasiswa')->findOrFail($id);
-        $before = ['Status' => $borrowing->status];
+        DB::transaction(function () use ($id) {
+            $borrowing = Borrowing::with('mahasiswa')->findOrFail($id);
+            $before = ['Status' => $borrowing->status];
 
-        $borrowing->status        = 'Disetujui';
-        $borrowing->diproses_oleh = auth()->id();
-        $borrowing->tgl_diproses  = now();
-        $borrowing->save();
+            $borrowing->status        = 'Disetujui';
+            $borrowing->diproses_oleh = auth()->id();
+            $borrowing->tgl_diproses  = now();
+            $borrowing->save();
 
-        $namaMhs = $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? '-';
-        $this->log(
-            'APPROVE', 'Peminjaman',
-            'PIN-' . str_pad($id, 3, '0', STR_PAD_LEFT),
-            "Menyetujui peminjaman oleh {$namaMhs}",
-            $before,
-            ['Status' => 'Disetujui']
-        );
+            $namaMhs = $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? '-';
+            $this->log(
+                'APPROVE', 'Peminjaman',
+                'PIN-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+                "Menyetujui peminjaman oleh {$namaMhs}",
+                $before,
+                ['Status' => 'Disetujui']
+            );
 
-        N8NWebhookService::sendBorrowingEvent('borrowing.approved', $borrowing);
+            N8NWebhookService::sendBorrowingEvent('borrowing.approved', $borrowing);
+        });
 
         return redirect()->back()->with('success', 'Peminjaman berhasil disetujui.');
     }
@@ -349,33 +356,35 @@ class AdminController extends Controller
             'catatan_admin.required' => 'Catatan penolakan wajib diisi.',
         ]);
 
-        $borrowing = Borrowing::with('mahasiswa')->findOrFail($id);
-        $before = ['Status' => $borrowing->status];
+        DB::transaction(function () use ($request, $id) {
+            $borrowing = Borrowing::with('mahasiswa')->findOrFail($id);
+            $before = ['Status' => $borrowing->status];
 
-        $borrowing->status        = 'Ditolak';
-        $borrowing->diproses_oleh = auth()->id();
-        $borrowing->tgl_diproses  = now();
-        $borrowing->catatan_admin = $request->catatan_admin;
-        $borrowing->save();
+            $borrowing->status        = 'Ditolak';
+            $borrowing->diproses_oleh = auth()->id();
+            $borrowing->tgl_diproses  = now();
+            $borrowing->catatan_admin = $request->catatan_admin;
+            $borrowing->save();
 
-        foreach ($borrowing->items as $item) {
-            $tool = $item->tool;
-            if ($tool) {
-                $tool->stok_tersedia += $item->jumlah_unit;
-                $tool->save();
+            foreach ($borrowing->items as $item) {
+                $tool = $item->tool;
+                if ($tool) {
+                    $tool->stok_tersedia += $item->jumlah_unit;
+                    $tool->save();
+                }
             }
-        }
 
-        $namaMhs = $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? '-';
-        $this->log(
-            'REJECT', 'Peminjaman',
-            'PIN-' . str_pad($id, 3, '0', STR_PAD_LEFT),
-            "Menolak peminjaman oleh {$namaMhs} — {$request->catatan_admin}",
-            $before,
-            ['Status' => 'Ditolak']
-        );
+            $namaMhs = $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? '-';
+            $this->log(
+                'REJECT', 'Peminjaman',
+                'PIN-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+                "Menolak peminjaman oleh {$namaMhs} — {$request->catatan_admin}",
+                $before,
+                ['Status' => 'Ditolak']
+            );
 
-        N8NWebhookService::sendBorrowingEvent('borrowing.rejected', $borrowing);
+            N8NWebhookService::sendBorrowingEvent('borrowing.rejected', $borrowing);
+        });
 
         return redirect()->back()->with('success', 'Peminjaman telah ditolak.');
     }
@@ -402,52 +411,54 @@ class AdminController extends Controller
 
     public function returnPeminjaman(Request $request, $id)
     {
-        $borrowing = Borrowing::with(['mahasiswa', 'items.tool'])->findOrFail($id);
-        $before = ['Status' => $borrowing->status];
+        DB::transaction(function () use ($request, $id) {
+            $borrowing = Borrowing::with(['mahasiswa', 'items.tool'])->findOrFail($id);
+            $before = ['Status' => $borrowing->status];
 
-        $borrowing->status                   = 'Dikembalikan';
-        $borrowing->tgl_pengembalian_aktual  = now();
-        $borrowing->save();
+            $borrowing->status                   = 'Dikembalikan';
+            $borrowing->tgl_pengembalian_aktual  = now();
+            $borrowing->save();
 
-        $kondisiBaik        = $request->input('kondisi_baik', []);
-        $kondisiRusakRingan = $request->input('kondisi_rusak_ringan', []);
-        $kondisiRusakBerat  = $request->input('kondisi_rusak_berat', []);
+            $kondisiBaik        = $request->input('kondisi_baik', []);
+            $kondisiRusakRingan = $request->input('kondisi_rusak_ringan', []);
+            $kondisiRusakBerat  = $request->input('kondisi_rusak_berat', []);
 
-        foreach ($borrowing->items as $item) {
-            $tool   = $item->tool;
-            $baik   = (int)($kondisiBaik[$item->id] ?? 0);
-            $ringan = (int)($kondisiRusakRingan[$item->id] ?? 0);
-            $berat  = (int)($kondisiRusakBerat[$item->id] ?? 0);
+            foreach ($borrowing->items as $item) {
+                $tool   = $item->tool;
+                $baik   = (int)($kondisiBaik[$item->id] ?? 0);
+                $ringan = (int)($kondisiRusakRingan[$item->id] ?? 0);
+                $berat  = (int)($kondisiRusakBerat[$item->id] ?? 0);
 
-            $kondisi = 'Baik';
-            if ($berat > 0) {
-                $kondisi = 'Rusak Berat';
-            } elseif ($ringan > 0) {
-                $kondisi = 'Rusak Ringan';
-            } elseif ($baik < $item->jumlah_unit && $baik > 0) {
-                 $kondisi = 'Campuran';
+                $kondisi = 'Baik';
+                if ($berat > 0) {
+                    $kondisi = 'Rusak Berat';
+                } elseif ($ringan > 0) {
+                    $kondisi = 'Rusak Ringan';
+                } elseif ($baik < $item->jumlah_unit && $baik > 0) {
+                     $kondisi = 'Campuran';
+                }
+
+                $item->kondisi_saat_kembali = $kondisi;
+                $item->save();
+
+                if ($tool) {
+                    $tool->stok_tersedia += $baik;
+                    $tool->stok_total -= ($ringan + $berat);
+                    $tool->save();
+                }
             }
 
-            $item->kondisi_saat_kembali = $kondisi;
-            $item->save();
+            $namaMhs = $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? '-';
+            $this->log(
+                'UPDATE', 'Peminjaman',
+                'PIN-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+                "Pengembalian alat oleh {$namaMhs}",
+                $before,
+                ['Status' => 'Dikembalikan']
+            );
 
-            if ($tool) {
-                $tool->stok_tersedia += $baik;
-                $tool->stok_total -= ($ringan + $berat);
-                $tool->save();
-            }
-        }
-
-        $namaMhs = $borrowing->mahasiswa->nama_lengkap ?? $borrowing->mahasiswa->name ?? '-';
-        $this->log(
-            'UPDATE', 'Peminjaman',
-            'PIN-' . str_pad($id, 3, '0', STR_PAD_LEFT),
-            "Pengembalian alat oleh {$namaMhs}",
-            $before,
-            ['Status' => 'Dikembalikan']
-        );
-
-        N8NWebhookService::sendBorrowingEvent('borrowing.returned', $borrowing);
+            N8NWebhookService::sendBorrowingEvent('borrowing.returned', $borrowing);
+        });
 
         return redirect()->back()->with('success', 'Alat berhasil dikembalikan dan stok diperbarui.');
     }
@@ -549,29 +560,31 @@ class AdminController extends Controller
         $stok_sebelum = $item->stok;
         $tipe         = ucfirst($request->tipe_mutasi);
 
-        if ($request->tipe_mutasi == 'masuk') {
-            $item->stok += $request->jumlah;
-        } else {
-            $item->stok -= $request->jumlah;
-        }
-        $item->save();
+        DB::transaction(function () use ($request, $id, $item, $stok_sebelum, $tipe) {
+            if ($request->tipe_mutasi == 'masuk') {
+                $item->stok += $request->jumlah;
+            } else {
+                $item->stok -= $request->jumlah;
+            }
+            $item->save();
 
-        \App\Models\ItemMutation::create([
-            'item_id'        => $item->id,
-            'tipe_mutasi'    => $tipe,
-            'jumlah'         => $request->jumlah,
-            'stok_sebelum'   => $stok_sebelum,
-            'stok_sesudah'   => $item->stok,
-            'keterangan'     => $request->keterangan,
-            'dilakukan_oleh' => auth()->id(),
-        ]);
+            \App\Models\ItemMutation::create([
+                'item_id'        => $item->id,
+                'tipe_mutasi'    => $tipe,
+                'jumlah'         => $request->jumlah,
+                'stok_sebelum'   => $stok_sebelum,
+                'stok_sesudah'   => $item->stok,
+                'keterangan'     => $request->keterangan,
+                'dilakukan_oleh' => auth()->id(),
+            ]);
 
-        $this->log(
-            'UPDATE', 'Manajemen Barang', 'BRG-' . str_pad($id, 3, '0', STR_PAD_LEFT),
-            "Mutasi stok {$tipe} barang '{$item->nama_barang}' sejumlah {$request->jumlah}",
-            ['Stok' => $stok_sebelum],
-            ['Stok' => $item->stok]
-        );
+            $this->log(
+                'UPDATE', 'Manajemen Barang', 'BRG-' . str_pad($id, 3, '0', STR_PAD_LEFT),
+                "Mutasi stok {$tipe} barang '{$item->nama_barang}' sejumlah {$request->jumlah}",
+                ['Stok' => $stok_sebelum],
+                ['Stok' => $item->stok]
+            );
+        });
 
         return redirect()->back()->with('success', 'Mutasi stok berhasil.');
     }

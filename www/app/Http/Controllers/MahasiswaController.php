@@ -50,7 +50,7 @@ class MahasiswaController extends Controller
             $query->where('kategori', $request->kategori);
         }
 
-        $tools = $query->paginate(10);
+        $tools = $query->paginate(12);
         
         $kategoriList = Tool::select('kategori')->distinct()->pluck('kategori')->filter();
 
