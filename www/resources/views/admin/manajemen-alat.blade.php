@@ -77,32 +77,33 @@ body {
                 </div>
             </div>
 
-            <div class="flex flex-col sm:flex-row gap-3">
+            <form action="{{ route('admin.manajemen_alat') }}" method="GET" class="flex flex-col sm:flex-row gap-3">
                 <div class="relative flex-1">
                     <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-4 top-3.5 text-xs"></i>
-                    <input type="text" placeholder="Cari nama alat, kode, atau lokasi..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 transition shadow-sm">
+                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama alat, kode, atau lokasi..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 transition shadow-sm">
+                    <button type="submit" class="hidden"></button>
                 </div>
                 <div class="relative">
-                    <select class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[140px]">
-                        <option>Semua Kategori</option>
-                        <option>Hardware</option>
-                        <option>Network</option>
-                        <option>IoT</option>
-                        <option>Lainnya</option>
+                    <select name="kategori" onchange="this.form.submit()" class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[140px]">
+                        <option value="">Semua Kategori</option>
+                        <option value="Hardware" {{ request('kategori') == 'Hardware' ? 'selected' : '' }}>Hardware</option>
+                        <option value="Network" {{ request('kategori') == 'Network' ? 'selected' : '' }}>Network</option>
+                        <option value="IoT" {{ request('kategori') == 'IoT' ? 'selected' : '' }}>IoT</option>
+                        <option value="Lainnya" {{ request('kategori') == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
                     </select>
                     <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-[10px] text-slate-400 pointer-events-none"></i>
                 </div>
                 <div class="relative">
-                    <select class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[140px]">
-                        <option>Semua Status</option>
-                        <option>Tersedia</option>
-                        <option>Dipinjam</option>
-                        <option>Rusak</option>
-                        <option>Dalam Perbaikan</option>
+                    <select name="status" onchange="this.form.submit()" class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[140px]">
+                        <option value="">Semua Status</option>
+                        <option value="Tersedia" {{ request('status') == 'Tersedia' ? 'selected' : '' }}>Tersedia</option>
+                        <option value="Dipinjam" {{ request('status') == 'Dipinjam' ? 'selected' : '' }}>Dipinjam</option>
+                        <option value="Rusak" {{ request('status') == 'Rusak' ? 'selected' : '' }}>Rusak</option>
+                        <option value="Dalam Perbaikan" {{ request('status') == 'Dalam Perbaikan' ? 'selected' : '' }}>Dalam Perbaikan</option>
                     </select>
                     <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-[10px] text-slate-400 pointer-events-none"></i>
                 </div>
-            </div>
+            </form>
 
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="p-5 border-b border-slate-100">
@@ -209,7 +210,7 @@ body {
                         <button onclick="toggleModal('modal-tambah')" class="text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
                     </div>
                     <div class="p-6">
-                        <form action="{{ route('admin.manajemen_alat.store') }}" method="POST" class="form-edit-alat">
+                        <form action="{{ route('admin.manajemen_alat.store') }}" method="POST" class="form-edit-alat" enctype="multipart/form-data">
                             @csrf
 
                             <div class="mb-4">
@@ -462,7 +463,7 @@ body {
                             <button onclick="toggleModal('modal-edit-{{ $alat->id }}')" class="text-slate-400 hover:text-rose-500 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
                         </div>
                         <div class="p-6">
-                            <form action="{{ route('admin.manajemen_alat.update', $alat->id) }}" method="POST" class="form-edit-alat" data-alat-id="{{ $alat->id }}">
+                            <form action="{{ route('admin.manajemen_alat.update', $alat->id) }}" method="POST" class="form-edit-alat" data-alat-id="{{ $alat->id }}" enctype="multipart/form-data">
                                 @csrf
                                 @method('PUT')
 

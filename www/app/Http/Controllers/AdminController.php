@@ -142,13 +142,29 @@ class AdminController extends Controller
     // MANAJEMEN ALAT
     // =========================================================================
 
-    public function manajemenAlat()
+    public function manajemenAlat(Request $request)
     {
         $statusTersedia  = Tool::where('status_alat', 'Tersedia')->count();
         $statusDipinjam  = Tool::where('status_alat', 'Dipinjam')->count();
         $statusRusak     = Tool::where('status_alat', 'Rusak')->count();
         $statusPerbaikan = Tool::where('status_alat', 'Dalam Perbaikan')->count();
-        $alatList        = Tool::paginate(10);
+
+        $query = Tool::query();
+
+        if ($request->has('q') && $request->q != '') {
+            $query->where('nama_alat', 'like', '%' . $request->q . '%')
+                  ->orWhere('kode_alat', 'like', '%' . $request->q . '%');
+        }
+
+        if ($request->has('kategori') && $request->kategori != '') {
+            $query->where('kategori', $request->kategori);
+        }
+
+        if ($request->has('status') && $request->status != '') {
+            $query->where('status_alat', $request->status);
+        }
+
+        $alatList = $query->paginate(10);
 
         return view('admin.manajemen-alat', compact(
             'alatList', 'statusTersedia', 'statusDipinjam', 'statusRusak', 'statusPerbaikan'
@@ -165,9 +181,18 @@ class AdminController extends Controller
             'stok_total' => 'required|integer|min:0',
             'status_alat'=> 'required|string',
             'lokasi'     => 'required|string|max:100',
+            'foto'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
+        if ($request->hasFile('foto')) {
+            $data['foto_alat'] = $request->file('foto')->store('alat', 'public');
+        }
+
         $data['stok_tersedia'] = $data['stok_total'];
+        if (in_array($data['status_alat'], ['Rusak', 'Dalam Perbaikan'])) {
+            $data['stok_tersedia'] = 0;
+        }
+
         $tool = Tool::create($data);
 
         $this->log(
@@ -191,6 +216,7 @@ class AdminController extends Controller
             'stok_total' => 'required|integer|min:0',
             'status_alat'=> 'required|string',
             'lokasi'     => 'required|string|max:100',
+            'foto'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
         ]);
 
         $before = [
@@ -200,8 +226,22 @@ class AdminController extends Controller
             'lokasi'     => $tool->lokasi,
         ];
 
+        if ($request->hasFile('foto')) {
+            if ($tool->foto_alat) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($tool->foto_alat);
+            }
+            $data['foto_alat'] = $request->file('foto')->store('alat', 'public');
+        }
+
         $diffStok = $data['stok_total'] - $tool->stok_total;
-        $data['stok_tersedia'] = $tool->stok_tersedia + $diffStok;
+        $data['stok_tersedia'] = max(0, $tool->stok_tersedia + $diffStok);
+
+        if (in_array($data['status_alat'], ['Rusak', 'Dalam Perbaikan'])) {
+            $data['stok_tersedia'] = 0;
+        } elseif (in_array($tool->status_alat, ['Rusak', 'Dalam Perbaikan']) && $data['status_alat'] === 'Tersedia') {
+            $data['stok_tersedia'] = $data['stok_total'];
+        }
+
         $tool->update($data);
 
         $this->log(
@@ -369,21 +409,31 @@ class AdminController extends Controller
         $borrowing->tgl_pengembalian_aktual  = now();
         $borrowing->save();
 
-        $kondisiArray = $request->input('kondisi', []);
+        $kondisiBaik        = $request->input('kondisi_baik', []);
+        $kondisiRusakRingan = $request->input('kondisi_rusak_ringan', []);
+        $kondisiRusakBerat  = $request->input('kondisi_rusak_berat', []);
 
         foreach ($borrowing->items as $item) {
-            $tool    = $item->tool;
-            $kondisi = $kondisiArray[$item->id] ?? 'Baik';
+            $tool   = $item->tool;
+            $baik   = (int)($kondisiBaik[$item->id] ?? 0);
+            $ringan = (int)($kondisiRusakRingan[$item->id] ?? 0);
+            $berat  = (int)($kondisiRusakBerat[$item->id] ?? 0);
+
+            $kondisi = 'Baik';
+            if ($berat > 0) {
+                $kondisi = 'Rusak Berat';
+            } elseif ($ringan > 0) {
+                $kondisi = 'Rusak Ringan';
+            } elseif ($baik < $item->jumlah_unit && $baik > 0) {
+                 $kondisi = 'Campuran';
+            }
 
             $item->kondisi_saat_kembali = $kondisi;
             $item->save();
 
             if ($tool) {
-                if ($kondisi === 'Baik') {
-                    $tool->stok_tersedia += $item->jumlah_unit;
-                } elseif (in_array($kondisi, ['Rusak Ringan', 'Rusak Berat'])) {
-                    $tool->stok_total -= $item->jumlah_unit;
-                }
+                $tool->stok_tersedia += $baik;
+                $tool->stok_total -= ($ringan + $berat);
                 $tool->save();
             }
         }
@@ -854,7 +904,7 @@ class AdminController extends Controller
             'name'         => 'required|string|max:255',
             'email'        => 'required|string|email|max:255|unique:users',
             'password'     => 'required|string|min:8',
-            'role'         => 'required|in:Admin,Mahasiswa',
+            'role'         => 'required|in:Admin,Mahasiswa,Dosen',
             'nim'          => 'nullable|string',
             'program_studi' => 'nullable|string',
         ]);
@@ -887,7 +937,7 @@ class AdminController extends Controller
         $request->validate([
             'name'         => 'required|string|max:255',
             'email'        => 'required|string|email|max:255|unique:users,email,' . $id,
-            'role'         => 'required|in:Admin,Mahasiswa',
+            'role'         => 'required|in:Admin,Mahasiswa,Dosen',
             'nim'          => 'nullable|string',
             'program_studi' => 'nullable|string',
         ]);

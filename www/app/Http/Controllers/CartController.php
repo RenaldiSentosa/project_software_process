@@ -12,7 +12,7 @@ class CartController extends Controller
     // Menampilkan halaman keranjang dengan data dari session
     public function index()
     {
-        $userId = Auth::id() ?? 2;
+        $userId = Auth::id();
 
         // Cek apakah mahasiswa masih memiliki peminjaman aktif/menunggu
         $activeBorrowing = Borrowing::where('mahasiswa_id', $userId)
@@ -37,7 +37,7 @@ class CartController extends Controller
             'alat_id' => 'required|exists:tools,id',
         ]);
 
-        $userId = Auth::id() ?? 2;
+        $userId = Auth::id();
 
         // Cegah nambah ke keranjang kalau masih ada peminjaman aktif yang
         // BELUM diproses (Menunggu/Disetujui/Dipinjam). Pengajuan yang

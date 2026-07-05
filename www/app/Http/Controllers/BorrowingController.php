@@ -21,16 +21,8 @@ class BorrowingController extends Controller
     {
         $user = Auth::user();
 
-        if (!$user) {
-            $user = (object)[
-                'id' => 2,
-                'name' => 'Aprizal Kim',
-                'nim' => '202301110011',
-                'program_studi' => 'Teknik Informatika'
-            ];
-        }
-
-        $userId = $user->id ?? 2;
+        $user = Auth::user();
+        $userId = $user->id;
 
         $dataPeminjaman = Borrowing::with(['items.tool'])
                             ->where('mahasiswa_id', $userId)
@@ -100,7 +92,7 @@ class BorrowingController extends Controller
             return redirect()->back()->withErrors(['error' => 'Keranjang kosong! Silakan tambahkan alat terlebih dahulu.'])->withInput();
         }
 
-        $userId = Auth::id() ?? 2;
+        $userId = Auth::id();
 
         // 3. Cek peminjaman aktif
         $activeBorrowing = Borrowing::where('mahasiswa_id', $userId)
@@ -171,14 +163,7 @@ class BorrowingController extends Controller
 
         $user = Auth::user();
 
-        if (!$user) {
-            $user = (object)[
-                'nama_lengkap'  => 'Aprizal Kim',
-                'nim'           => '202301110011',
-                'program_studi' => 'Teknik Informatika',
-                'role'          => 'mahasiswa',
-            ];
-        }
+        $user = Auth::user();
 
         // Kolom 'name' di tabel users sebenarnya menyimpan ROLE user
         // (mis. "Admin", "Mahasiswa", "Dosen"), bukan nama orangnya.

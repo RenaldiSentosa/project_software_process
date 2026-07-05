@@ -33,16 +33,22 @@ class AuthController extends Controller
         $credentials = [
             $fieldType  => $request->login_input,
             'password'  => $request->password,
-            // FIX: tidak ada lagi proses aktivasi, tapi is_active tetap
-            // dicek di sini sebagai jaga-jaga kalau ada akun lama yang
-            // is_active-nya masih 0 dari sebelum perubahan ini.
-            'is_active' => 1,
         ];
 
         if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-
             $user = Auth::user();
+
+            if ($user->is_active == 0) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()->back()->withErrors([
+                    'login_error' => 'Akun anda dinonaktifkan',
+                ])->withInput($request->except('password'));
+            }
+
+            $request->session()->regenerate();
 
             \App\Models\Auditlog::create([
                 'nama_pelaku'  => $user->nama_lengkap ?? $user->name ?? 'System',

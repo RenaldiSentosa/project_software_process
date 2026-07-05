@@ -21,6 +21,9 @@ class UserController extends Controller
     {
         $request->validate([
             'password' => 'nullable|min:8|confirmed',
+        ], [
+            'password.min' => 'Password minimal harus 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
 
         // Kalau password tidak diisi, langsung balik
@@ -32,6 +35,16 @@ class UserController extends Controller
         $user = Auth::user();
         $user->password = Hash::make($request->password);
         $user->save();
+
+        \App\Models\Auditlog::create([
+            'nama_pelaku'  => $user->nama_lengkap ?? $user->name ?? 'System',
+            'role_pelaku'  => $user->role ?? '-',
+            'modul'        => 'Profil',
+            'aksi'         => 'UPDATE',
+            'id_record'    => $user->id,
+            'ip_address'   => request()->ip(),
+            'deskripsi'    => 'User berhasil mengubah password akun',
+        ]);
 
         return back()->with('success', 'Password berhasil diperbarui.');
     }

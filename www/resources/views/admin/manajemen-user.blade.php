@@ -135,6 +135,7 @@ body {
                                     <select name="role" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
                                         <option value="Mahasiswa">Mahasiswa</option>
                                         <option value="Admin">Admin</option>
+                                        <option value="Dosen">Dosen</option>
                                     </select>
                                 </div>
                                 <div>
@@ -286,6 +287,7 @@ body {
                                     <select name="role" required class="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-blue-500">
                                         <option value="Mahasiswa" {{ strtolower($u->role) == 'mahasiswa' ? 'selected' : '' }}>Mahasiswa</option>
                                         <option value="Admin" {{ strtolower($u->role) == 'admin' ? 'selected' : '' }}>Admin</option>
+                                        <option value="Dosen" {{ strtolower($u->role) == 'dosen' ? 'selected' : '' }}>Dosen</option>
                                     </select>
                                 </div>
                                 <div>
