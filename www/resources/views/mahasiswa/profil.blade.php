@@ -60,9 +60,7 @@
 
 @section('content')
 @php
-    // FIX: tampilan menyesuaikan role user yang login (mahasiswa/dosen)
-    // Kolom 'name' di tabel users menyimpan ROLE ('Admin'/'Mahasiswa'/'Dosen'), bukan nama orang.
-    $roleRaw   = auth()->user()->name ?? 'Mahasiswa';
+    $roleRaw   = auth()->user()->role ?? 'Mahasiswa';
     $isDosen   = strtolower($roleRaw) === 'dosen';
     $nimLabel  = $isDosen ? 'NUPTK' : 'NIM';
     $peranText = $isDosen ? 'Dosen / Peminjam' : 'Mahasiswa / Peminjam';
@@ -83,9 +81,17 @@
     <div class="user-intro-card">
         <div class="avatar-upload-wrapper">
             <div class="user-intro-avatar" onclick="document.getElementById('fotoProfilInput').click()">
-                <img id="previewFoto"
-                    src="{{ auth()->user()->foto_profil ? asset('storage/' . auth()->user()->foto_profil) : asset('images/avatar-illustration.png') }}"
-                    alt="Avatar">
+                @if(auth()->user()->foto_profil)
+                    <img id="previewFoto" src="{{ asset('storage/' . auth()->user()->foto_profil) }}" alt="Avatar">
+                    <div id="initialAvatar" style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: #0369a1;">
+                        {{ strtoupper(substr(auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'U', 0, 1)) }}
+                    </div>
+                @else
+                    <img id="previewFoto" src="" alt="Avatar" style="display: none;">
+                    <div id="initialAvatar" style="display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: #0369a1;">
+                        {{ strtoupper(substr(auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'U', 0, 1)) }}
+                    </div>
+                @endif
             </div>
             <div class="avatar-upload-overlay" onclick="document.getElementById('fotoProfilInput').click()">
                 <svg viewBox="0 0 24 24">
@@ -99,9 +105,7 @@
             <p>{{ auth()->user()->email }}</p>
             <div class="pill-container">
                 <span class="identity-pill">{{ $isDosen ? 'Dosen' : 'Mahasiswa' }}</span>
-                @unless($isDosen)
-                <span class="identity-pill">{{ auth()->user()->program_studi ?? 'Teknik Informatika' }}</span>
-                @endunless
+                <span class="identity-pill">{{ $isDosen ? '-' : (auth()->user()->program_studi ?? 'Teknik Informatika') }}</span>
             </div>
         </div>
     </div>
@@ -117,12 +121,10 @@
             <div class="info-icon-box"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg></div>
             <div class="info-content"><span class="info-label">Email</span><span class="info-value">{{ auth()->user()->email }}</span></div>
         </div>
-        @unless($isDosen)
         <div class="info-row">
             <div class="info-icon-box"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0 0 12 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18"/></svg></div>
-            <div class="info-content"><span class="info-label">Program Studi</span><span class="info-value">{{ auth()->user()->program_studi ?? 'Teknik Informatika' }}</span></div>
+            <div class="info-content"><span class="info-label">Program Studi</span><span class="info-value">{{ $isDosen ? '-' : (auth()->user()->program_studi ?? 'Teknik Informatika') }}</span></div>
         </div>
-        @endunless
         <div class="info-row">
             <div class="info-icon-box"><svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 0 1-1.043 3.296 3.745 3.745 0 0 1-3.296 1.043A3.745 3.745 0 0 1 12 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 0 1-3.296-1.043 3.745 3.745 0 0 1-1.043-3.296A3.745 3.745 0 0 1 3 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 0 1 1.043-3.296 3.746 3.746 0 0 1 3.296-1.043A3.746 3.746 0 0 1 12 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 0 1 3.296 1.043 3.746 3.746 0 0 1 1.043 3.296A3.745 3.745 0 0 1 21 12Z"/></svg></div>
             <div class="info-content"><span class="info-label">Peran</span><span class="info-value">{{ $peranText }}</span></div>
@@ -189,6 +191,9 @@
         const reader = new FileReader();
         reader.onload = function(ev) {
             document.getElementById('previewFoto').src = ev.target.result;
+            document.getElementById('previewFoto').style.display = 'block';
+            const initial = document.getElementById('initialAvatar');
+            if(initial) initial.style.display = 'none';
         };
         reader.readAsDataURL(file);
 

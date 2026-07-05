@@ -289,7 +289,7 @@
 
         /* ── PAGE CONTENT ── */
         .page-content {
-            max-width: 960px;
+            max-width: 1440px;
             margin: 0 auto;
             padding: 16px 16px;
         }
@@ -324,19 +324,19 @@
         </div>
 
         <div class="nav-links">
-            <a href="{{ route('dashboard') }}" @class(['active' => request()->routeIs('dashboard')])>Dashboard</a>
-            <a href="{{ route('katalog') }}" @class(['active' => request()->routeIs('katalog')])>Katalog Alat</a>
-            <a href="{{ route('keranjang') }}" @class(['active' => request()->routeIs('keranjang')])>Keranjang</a>
-            <a href="{{ route('peminjaman') }}" @class(['active' => request()->routeIs('peminjaman*')])>Peminjaman Saya</a>
-            <a href="{{ route('profil') }}" @class(['active' => request()->routeIs('profil')])>Profil</a>
+            <a href="{{ route('dashboard') }}" @class(['active' => request()->routeIs('dashboard', 'mahasiswa.dashboard')])>Dashboard</a>
+            <a href="{{ route('katalog') }}" @class(['active' => request()->routeIs('katalog', 'mahasiswa.katalog')])>Katalog Alat</a>
+            <a href="{{ route('keranjang') }}" @class(['active' => request()->routeIs('keranjang', 'mahasiswa.keranjang')])>Keranjang</a>
+            <a href="{{ route('peminjaman') }}" @class(['active' => request()->routeIs('peminjaman*', 'mahasiswa.peminjaman*')])>Peminjaman Saya</a>
+            <a href="{{ route('profil') }}" @class(['active' => request()->routeIs('profil', 'mahasiswa.profil')])>Profil</a>
         </div>
         
         <div class="mobile-nav" id="mobileNav">
-            <a href="{{ route('dashboard') }}" @class(['active' => request()->routeIs('dashboard')])>Dashboard</a>
-            <a href="{{ route('katalog') }}" @class(['active' => request()->routeIs('katalog')])>Katalog Alat</a>
-            <a href="{{ route('keranjang') }}" @class(['active' => request()->routeIs('keranjang')])>Keranjang</a>
-            <a href="{{ route('peminjaman') }}" @class(['active' => request()->routeIs('peminjaman*')])>Peminjaman Saya</a>
-            <a href="{{ route('profil') }}" @class(['active' => request()->routeIs('profil')])>Profil</a>
+            <a href="{{ route('dashboard') }}" @class(['active' => request()->routeIs('dashboard', 'mahasiswa.dashboard')])>Dashboard</a>
+            <a href="{{ route('katalog') }}" @class(['active' => request()->routeIs('katalog', 'mahasiswa.katalog')])>Katalog Alat</a>
+            <a href="{{ route('keranjang') }}" @class(['active' => request()->routeIs('keranjang', 'mahasiswa.keranjang')])>Keranjang</a>
+            <a href="{{ route('peminjaman') }}" @class(['active' => request()->routeIs('peminjaman*', 'mahasiswa.peminjaman*')])>Peminjaman Saya</a>
+            <a href="{{ route('profil') }}" @class(['active' => request()->routeIs('profil', 'mahasiswa.profil')])>Profil</a>
         </div>
 
         <div class="nav-right">
@@ -352,8 +352,7 @@
                     </div>
                     <div class="user-info">
                         <div class="user-name">{{ auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Guest' }}</div>
-                        {{-- FIX: kolom 'role' tidak ada di tabel users. Role sebenarnya disimpan di kolom 'name' --}}
-                        <div class="user-role">{{ ucfirst(auth()->user()->name ?? 'Mahasiswa') }}</div>
+                        <div class="user-role">{{ ucfirst(auth()->user()->role ?? 'Mahasiswa') }}</div>
                     </div>
                     <svg class="chevron-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="6 9 12 15 18 9"/>
@@ -362,8 +361,7 @@
                 <div class="dropdown" id="dropdown">
                     <div class="dropdown-header">
                         <div class="d-name">{{ auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'Guest' }}</div>
-                        {{-- FIX: kolom 'role' tidak ada di tabel users. Role sebenarnya disimpan di kolom 'name' --}}
-                        <div class="d-role">{{ ucfirst(auth()->user()->name ?? 'Mahasiswa') }}</div>
+                        <div class="d-role">{{ ucfirst(auth()->user()->role ?? 'Mahasiswa') }}</div>
                     </div>
                     <button class="dropdown-item logout" onclick="triggerLogout()">
                         <svg viewBox="0 0 24 24">

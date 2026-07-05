@@ -204,7 +204,13 @@
 @section('content')
     {{-- Greeting Card --}}
     <div class="greeting">
-        <div class="greeting-avatar">{{ strtoupper(substr(auth()->user()->nama_lengkap ?? 'U', 0, 1)) }}</div>
+        <div class="greeting-avatar" style="overflow: hidden;">
+            @if(auth()->user()->foto_profil)
+                <img src="{{ asset('storage/' . auth()->user()->foto_profil) }}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover;">
+            @else
+                {{ strtoupper(substr(auth()->user()->nama_lengkap ?? auth()->user()->name ?? 'U', 0, 1)) }}
+            @endif
+        </div>
         <div>
             <h2>Halo, {{ auth()->user()->nama_lengkap ?? 'Guest User' }}!</h2>
             <p>Selamat datang di Portal Peminjaman Lab. Ada banyak alat tersedia untuk dipinjam.</p>

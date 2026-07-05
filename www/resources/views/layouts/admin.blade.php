@@ -141,7 +141,7 @@
         </header>
 
         {{-- PAGE CONTENT (diisi oleh @section('content') di masing-masing page admin) --}}
-        <main class="p-4 sm:p-8 space-y-6 flex-1 max-w-7xl w-full mx-auto">
+        <main class="p-4 sm:p-8 space-y-6 flex-1 max-w-[1440px] w-full mx-auto">
             @yield('content')
         </main>
     </div>
