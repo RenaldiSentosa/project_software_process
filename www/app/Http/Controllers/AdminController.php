@@ -805,6 +805,14 @@ class AdminController extends Controller
             fclose($handle);
         };
 
+        $this->log(
+            'EXPORT', 'Laporan',
+            null,
+            "Mengekspor laporan " . ucfirst($jenis) . " ke CSV",
+            null,
+            ['Jenis Laporan' => ucfirst($jenis), 'Status' => $status ?: 'Semua']
+        );
+
         return response()->stream($callback, 200, [
             'Content-Type'        => 'text/csv; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
@@ -877,7 +885,7 @@ class AdminController extends Controller
 
         // Catat aksi export ini ke audit log
         $this->log(
-            'EXPORT', 'Laporan',
+            'EXPORT', 'Audit Trail',
             null,
             'Mengekspor audit trail ke CSV',
             null,

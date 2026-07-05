@@ -50,7 +50,12 @@ Route::middleware(['auth'])->group(function () {
     // =====================================================================
     // 4. AREA MAHASISWA & DOSEN
     // =====================================================================
-    Route::get('/dashboard', [MahasiswaController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', function () {
+        if (auth()->user()->role === 'admin') {
+            return redirect('/admin/dashboard');
+        }
+        return redirect('/mahasiswa/dashboard');
+    })->name('dashboard');
     Route::get('/katalog', [MahasiswaController::class, 'katalog'])->name('katalog');
 
     Route::prefix('mahasiswa')->name('mahasiswa.')->group(function () {
