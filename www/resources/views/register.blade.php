@@ -474,7 +474,10 @@
                     <label class="field-label" for="program_studi">Program Studi</label>
                     <div class="input-wrap">
                         <svg class="ico" viewBox="0 0 24 24">
-                            <path d="M12 3L1 9l11 6 9-4.91V17M1 9v6m11-3v6"/>
+                            <path d="M12 4l-6 3 6 3 6-3-6-3z"/>
+                            <path d="M18 7v4"/>
+                            <circle cx="12" cy="13" r="3"/>
+                            <path d="M5 21a7 7 0 0 1 14 0"/>
                         </svg>
                         <select id="program_studi" name="program_studi" class="placeholder"
                             onchange="this.classList.remove('placeholder')">
@@ -713,10 +716,7 @@
             showError('Email wajib diisi.');
             return false;
         }
-        if (!email.endsWith('@ipwija.ac.id')) {
-            showError('Anda wajib menggunakan email resmi Universitas IPWIJA (@ipwija.ac.id).');
-            return false;
-        }
+        // Email tidak dibatasi domain lagi
 
         if (role === 'mahasiswa' && programStudi && !programStudi.value) {
             showError('Program studi wajib dipilih.');

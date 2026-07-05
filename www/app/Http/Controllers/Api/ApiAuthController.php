@@ -67,12 +67,7 @@ class ApiAuthController extends Controller
             'program_studi' => 'required|string|max:100',
         ]);
 
-        if (!str_ends_with($request->email, '@ipwija.ac.id')) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Registrasi ditolak. Wajib menggunakan email @ipwija.ac.id'
-            ], 400);
-        }
+        // Tidak ada validasi domain email lagi
 
         $user = User::create([
             'nama_lengkap'  => $request->nama_lengkap,

@@ -115,13 +115,8 @@ class AuthController extends Controller
             'nama_lengkap.required'  => 'Nama wajib diisi.',
         ]);
 
-        // Aturan email khusus domain kampus, dicek manual supaya pesannya jelas
+        // Tidak ada lagi aturan email khusus, user bebas menggunakan email apapun (seperti gmail)
         $email = $request->email;
-        if ($email && !str_ends_with($email, '@ipwija.ac.id')) {
-            $validator->after(function ($v) {
-                $v->errors()->add('email', 'Registrasi ditolak! Anda wajib menggunakan email resmi Universitas IPWIJA (@ipwija.ac.id).');
-            });
-        }
 
         if ($validator->fails()) {
             if ($request->wantsJson() || $request->ajax()) {
