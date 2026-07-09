@@ -25,39 +25,39 @@ body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
 </div>
 
 {{-- FILTER BAR --}}
-<div class="flex flex-col sm:flex-row gap-3 mb-6">
+<form method="GET" action="{{ route('admin.manajemen_barang') }}" class="flex flex-col sm:flex-row gap-3 mb-6">
     <div class="relative flex-1">
         <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 text-xs"></i>
-        <input type="text" id="input-cari-barang"
+        <input type="text" name="q" value="{{ request('q') }}"
                placeholder="Cari nama alat, kode, atau lokasi..."
                class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm">
     </div>
     <div class="relative">
-        <select id="filter-kategori" class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm cursor-pointer min-w-[160px]">
+        <select name="kategori" class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm cursor-pointer min-w-[160px]">
             <option value="">Semua Kategori</option>
-            <option value="Furniture">Furniture</option>
-            <option value="Elektronik">Elektronik</option>
-            <option value="Jaringan">Jaringan</option>
-            <option value="ATK">ATK</option>
-            <option value="Multimedia">Multimedia</option>
-            <option value="Lainnya">Lainnya</option>
+            <option value="Furniture" {{ request('kategori') == 'Furniture' ? 'selected' : '' }}>Furniture</option>
+            <option value="Elektronik" {{ request('kategori') == 'Elektronik' ? 'selected' : '' }}>Elektronik</option>
+            <option value="Jaringan" {{ request('kategori') == 'Jaringan' ? 'selected' : '' }}>Jaringan</option>
+            <option value="ATK" {{ request('kategori') == 'ATK' ? 'selected' : '' }}>ATK</option>
+            <option value="Multimedia" {{ request('kategori') == 'Multimedia' ? 'selected' : '' }}>Multimedia</option>
+            <option value="Lainnya" {{ request('kategori') == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
         </select>
         <i class="fa-solid fa-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none"></i>
     </div>
     <div class="relative">
-        <select id="filter-kondisi" class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm cursor-pointer min-w-[160px]">
+        <select name="kondisi" class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm cursor-pointer min-w-[160px]">
             <option value="">Semua Kondisi</option>
-            <option value="Baik">Baik</option>
-            <option value="Rusak Ringan">Rusak Ringan</option>
-            <option value="Rusak Berat">Rusak Berat</option>
-            <option value="Tidak Layak">Tidak Layak</option>
+            <option value="Baik" {{ request('kondisi') == 'Baik' ? 'selected' : '' }}>Baik</option>
+            <option value="Rusak Ringan" {{ request('kondisi') == 'Rusak Ringan' ? 'selected' : '' }}>Rusak Ringan</option>
+            <option value="Rusak Berat" {{ request('kondisi') == 'Rusak Berat' ? 'selected' : '' }}>Rusak Berat</option>
+            <option value="Tidak Layak" {{ request('kondisi') == 'Tidak Layak' ? 'selected' : '' }}>Tidak Layak</option>
         </select>
         <i class="fa-solid fa-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none"></i>
     </div>
-    <button id="btn-terapkan-filter" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center gap-2">
         <i class="fa-solid fa-filter"></i> Filter
     </button>
-</div>
+</form>
 
 {{-- TABLE --}}
 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -80,12 +80,7 @@ body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
                 @php
                     $kondisiNorm = $item->kondisi ?? '';
                 @endphp
-                <tr class="hover:bg-slate-50/60 transition"
-                    data-nama="{{ strtolower($item->nama_barang) }}"
-                    data-kode="{{ strtolower($item->kode_barang) }}"
-                    data-lokasi="{{ strtolower($item->lokasi) }}"
-                    data-kategori="{{ $item->kategori }}"
-                    data-kondisi="{{ $kondisiNorm }}">
+                <tr class="hover:bg-slate-50/60 transition item-row">
                     <td class="py-4 px-6 font-semibold text-slate-800 text-xs">{{ $item->kode_barang }}</td>
                     <td class="py-4 px-6 font-semibold text-slate-800 text-xs">{{ $item->nama_barang }}</td>
                     <td class="py-4 px-6">
@@ -160,10 +155,12 @@ body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
                 @endforelse
             </tbody>
         </table>
-        <p id="pesan-kosong-barang" class="hidden text-center py-10 text-slate-400 text-xs">
-            <i class="fa-solid fa-magnifying-glass text-xl mb-2 block"></i>
-            Tidak ada barang yang cocok dengan pencarian/filter.
+        @if($items->isEmpty())
+        <p class="text-center py-10 text-slate-400 text-xs">
+            <i class="fa-solid fa-box-open text-xl mb-2 block"></i>
+            Tidak ada barang yang cocok dengan filter pencarian.
         </p>
+        @endif
     </div>
     <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
         <p class="text-xs text-slate-400">
@@ -688,45 +685,11 @@ document.querySelectorAll('input[name="tipe_mutasi"]').forEach(function(radio) {
     });
 });
 
-// ================================================================
-// FILTER & SEARCH — client-side
-// ================================================================
-(function () {
-    const inputCari    = document.getElementById('input-cari-barang');
-    const filterKat    = document.getElementById('filter-kategori');
-    const filterKond   = document.getElementById('filter-kondisi');
-    const tbody        = document.getElementById('tbody-barang');
-    const pesanKosong  = document.getElementById('pesan-kosong-barang');
-    const btnFilter    = document.getElementById('btn-terapkan-filter');
-    if (!tbody || !btnFilter) return;
-
-    const baris = Array.from(tbody.querySelectorAll('tr[data-nama]'));
-
-    function terapkanFilter() {
-        const kata    = inputCari.value.trim().toLowerCase();
-        const kat     = filterKat.value;
-        const kond    = filterKond.value;
-        let ada = false;
-
-        baris.forEach(function(tr) {
-            const cocokKata = kata === '' ||
-                tr.dataset.nama.includes(kata) ||
-                tr.dataset.kode.includes(kata) ||
-                tr.dataset.lokasi.includes(kata);
-            const cocokKat  = kat  === '' || tr.dataset.kategori === kat;
-            const cocokKond = kond === '' || tr.dataset.kondisi === kond;
-            const tampil = cocokKata && cocokKat && cocokKond;
-            tr.classList.toggle('hidden', !tampil);
-            if (tampil) ada = true;
-        });
-
-        if (pesanKosong) pesanKosong.classList.toggle('hidden', ada || baris.length === 0);
+// ===================================    // Menutup modal otomatis bila klik di luar
+    window.onclick = function(event) {
+        if (event.target.attributes.id && event.target.attributes.id.value.startsWith('modal-')) {
+            toggleModal(event.target.id);
+        }
     }
-
-    btnFilter.addEventListener('click', terapkanFilter);
-    inputCari.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') terapkanFilter();
-    });
-})();
 </script>
 @endsection

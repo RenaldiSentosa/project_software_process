@@ -33,20 +33,24 @@ body {
                 </button>
             </div>
 
-            <div class="flex flex-col sm:flex-row gap-3">
+            <form method="GET" action="{{ route('admin.manajemen_user') }}" class="flex flex-col sm:flex-row gap-3 mb-6">
                 <div class="relative flex-1">
                     <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-4 top-3.5 text-xs"></i>
-                    <input type="text" placeholder="Cari nama, NIM/NIDN, email, atau program studi..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 transition shadow-sm">
+                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama, NIM/NIDN, email, atau program studi..." class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 transition shadow-sm">
                 </div>
                 <div class="relative">
-                    <select class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[140px]">
-                        <option>Semua Peran</option>
-                        <option>Admin</option>
-                        <option>Mahasiswa</option>
+                    <select name="role" class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[140px]">
+                        <option value="">Semua Peran</option>
+                        <option value="Admin" {{ strcasecmp(request('role'), 'Admin') == 0 ? 'selected' : '' }}>Admin</option>
+                        <option value="Mahasiswa" {{ strcasecmp(request('role'), 'Mahasiswa') == 0 ? 'selected' : '' }}>Mahasiswa</option>
+                        <option value="Dosen" {{ strcasecmp(request('role'), 'Dosen') == 0 ? 'selected' : '' }}>Dosen</option>
                     </select>
                     <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-[10px] text-slate-400 pointer-events-none"></i>
                 </div>
-            </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-filter"></i> Filter
+                </button>
+            </form>
 
             <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
@@ -62,9 +66,12 @@ body {
                                 <th class="py-4 px-6 text-center">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
+                        <tbody id="tbody-user" class="divide-y divide-slate-100 text-slate-700 font-medium">
                             @forelse($users ?? [] as $u)
-                            <tr class="hover:bg-slate-50/50 transition">
+                            @php
+                                $roleNorm = strtolower($u->role);
+                            @endphp
+                            <tr class="hover:bg-slate-50/50 transition user-row">
                                 <td class="py-4 px-6 text-slate-600 font-mono">{{ $u->nim ?? '-' }}</td>
                                 <td class="py-4 px-6 text-slate-900 font-bold">{{ $u->nama_lengkap ?? $u->name }}</td>
                                 <td class="py-4 px-6 text-slate-500">{{ $u->email }}</td>
@@ -95,6 +102,12 @@ body {
                             @endforelse
                         </tbody>
                     </table>
+                    @if($users->isEmpty())
+                    <p class="text-center py-10 text-slate-400 text-xs">
+                        <i class="fa-solid fa-magnifying-glass text-xl mb-2 block"></i>
+                        Tidak ada user yang cocok dengan pencarian/filter.
+                    </p>
+                    @endif
                 </div>
                 <div class="p-5 border-t border-slate-100">
                     {{ $users->links() }}

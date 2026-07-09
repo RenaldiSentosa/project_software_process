@@ -52,6 +52,8 @@ services:
       - ./www:/var/www/html
     networks:
       - laravel_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 networks:
   laravel_network:

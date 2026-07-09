@@ -26,7 +26,7 @@ class N8NWebhookService
 
         try {
             // Get first tool info for simplicity, or handle multiple
-            $firstItem = $borrowing->borrowingItems()->first();
+            $firstItem = $borrowing->items()->first();
             $toolName = $firstItem && $firstItem->tool ? $firstItem->tool->nama_alat : 'Multiple Tools';
             $toolCode = $firstItem && $firstItem->tool ? $firstItem->tool->kode_alat : '-';
 
@@ -40,6 +40,7 @@ class N8NWebhookService
                 'borrow_date' => $borrowing->tgl_rencana_pinjam,
                 'return_date' => $borrowing->tgl_rencana_kembali,
                 'admin_note' => $borrowing->catatan_admin,
+                'target_email' => $borrowing->mahasiswa->email ?? 'gozzzgas@gmail.com',
                 'timestamp' => now()->toIso8601String()
             ];
 

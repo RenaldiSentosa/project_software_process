@@ -308,11 +308,38 @@ class AdminController extends Controller
     // PEMINJAMAN
     // =========================================================================
 
-    public function peminjaman()
+    public function peminjaman(Request $request)
     {
-        $borrowings = Borrowing::with('mahasiswa', 'items.tool')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $query = Borrowing::with('mahasiswa', 'items.tool')->orderBy('created_at', 'desc');
+
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $cleanId = ltrim(str_ireplace('PJM-', '', $search), '0');
+            
+            $query->where(function($q) use ($search, $cleanId) {
+                $q->whereHas('mahasiswa', function($mhs) use ($search) {
+                    $mhs->where('nama_lengkap', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%");
+                });
+                
+                if (is_numeric($cleanId)) {
+                    $q->orWhere('id', $cleanId);
+                }
+            });
+        }
+
+        if ($request->filled('status')) {
+            $status = $request->status;
+            if ($status === 'Dipinjam') {
+                $query->whereIn('status', ['Dipinjam', 'Diproses']);
+            } elseif ($status === 'Dikembalikan') {
+                $query->whereIn('status', ['Dikembalikan', 'Selesai']);
+            } else {
+                $query->where('status', $status);
+            }
+        }
+
+        $borrowings = $query->paginate(10)->withQueryString();
 
         return view('admin.peminjaman', compact('borrowings'));
     }
@@ -474,9 +501,28 @@ class AdminController extends Controller
     // MANAJEMEN BARANG
     // =========================================================================
 
-    public function manajemenBarang()
+    public function manajemenBarang(Request $request)
     {
-        $items = Item::paginate(10);
+        $query = Item::query();
+
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where(function($q) use ($search) {
+                $q->where('nama_barang', 'like', "%{$search}%")
+                  ->orWhere('kode_barang', 'like', "%{$search}%")
+                  ->orWhere('lokasi', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('kategori')) {
+            $query->where('kategori', $request->kategori);
+        }
+
+        if ($request->filled('kondisi')) {
+            $query->where('kondisi', $request->kondisi);
+        }
+
+        $items = $query->paginate(10)->withQueryString();
         return view('admin.manajemen-barang', compact('items'));
     }
 
@@ -927,9 +973,27 @@ class AdminController extends Controller
     // MANAJEMEN USER
     // =========================================================================
 
-    public function manajemenUser()
+    public function manajemenUser(Request $request)
     {
-        $users = User::paginate(10);
+        $query = User::query();
+
+        if ($request->filled('q')) {
+            $search = $request->q;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('nim', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('program_studi', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('role')) {
+            // handle case-insensitive role match
+            $query->where('role', $request->role);
+        }
+
+        $users = $query->paginate(10)->withQueryString();
         return view('admin.manajemen-user', compact('users'));
     }
 

@@ -64,12 +64,11 @@ body {
 
         {{-- Tanggal --}}
         <input type="date" name="date" value="{{ request('date') }}"
-            onchange="document.getElementById('filter-form').submit()"
             class="bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[150px]">
 
         {{-- Role --}}
         <div class="relative">
-            <select name="role" onchange="document.getElementById('filter-form').submit()"
+            <select name="role"
                 class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[160px]">
                 <option value="">Semua Role</option>
                 <option value="Admin Laboratorium" {{ request('role') == 'Admin Laboratorium' ? 'selected' : '' }}>Admin Laboratorium</option>
@@ -80,7 +79,7 @@ body {
 
         {{-- Modul --}}
         <div class="relative">
-            <select name="modul" onchange="document.getElementById('filter-form').submit()"
+            <select name="modul"
                 class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[160px]">
                 <option value="">Semua Module</option>
                 <option value="Manajemen Alat"   {{ request('modul') == 'Manajemen Alat'   ? 'selected' : '' }}>Manajemen Alat</option>
@@ -95,7 +94,7 @@ body {
 
         {{-- Aksi --}}
         <div class="relative">
-            <select name="aksi" onchange="document.getElementById('filter-form').submit()"
+            <select name="aksi"
                 class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none shadow-sm cursor-pointer min-w-[160px]">
                 <option value="">Semua Aksi</option>
                 <option value="CREATE"  {{ request('aksi') == 'CREATE'  ? 'selected' : '' }}>Create</option>
@@ -119,7 +118,10 @@ body {
         @endif
 
         {{-- Export CSV — kirim filter aktif juga --}}
-        <div class="ml-auto">
+        <div class="ml-auto flex items-center gap-3">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center gap-2">
+                <i class="fa-solid fa-filter"></i> Filter
+            </button>
             <a href="{{ route('admin.audit_trail.export', request()->only(['search','date','role','modul','aksi'])) }}"
                 class="inline-flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-semibold transition shadow-sm">
                 <i class="fa-solid fa-file-csv"></i>
@@ -415,13 +417,6 @@ document.addEventListener('keydown', function (e) {
     }
 });
 
-// Submit form saat ketik di search (delay 500ms biar ga spam)
-let searchTimer;
-document.querySelector('input[name="search"]').addEventListener('input', function () {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => {
-        document.getElementById('filter-form').submit();
-    }, 500);
-});
+
 </script>
 @endsection

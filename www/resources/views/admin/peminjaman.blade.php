@@ -25,44 +25,42 @@ input[type=number].kondisi-input::-webkit-outer-spin-button { opacity: 1; }
 </div>
 
 {{-- SEARCH & FILTER BAR --}}
-<div class="flex flex-col sm:flex-row gap-3 mb-6">
+<form method="GET" action="{{ route('admin.peminjaman') }}" class="flex flex-col sm:flex-row gap-3 mb-6">
     <div class="relative flex-1">
         <i class="fa-solid fa-magnifying-glass text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 text-xs"></i>
         <input
             type="text"
-            id="input-cari-peminjaman"
+            name="q"
+            value="{{ request('q') }}"
             placeholder="Cari ID peminjaman atau nama peminjam..."
             class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition shadow-sm"
         >
     </div>
     <div class="relative">
-        <select id="select-status-peminjaman" class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm cursor-pointer min-w-[160px]">
+        <select name="status" class="appearance-none bg-white border border-slate-200 pl-4 pr-10 py-2.5 rounded-xl text-xs font-medium text-slate-600 focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm cursor-pointer min-w-[160px]">
             <option value="">Semua Status</option>
-            <option value="Menunggu">Menunggu</option>
-            <option value="Disetujui">Disetujui</option>
-            <option value="Dipinjam">Dipinjam</option>
-            <option value="Diproses">Diproses</option>
-            <option value="Dikembalikan">Dikembalikan</option>
-            <option value="Selesai">Selesai</option>
-            <option value="Ditolak">Ditolak</option>
+            <option value="Menunggu" {{ request('status') == 'Menunggu' ? 'selected' : '' }}>Menunggu</option>
+            <option value="Disetujui" {{ request('status') == 'Disetujui' ? 'selected' : '' }}>Disetujui</option>
+            <option value="Dipinjam" {{ request('status') == 'Dipinjam' ? 'selected' : '' }}>Dipinjam</option>
+            <option value="Diproses" {{ request('status') == 'Diproses' ? 'selected' : '' }}>Diproses</option>
+            <option value="Dikembalikan" {{ request('status') == 'Dikembalikan' ? 'selected' : '' }}>Dikembalikan</option>
+            <option value="Selesai" {{ request('status') == 'Selesai' ? 'selected' : '' }}>Selesai</option>
+            <option value="Ditolak" {{ request('status') == 'Ditolak' ? 'selected' : '' }}>Ditolak</option>
         </select>
         <i class="fa-solid fa-chevron-down absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 pointer-events-none"></i>
     </div>
     <button
-        type="button"
-        id="btn-terapkan-filter"
+        type="submit"
         class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center gap-2"
     >
         <i class="fa-solid fa-filter"></i> Filter
     </button>
-    <button
-        type="button"
-        id="btn-reset-filter-peminjaman"
-        class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2.5 rounded-xl text-xs transition shadow-sm"
+    <a href="{{ route('admin.peminjaman') }}"
+        class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-2.5 rounded-xl text-xs transition shadow-sm flex items-center"
     >
         Reset
-    </button>
-</div>
+    </a>
+</form>
 
 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
     <div class="px-6 py-4 border-b border-slate-100">
@@ -92,12 +90,7 @@ input[type=number].kondisi-input::-webkit-outer-spin-button { opacity: 1; }
                         $nimLabel     = $borrowing->mahasiswa->nim ?? $borrowing->mahasiswa->nip ?? '';
                         $st           = $borrowing->status;
                     @endphp
-                    <tr
-                        class="hover:bg-slate-50/60 transition"
-                        data-id-peminjaman="{{ strtolower($idTampil) }}"
-                        data-nama-peminjam="{{ strtolower($namaPeminjam) }}"
-                        data-status-peminjaman="{{ $st }}"
-                    >
+                    <tr class="hover:bg-slate-50/60 transition item-row">
                         <td class="py-4 px-6 font-semibold text-slate-800 text-xs">{{ $idTampil }}</td>
                         <td class="py-4 px-6">
                             <span class="font-semibold text-slate-800 block text-xs">{{ $namaPeminjam }}</span>
@@ -188,10 +181,12 @@ input[type=number].kondisi-input::-webkit-outer-spin-button { opacity: 1; }
                 @endforelse
             </tbody>
         </table>
-        <p id="pesan-kosong-filter" class="hidden text-center py-10 text-slate-400 text-xs">
+        @if($borrowings->isEmpty())
+        <p class="text-center py-10 text-slate-400 text-xs">
             <i class="fa-solid fa-magnifying-glass text-xl mb-2 block"></i>
             Tidak ada peminjaman yang cocok dengan pencarian/filter.
         </p>
+        @endif
     </div>
     <div class="px-6 py-4 border-t border-slate-100 flex items-center justify-between">
         <p class="text-xs text-slate-400">
@@ -671,62 +666,6 @@ function validasiDanSubmitPengembalian(formId) {
     form.submit();
 }
 
-// ================================================================
-// FILTER & SEARCH — client-side
-// ================================================================
-(function () {
-    const inputCari   = document.getElementById('input-cari-peminjaman');
-    const selectStat  = document.getElementById('select-status-peminjaman');
-    const btnReset    = document.getElementById('btn-reset-filter-peminjaman');
-    const tbody       = document.getElementById('tbody-peminjaman');
-    const pesanKosong = document.getElementById('pesan-kosong-filter');
-    const btnFilter   = document.getElementById('btn-terapkan-filter');
-    if (!tbody || !btnFilter) return;
 
-    const baris = Array.from(tbody.querySelectorAll('tr[data-id-peminjaman]'));
-
-    function terapkanFilter() {
-        const kataKunci   = inputCari.value.trim().toLowerCase();
-        const statusPilih = selectStat.value;
-        let adaYangTampil = false;
-
-        baris.forEach(function (tr) {
-            const idPjm  = (tr.dataset.idPeminjaman  || '').toLowerCase();
-            const nama   = (tr.dataset.namaPeminjam  || '').toLowerCase();
-            const status = tr.dataset.statusPeminjaman || '';
-
-            const cocokKata = kataKunci === '' || idPjm.includes(kataKunci) || nama.includes(kataKunci);
-
-            let cocokStatus;
-            if (statusPilih === '') {
-                cocokStatus = true;
-            } else if (statusPilih === 'Dipinjam') {
-                cocokStatus = status === 'Dipinjam' || status === 'Diproses';
-            } else if (statusPilih === 'Dikembalikan') {
-                cocokStatus = status === 'Dikembalikan' || status === 'Selesai';
-            } else {
-                cocokStatus = status === statusPilih;
-            }
-
-            const tampil = cocokKata && cocokStatus;
-            tr.classList.toggle('hidden', !tampil);
-            if (tampil) adaYangTampil = true;
-        });
-
-        if (pesanKosong) {
-            pesanKosong.classList.toggle('hidden', adaYangTampil || baris.length === 0);
-        }
-    }
-
-    btnFilter.addEventListener('click', terapkanFilter);
-    inputCari.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') terapkanFilter();
-    });
-    btnReset.addEventListener('click', function () {
-        inputCari.value  = '';
-        selectStat.value = '';
-        terapkanFilter();
-    });
-})();
 </script>
 @endsection
