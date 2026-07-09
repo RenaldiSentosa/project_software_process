@@ -86,8 +86,9 @@ Sistem ini menggunakan n8n untuk mengirim email otomatis ketika ada peminjaman, 
 7. **Production Mode (Agar berjalan otomatis tanpa di klik "Listen for test event")**:
    - Di n8n, pastikan Anda mengubah endpoint Webhook node dari **Test** menjadi **Production**.
    - Copy URL Production webhook tersebut (misal: `/webhook/` bukan `/webhook-test/`).
-   - Ubah `N8N_WEBHOOK_URL` di dalam file `.env` Laravel Anda agar menggunakan `/webhook/`.
-   - Di n8n, nyalakan toggle **"Active"** di sudut kanan atas layar agar workflow selalu menyala di latar belakang.
+   - Ubah `N8N_WEBHOOK_URL` di dalam file `.env` Laravel Anda. **PENTING:** Karena Laravel berjalan di dalam Docker, ganti kata `localhost` menjadi `n8n` agar aplikasi mengenali container n8n (contoh: `http://n8n:5678/webhook/...`).
+   - Jangan lupa jalankan `docker exec -it laravel_app_sp php artisan config:clear` setelah mengubah `.env`.
+   - Di n8n, klik tombol **"Publish"** di sudut kanan atas layar agar workflow selalu menyala di latar belakang.
 
 ---
 
