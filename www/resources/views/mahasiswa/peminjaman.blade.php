@@ -47,6 +47,40 @@
     .btn-detail svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
 
     .empty-table-state { padding: 48px 16px; text-align: center; color: #6b7280; font-size: 14px; }
+
+    /* ====== PAGINATION ====== */
+    .pg-custom { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 28px; }
+    .pg-custom ul { display: flex; align-items: center; gap: 6px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; justify-content: center; }
+    .pg-custom li { list-style: none; }
+
+    .pg-custom li > a,
+    .pg-custom li > span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 8px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: #fff;
+        color: #374151;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: inherit;
+        text-decoration: none;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+    }
+
+    .pg-custom li > a:hover { background: #eff6ff; border-color: #bfdbfe; color: #2563eb; }
+
+    .pg-custom li > a svg,
+    .pg-custom li > span svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .pg-custom li.active > span { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .pg-custom li.disabled > span { color: #d1d5db; border-color: #f3f4f6; cursor: not-allowed; background: #f9fafb; }
+
+    .pg-info { font-size: 12px; color: #9ca3af; margin: 0; }
 </style>
 @endsection
 
@@ -125,9 +159,32 @@
         </table>
     </div>
     
-    <div style="margin-top: 20px;">
-        {{ $peminjaman->links() }}
-    </div>
+    @if ($peminjaman->hasPages())
+    <nav class="pg-custom" aria-label="Pagination">
+        <ul>
+            @if ($peminjaman->onFirstPage())
+                <li class="disabled"><span><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></span></li>
+            @else
+                <li><a href="{{ $peminjaman->previousPageUrl() }}" rel="prev"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></a></li>
+            @endif
+
+            @foreach ($peminjaman->getUrlRange(1, $peminjaman->lastPage()) as $page => $url)
+                @if ($page == $peminjaman->currentPage())
+                    <li class="active"><span>{{ $page }}</span></li>
+                @else
+                    <li><a href="{{ $url }}">{{ $page }}</a></li>
+                @endif
+            @endforeach
+
+            @if ($peminjaman->hasMorePages())
+                <li><a href="{{ $peminjaman->nextPageUrl() }}" rel="next"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></a></li>
+            @else
+                <li class="disabled"><span><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></span></li>
+            @endif
+        </ul>
+        <p class="pg-info">Menampilkan {{ $peminjaman->firstItem() }}–{{ $peminjaman->lastItem() }} dari {{ $peminjaman->total() }} data peminjaman</p>
+    </nav>
+    @endif
 @endsection
 
 @section('scripts')

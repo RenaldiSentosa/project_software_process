@@ -26,16 +26,6 @@ services:
     networks:
       - laravel_network
 
-  # Mailpit (Alat testing email lokal)
-  mailpit:
-    image: 'axllent/mailpit:latest'
-    container_name: laravel_mailpit_sp
-    ports:
-      - "${FORWARD_MAILPIT_PORT:-1025}:1025" # SMTP port
-      - "${FORWARD_MAILPIT_DASHBOARD_PORT:-8025}:8025" # Web Dashboard
-    networks:
-      - laravel_network
-
   # PHP 8.4 & Web Server Service
   app:
     build:
