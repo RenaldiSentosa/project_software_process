@@ -231,29 +231,27 @@
         <p>Jelajahi peralatan lab yang tersedia dan tambahkan ke keranjang peminjaman.</p>
     </div>
 
-    @php
-        $kategoriList = isset($tools) ? $tools->pluck('kategori')->unique()->filter()->sort()->values() : collect();
-    @endphp
-
+    {{-- Kategori List sudah dikirim dari backend, tidak dioverride lagi --}}
     {{-- Toolbar Filter & Cari --}}
-    <div class="toolbar">
+    <form action="{{ route('mahasiswa.katalog') }}" method="GET" class="toolbar">
         <div class="search-wrap">
-            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <input type="text" id="searchInput" placeholder="Cari alat berdasarkan nama..." oninput="filterAlat()">
+            <button type="submit" style="background:none;border:none;padding:0;cursor:pointer;display:flex;align-items:center;">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
+            <input type="text" name="q" id="search_q" placeholder="Cari alat (Tekan Enter)..." value="{{ request('q') }}">
         </div>
         <div class="select-wrap">
-            <select id="kategoriSelect" onchange="filterAlat()">
-                <option value="semua">Semua Kategori</option>
+            <select name="kategori" id="kategoriSelect" onchange="this.form.submit()">
+                <option value="">Semua Kategori</option>
                 @foreach($kategoriList as $kat)
-                    <option value="{{ strtolower($kat) }}">{{ $kat }}</option>
+                    <option value="{{ $kat }}" {{ request('kategori') == $kat ? 'selected' : '' }}>{{ $kat }}</option>
                 @endforeach
             </select>
             <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
-        <button class="btn-filter" onclick="filterAlat()">Filter</button>
-    </div>
+    </form>
 
-    <p class="count-label">Menampilkan <span id="countLabel">0</span> alat</p>
+    <p class="count-label">Menampilkan <span>{{ $tools->total() }}</span> alat</p>
 
     {{-- Grid Card Alat --}}
     <div class="grid" id="alatGrid">
@@ -385,8 +383,7 @@
 
 @section('scripts')
 <script>
-    document.addEventListener("DOMContentLoaded", function() { filterAlat(); });
-
+    // (Removed filterAlat call)
     async function tambahKeranjangAjax(event, form, namaAlat) {
         event.preventDefault();
 
@@ -437,28 +434,5 @@
         }
     }
 
-    function filterAlat() {
-        const keyword  = document.getElementById('searchInput').value.toLowerCase();
-        const kategori = document.getElementById('kategoriSelect').value.toLowerCase();
-        const cards    = document.querySelectorAll('#alatGrid .card');
-        let count = 0;
-
-        cards.forEach(card => {
-            const nama = card.dataset.nama;
-            const kat  = card.dataset.kategori;
-            const matchNama = nama.includes(keyword);
-            const matchKat  = kategori === 'semua' || kat === kategori;
-
-            if (matchNama && matchKat) {
-                card.style.setProperty('display', '', 'important');
-                count++;
-            } else {
-                card.style.display = 'none';
-            }
-        });
-
-        const countLabel = document.getElementById('countLabel');
-        if (countLabel) countLabel.textContent = count;
-    }
 </script>
 @endsection

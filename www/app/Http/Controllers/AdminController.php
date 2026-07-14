@@ -152,9 +152,12 @@ class AdminController extends Controller
 
         $query = Tool::query();
 
-        if ($request->has('q') && $request->q != '') {
-            $query->where('nama_alat', 'like', '%' . $request->q . '%')
-                  ->orWhere('kode_alat', 'like', '%' . $request->q . '%');
+        if ($request->has('q') && trim($request->q) != '') {
+            $q = trim($request->q);
+            $query->where(function($query) use ($q) {
+                $query->where('nama_alat', 'like', '%' . $q . '%')
+                      ->orWhere('kode_alat', 'like', '%' . $q . '%');
+            });
         }
 
         if ($request->has('kategori') && $request->kategori != '') {
@@ -165,7 +168,7 @@ class AdminController extends Controller
             $query->where('status_alat', $request->status);
         }
 
-        $alatList = $query->paginate(10);
+        $alatList = $query->paginate(10)->withQueryString();
 
         return view('admin.manajemen-alat', compact(
             'alatList', 'statusTersedia', 'statusDipinjam', 'statusRusak', 'statusPerbaikan'

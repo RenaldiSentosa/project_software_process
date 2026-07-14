@@ -101,9 +101,13 @@
                         <div class="item-left">
                             <div class="image">
                                 @if(isset($details['foto_alat']) && $details['foto_alat'])
-                                    <img src="{{ asset('storage/' . $details['foto_alat']) }}" alt="{{ $details['nama_alat'] }}">
+                                    @php
+                                        $foto = str_starts_with($details['foto_alat'], 'alat/') ? $details['foto_alat'] : 'alat/' . $details['foto_alat'];
+                                    @endphp
+                                    <img src="{{ asset('storage/' . $foto) }}" alt="{{ $details['nama_alat'] }}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                    <svg viewBox="0 0 24 24" style="display:none; width: 28px; height: 28px; color: #9ca3af; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                                 @else
-                                    📡
+                                    <svg viewBox="0 0 24 24" style="width: 28px; height: 28px; color: #9ca3af; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
                                 @endif
                             </div>
                             <div>

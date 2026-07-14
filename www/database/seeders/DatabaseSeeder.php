@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Models\Tool;
+
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -56,28 +56,10 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Seed some Tools
-        Tool::updateOrCreate(
-            ['kode_alat' => 'BB400'],
-            [
-                'nama_alat' => 'Breadboard 400 Holes',
-                'kategori' => 'Komponen Dasar',
-                'stok_total' => 50,
-                'stok_tersedia' => 50,
-                'status_alat' => 'Tersedia'
-            ]
-        );
 
-        Tool::updateOrCreate(
-            ['kode_alat' => 'UNO-R3'],
-            [
-                'nama_alat' => 'Arduino Uno R3',
-                'kategori' => 'Microcontroller',
-                'stok_total' => 20,
-                'stok_tersedia' => 20,
-                'status_alat' => 'Tersedia'
-            ]
-        );
+
+        // Memanggil ToolSeeder untuk mengisi data alat dari Excel
+        $this->call(ToolSeeder::class);
 
         // Memanggil DummySeeder untuk mengisi tabel lainnya agar tidak kosong
         $this->call(DummySeeder::class);

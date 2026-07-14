@@ -41,16 +41,19 @@ class MahasiswaController extends Controller
     {
         $query = Tool::query();
         
-        if ($request->has('q')) {
-            $query->where('nama_alat', 'like', '%' . $request->q . '%')
-                  ->orWhere('kode_alat', 'like', '%' . $request->q . '%');
+        if ($request->has('q') && trim($request->q) != '') {
+            $q = trim($request->q);
+            $query->where(function($query) use ($q) {
+                $query->where('nama_alat', 'like', '%' . $q . '%')
+                      ->orWhere('kode_alat', 'like', '%' . $q . '%');
+            });
         }
         
         if ($request->has('kategori') && $request->kategori != '') {
             $query->where('kategori', $request->kategori);
         }
 
-        $tools = $query->paginate(12);
+        $tools = $query->paginate(12)->withQueryString();
         
         $kategoriList = Tool::select('kategori')->distinct()->pluck('kategori')->filter();
 

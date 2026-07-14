@@ -56,10 +56,15 @@ Route::middleware(['auth'])->group(function () {
         }
         return redirect('/mahasiswa/dashboard');
     })->name('dashboard');
-    Route::get('/katalog', [MahasiswaController::class, 'katalog'])->name('katalog');
+    Route::get('/katalog', function (\Illuminate\Http\Request $request) {
+        return redirect('/mahasiswa/katalog' . ($request->getQueryString() ? '?' . $request->getQueryString() : ''));
+    })->name('katalog');
 
     Route::prefix('mahasiswa')->name('mahasiswa.')->group(function () {
         Route::get('/dashboard', [MahasiswaController::class, 'dashboard'])->name('dashboard');
+        Route::get('/katalog-alat', function (\Illuminate\Http\Request $request) {
+            return redirect('/mahasiswa/katalog' . ($request->getQueryString() ? '?' . $request->getQueryString() : ''));
+        });
         Route::get('/katalog', [MahasiswaController::class, 'katalog'])->name('katalog');
         Route::get('/keranjang', [CartController::class, 'index'])->name('keranjang');
         Route::get('/peminjaman', [BorrowingController::class, 'index'])->name('peminjaman');
