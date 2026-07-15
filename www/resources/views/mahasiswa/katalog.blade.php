@@ -44,12 +44,11 @@
     .search-wrap input::placeholder { color: #9ca3af; }
 
     .select-wrap {
+        position: relative;
         display: flex;
         align-items: center;
-        gap: 6px;
         border: 1px solid #e5e7eb;
         border-radius: 10px;
-        padding: 0 12px;
         height: 38px;
         background: #fff;
         cursor: pointer;
@@ -64,11 +63,26 @@
         color: #374151;
         cursor: pointer;
         appearance: none;
-        padding-right: 4px;
-        max-width: 180px;
+        padding: 0 32px 0 12px;
+        width: 100%;
+        height: 100%;
     }
 
-    .select-wrap svg { width: 14px; height: 14px; color: #9ca3af; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+    .select-wrap svg { 
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 14px; 
+        height: 14px; 
+        color: #9ca3af; 
+        fill: none; 
+        stroke: currentColor; 
+        stroke-width: 2; 
+        stroke-linecap: round; 
+        stroke-linejoin: round; 
+        pointer-events: none; 
+    }
 
     .btn-filter {
         height: 38px;
@@ -351,12 +365,20 @@
                 </li>
             @endif
 
-            {{-- Nomor halaman --}}
-            @foreach ($tools->getUrlRange(1, $tools->lastPage()) as $page => $url)
-                @if ($page == $tools->currentPage())
-                    <li class="active"><span>{{ $page }}</span></li>
+            {{-- Pagination Elements --}}
+            @php
+                $links = $tools->linkCollection()->toArray();
+                array_shift($links); // Hapus tombol prev bawaan
+                array_pop($links);   // Hapus tombol next bawaan
+            @endphp
+            
+            @foreach ($links as $link)
+                @if ($link['url'] === null && $link['label'] === '...')
+                    <li class="disabled"><span>...</span></li>
+                @elseif ($link['active'])
+                    <li class="active"><span>{!! $link['label'] !!}</span></li>
                 @else
-                    <li><a href="{{ $url }}">{{ $page }}</a></li>
+                    <li><a href="{{ $link['url'] }}">{!! $link['label'] !!}</a></li>
                 @endif
             @endforeach
 

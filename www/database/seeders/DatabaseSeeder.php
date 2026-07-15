@@ -60,6 +60,8 @@ class DatabaseSeeder extends Seeder
 
         // Memanggil ToolSeeder untuk mengisi data alat dari Excel
         $this->call(ToolSeeder::class);
+        $this->call(BidanToolSeeder::class);
+        $this->call(BidanItemSeeder::class);
 
         // Memanggil DummySeeder untuk mengisi tabel lainnya agar tidak kosong
         $this->call(DummySeeder::class);

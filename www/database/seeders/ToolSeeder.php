@@ -1238,7 +1238,7 @@ class ToolSeeder extends Seeder
                 'stok_tersedia' => 4,
                 'status_alat' => 'Tersedia',
                 'lokasi' => 'Workshop IT',
-                'foto_alat' => 'alat/alat_Tools20nov_103.png'
+                'foto_alat' => 'alat/flux_solder.png'
             ]
         );
 
@@ -1252,7 +1252,7 @@ class ToolSeeder extends Seeder
                 'stok_tersedia' => 4,
                 'status_alat' => 'Tersedia',
                 'lokasi' => 'Workshop IT',
-                'foto_alat' => null
+                'foto_alat' => 'alat/sedot_timah.png'
             ]
         );
 
