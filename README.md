@@ -10,7 +10,6 @@ IPWIJA SmartLab adalah Sistem Informasi Laboratorium untuk mengelola inventaris 
 - **Database:** MySQL
 - **Automation/Webhook:** n8n (Menjalankan email automation)
 - **Containerization:** Docker & Docker Compose (Mempermudah setup local & production)
-- **Testing Mail (Dev):** (Tidak digunakan, email via n8n)
 
 ---
 
