@@ -10,7 +10,7 @@ IPWIJA SmartLab adalah Sistem Informasi Laboratorium untuk mengelola inventaris 
 - **Database:** MySQL
 - **Automation/Webhook:** n8n (Menjalankan email automation)
 - **Containerization:** Docker & Docker Compose (Mempermudah setup local & production)
-- **Testing Mail (Dev):** Mailpit
+- **Testing Mail (Dev):** (Tidak digunakan, email via n8n)
 
 ---
 
@@ -38,7 +38,7 @@ Buka terminal di direktori utama proyek (tempat file `docker-compose.yml` berada
 ```bash
 docker-compose up -d --build
 ```
-Perintah ini akan men-download *image* yang diperlukan (MySQL, Redis, Mailpit, dll), membangun *image* aplikasi, dan menjalankan semua container di latar belakang (*detached mode*).
+Perintah ini akan men-download *image* yang diperlukan (MySQL, Redis, dll), membangun *image* aplikasi, dan menjalankan semua container di latar belakang (*detached mode*).
 
 ### 4. Setup Laravel (Dependencies & Database)
 Masuk ke container dan jalankan setup standar Laravel:
@@ -101,7 +101,7 @@ Sistem ini menggunakan n8n untuk mengirim email otomatis ketika ada peminjaman, 
 Setelah semua berhasil berjalan, berikut adalah daftar akses layanan Anda:
 
 - **Aplikasi Web (Laravel):** [http://localhost:8000](http://localhost:8000)
-- **Mailpit (Dashboard Email Lokal):** [http://localhost:8025](http://localhost:8025) *(Digunakan jika email di route via Mailpit)*
+
 - **n8n Webhook Dashboard:** [http://localhost:5678](http://localhost:5678)
 
 ### Akun Login Default (Seeder)
