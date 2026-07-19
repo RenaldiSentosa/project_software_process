@@ -177,7 +177,7 @@ body { font-family: 'Inter', sans-serif; background-color: #F8FAFC; }
      class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-sm opacity-0 flex items-center justify-center p-4 transition-opacity duration-300">
     <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden scale-95 transition-transform duration-300 max-h-[92vh] flex flex-col">
         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
-            <h3 class="font-bold text-slate-800 text-sm">Tambah Alat Baru</h3>
+            <h3 class="font-bold text-slate-800 text-sm">Tambah Barang Baru</h3>
             <button onclick="toggleModal('modal-tambah')"
                     class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition">
                 <i class="fa-solid fa-xmark"></i>

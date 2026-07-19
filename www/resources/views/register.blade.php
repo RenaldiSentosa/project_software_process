@@ -485,6 +485,7 @@
                             <option value="Teknik Informatika">Teknik Informatika</option>
                             <option value="Rekayasa Perangkat Lunak">Rekayasa Perangkat Lunak (RPL)</option>
                             <option value="Sistem Informasi">Sistem Informasi</option>
+                            <option value="Kebidanan">Kebidanan</option>
                         </select>
                         <svg class="ico" viewBox="0 0 24 24" style="stroke:#9ca3af; flex-shrink:0;">
                             <polyline points="6 9 12 15 18 9"/>
