@@ -61,6 +61,12 @@ docker exec -i laravel_db_sp mysql -u user_laravel -psecret_password laravel_sp 
 ```
 *(Alternatif jika Anda hanya ingin data kosong/dummy awal: jalankan `docker exec -it laravel_app_sp php artisan migrate:fresh --seed`)*
 
+**Tautkan Storage (Untuk Menampilkan Gambar Alat):**
+Agar gambar-gambar katalog alat yang tersimpan bisa diakses oleh *browser*, Anda harus membuat *symlink* dengan perintah berikut:
+```bash
+docker exec -it laravel_app_sp php artisan storage:link
+```
+
 **Perbaiki Hak Akses Folder (Jika diperlukan):**
 Jika Anda menemui masalah *"permission denied"* (misalnya file log atau cache tidak bisa ditulis), jalankan:
 ```bash
