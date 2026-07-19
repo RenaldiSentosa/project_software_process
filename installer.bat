@@ -28,12 +28,12 @@ echo [5/5] Finalisasi di dalam Container...
 timeout /t 5
 
 :: Menjalankan perintah Laravel di dalam container
-docker exec laravel_app composer install
-docker exec laravel_app php artisan key:generate
-docker exec laravel_app php artisan migrate --force
+docker exec laravel_app_sp composer install
+docker exec laravel_app_sp php artisan key:generate
+docker exec laravel_app_sp php artisan migrate --force
 
 echo ---------------------------------------------------
 echo Setup Selesai! 
-echo Cek Dashboard Docker Desktop untuk container: laravel_app & laravel_db
+echo Cek Dashboard Docker Desktop untuk container: laravel_app_sp & laravel_db_sp
 echo ---------------------------------------------------
 pause
