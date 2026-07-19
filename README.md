@@ -6,7 +6,7 @@ IPWIJA SmartLab adalah Sistem Informasi Laboratorium untuk mengelola inventaris 
 
 ## Arsitektur & Lingkungan
 
-- **Web Framework:** Laravel 10/11
+- **Web Framework:** Laravel 13
 - **Database:** MySQL
 - **Automation/Webhook:** n8n (Menjalankan email automation)
 - **Containerization:** Docker & Docker Compose (Mempermudah setup local & production)
