@@ -1,0 +1,146 @@
+[
+    {
+        "updatedAt": "2026-07-15T06:28:28.000Z",
+        "createdAt": "2026-07-09T15:26:59.391Z",
+        "id": "5BVtDygJQ9I0dIsc",
+        "name": "My workflow",
+        "description": null,
+        "active": true,
+        "isArchived": false,
+        "nodes": [
+            {
+                "parameters": {
+                    "httpMethod": "POST",
+                    "path": "c30ceb14-6917-4c48-93ed-e527da9b958e",
+                    "options": {}
+                },
+                "type": "n8n-nodes-base.webhook",
+                "typeVersion": 2.1,
+                "position": [
+                    0,
+                    0
+                ],
+                "id": "1890a27c-eb21-43ec-a0a4-bfa4a18b6b51",
+                "name": "Webhook",
+                "webhookId": "c30ceb14-6917-4c48-93ed-e527da9b958e"
+            },
+            {
+                "parameters": {
+                    "assignments": {
+                        "assignments": [
+                            {
+                                "id": "fbab6474-ccd0-469b-aa75-3db406e704a4",
+                                "name": "email_tujuan",
+                                "value": "={{ $json.body.target_email }}",
+                                "type": "string"
+                            },
+                            {
+                                "id": "0799aa70-fa38-47ea-aa68-ec0b4b42a05a",
+                                "name": "judul_email",
+                                "value": "={{ $json.body.tool_name }}",
+                                "type": "string"
+                            },
+                            {
+                                "id": "428c4db3-3fd3-42ee-9df2-5261f3a94809",
+                                "name": "isi_pesan",
+                                "value": "={{ $json.body.email_body_html }}",
+                                "type": "string"
+                            }
+                        ]
+                    },
+                    "options": {}
+                },
+                "type": "n8n-nodes-base.set",
+                "typeVersion": 3.4,
+                "position": [
+                    208,
+                    0
+                ],
+                "id": "2bf49c26-e69a-4e7f-923d-cf12ed37ae7b",
+                "name": "Edit Fields"
+            },
+            {
+                "parameters": {
+                    "sendTo": "={{ $json.email_tujuan }}",
+                    "subject": "={{ $json.judul_email }}",
+                    "message": "={{ $json.isi_pesan }}",
+                    "options": {}
+                },
+                "type": "n8n-nodes-base.gmail",
+                "typeVersion": 2.2,
+                "position": [
+                    400,
+                    0
+                ],
+                "id": "e485598a-4996-401e-84af-237bd8b9dc7e",
+                "name": "Send a message",
+                "webhookId": "e21cff02-0f71-4bc8-a3e2-47658050d16a"
+            }
+        ],
+        "connections": {
+            "Webhook": {
+                "main": [
+                    [
+                        {
+                            "node": "Edit Fields",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Edit Fields": {
+                "main": [
+                    [
+                        {
+                            "node": "Send a message",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            }
+        },
+        "settings": {
+            "executionOrder": "v1",
+            "binaryMode": "separate",
+            "availableInMCP": true
+        },
+        "staticData": null,
+        "meta": {
+            "templateCredsSetupCompleted": true
+        },
+        "nodeGroups": [],
+        "pinData": {},
+        "versionId": "37dd2e54-ba2b-4242-9380-917e9f99efaa",
+        "activeVersionId": "37dd2e54-ba2b-4242-9380-917e9f99efaa",
+        "versionCounter": 61,
+        "triggerCount": 1,
+        "sourceWorkflowId": null,
+        "tags": [],
+        "shared": [
+            {
+                "updatedAt": "2026-07-09T15:26:59.393Z",
+                "createdAt": "2026-07-09T15:26:59.393Z",
+                "role": "workflow:owner",
+                "workflowId": "5BVtDygJQ9I0dIsc",
+                "projectId": "qln5FyGVO1ZU9ILs",
+                "project": {
+                    "updatedAt": "2026-07-22T06:33:32.896Z",
+                    "createdAt": "2026-07-09T15:25:45.142Z",
+                    "id": "qln5FyGVO1ZU9ILs",
+                    "name": "User <user@example.com>",
+                    "type": "personal",
+                    "icon": null,
+                    "description": null,
+                    "customTelemetryTags": [],
+                    "creatorId": "1ec0ddd8-d9de-48b8-a09e-a12e5d77f4eb"
+                }
+            }
+        ],
+        "versionMetadata": {
+            "name": "Version 37dd2e54",
+            "description": ""
+        }
+    }
+]

@@ -54,11 +54,12 @@ docker exec -it laravel_app_sp composer install
 docker exec -it laravel_app_sp php artisan key:generate
 ```
 
-**Jalankan Migration & Database Seeder:**
-Langkah ini akan membuat tabel-tabel di database beserta data dummy/inisial.
+**Import Database Komplit (Rekomendasi):**
+Agar Anda mendapatkan database komplit (dengan 100+ katalog alat asli, barang, dan akun), gunakan file `database_full_terbaru.sql` untuk mengimpor seluruh data secara instan:
 ```bash
-docker exec -it laravel_app_sp php artisan migrate:fresh --seed
+docker exec -i laravel_db_sp mysql -u user_laravel -psecret_password laravel_sp < database_full_terbaru.sql
 ```
+*(Alternatif jika Anda hanya ingin data kosong/dummy awal: jalankan `docker exec -it laravel_app_sp php artisan migrate:fresh --seed`)*
 
 **Perbaiki Hak Akses Folder (Jika diperlukan):**
 Jika Anda menemui masalah *"permission denied"* (misalnya file log atau cache tidak bisa ditulis), jalankan:
@@ -70,15 +71,12 @@ docker exec -u root laravel_app_sp chmod -R 777 /var/www/html/storage /var/www/h
 Sistem ini menggunakan n8n untuk mengirim email otomatis ketika ada peminjaman, persetujuan, atau penolakan alat.
 
 1. Buka n8n di komputer lokal Anda: [http://localhost:5678](http://localhost:5678)
-2. Buat Workflow baru dengan struktur node: **Webhook Node ➔ Edit Fields Node ➔ Send Email Node**.
+2. **Impor Workflow:** Buat Workflow baru, lalu buka menu *Options* (icon tiga titik di pojok kanan atas) -> **Import from File**. Pilih file `My_workflow.json` yang ada di direktori utama proyek. Semua node akan otomatis terkonfigurasi.
 3. Konfigurasi **Webhook Node**:
-   - URL Path: Samakan dengan yang ada di `N8N_WEBHOOK_URL` file `.env` Laravel.
-   - Method: POST
-4. Konfigurasi **Edit Fields Node**:
-   - Petakan data dari webhook JSON body ke variabel yang lebih mudah, misal: `email_tujuan` (mengambil dari `target_email`), `nama_mahasiswa`, dll.
-5. Konfigurasi **Send Email Node**:
-   - Gunakan Credentials Gmail (menggunakan SMTP dan App Password Gmail).
-   - Set "To" ke expression dari node sebelumnya.
+   - Buka node Webhook, pastikan URL Path-nya sama dengan `N8N_WEBHOOK_URL` di file `.env` Laravel.
+4. Konfigurasi Kredensial **Gmail**:
+   - Klik pada node Gmail ("Send a message").
+   - Pada bagian *Credential for Gmail API*, pilih *Create New Credential* dan sambungkan akun Gmail Anda mengikuti instruksi OAuth2 n8n agar bisa mengirimkan email notifikasi.
 6. **Testing**: 
    - Klik **"Listen for test event"** pada Webhook node di n8n.
    - Buat peminjaman / update status peminjaman di aplikasi Laravel.
