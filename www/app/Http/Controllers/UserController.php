@@ -33,7 +33,7 @@ class UserController extends Controller
 
         /** @var User $user */
         $user = Auth::user();
-        $user->password = Hash::make($request->password);
+        $user->password = bcrypt($request->password);
         $user->save();
 
         \App\Models\Auditlog::create([

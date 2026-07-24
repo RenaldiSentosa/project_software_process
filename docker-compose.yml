@@ -59,10 +59,27 @@ services:
       - NODE_ENV=production
       - WEBHOOK_URL=http://localhost:5678/
       - GENERIC_TIMEZONE=Asia/Jakarta
+      - N8N_USER_MANAGEMENT_DISABLED=true
     volumes:
       - n8n_data:/home/node/.n8n
     networks:
       - laravel_network
+
+  # Laravel Scheduler Service (Pengecek Jadwal Otomatis)
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel_scheduler_sp
+    restart: always
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./www:/var/www/html
+    networks:
+      - laravel_network
+    command: php artisan schedule:work
 
 networks:
   laravel_network:

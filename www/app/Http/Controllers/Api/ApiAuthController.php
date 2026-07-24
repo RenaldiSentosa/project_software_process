@@ -73,7 +73,7 @@ class ApiAuthController extends Controller
             'nama_lengkap'  => $request->nama_lengkap,
             'nim'           => $request->nim,
             'email'         => $request->email,
-            'password'      => Hash::make($request->password),
+            'password'      => bcrypt($request->password),
             'role'          => 'mahasiswa',
             'program_studi' => $request->program_studi,
             'is_active'     => 0,

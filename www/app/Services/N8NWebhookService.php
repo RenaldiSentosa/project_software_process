@@ -60,7 +60,7 @@ class N8NWebhookService
                 $color = '#10b981'; // green
                 $rgbaColor = 'rgba(16, 185, 129, 0.1)';
             }
-            if ($event === 'borrowing.rejected') {
+            if ($event === 'borrowing.rejected' || $event === 'borrowing.overdue') {
                 $color = '#ef4444'; // red
                 $rgbaColor = 'rgba(239, 68, 68, 0.1)';
             }
@@ -68,10 +68,10 @@ class N8NWebhookService
             // 2. Buat Template Email HTML yang sangat menarik & responsif
             $adminNoteHtml = '';
             if (!empty($borrowing->catatan_admin)) {
-                $noteColor = $event === 'borrowing.rejected' ? '#fef2f2' : '#fffbeb';
-                $noteBorderColor = $event === 'borrowing.rejected' ? '#ef4444' : '#f59e0b';
-                $noteTitleColor = $event === 'borrowing.rejected' ? '#991b1b' : '#92400e';
-                $noteTextColor = $event === 'borrowing.rejected' ? '#b91c1c' : '#b45309';
+                $noteColor = ($event === 'borrowing.rejected' || $event === 'borrowing.overdue') ? '#fef2f2' : '#fffbeb';
+                $noteBorderColor = ($event === 'borrowing.rejected' || $event === 'borrowing.overdue') ? '#ef4444' : '#f59e0b';
+                $noteTitleColor = ($event === 'borrowing.rejected' || $event === 'borrowing.overdue') ? '#991b1b' : '#92400e';
+                $noteTextColor = ($event === 'borrowing.rejected' || $event === 'borrowing.overdue') ? '#b91c1c' : '#b45309';
 
                 $adminNoteHtml = "
                 <div style='background-color: {$noteColor}; border-left: 4px solid {$noteBorderColor}; padding: 16px 20px; margin-bottom: 25px; border-radius: 4px 8px 8px 4px;'>
@@ -96,7 +96,7 @@ class N8NWebhookService
                                 
                                 <!-- Header -->
                                 <tr>
-                                    <td align='center' style='background: linear-gradient(135deg, {$color} 0%, " . ($event === 'borrowing.approved' ? '#059669' : ($event === 'borrowing.rejected' ? '#dc2626' : '#2563eb')) . " 100%); padding: 40px 30px;'>
+                                    <td align='center' style='background: linear-gradient(135deg, {$color} 0%, " . ($event === 'borrowing.approved' ? '#059669' : (($event === 'borrowing.rejected' || $event === 'borrowing.overdue') ? '#dc2626' : '#2563eb')) . " 100%); padding: 40px 30px;'>
                                         <h1 style='color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;'>IPWIJA SmartLab</h1>
                                         <p style='color: rgba(255,255,255,0.9); margin: 10px 0 0 0; font-size: 16px; font-weight: 500;'>Notifikasi Sistem Peminjaman</p>
                                     </td>

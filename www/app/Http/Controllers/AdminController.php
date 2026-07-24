@@ -1012,7 +1012,7 @@ class AdminController extends Controller
             'name'          => $request->name,
             'nama_lengkap'  => $request->name,
             'email'         => $request->email,
-            'password'      => \Illuminate\Support\Facades\Hash::make($request->password),
+            'password'      => bcrypt($request->password),
             'role'          => strtolower($request->role),
             'nim'           => $request->nim,
             'program_studi' => $request->program_studi,
@@ -1054,7 +1054,7 @@ class AdminController extends Controller
         ]);
 
         if ($request->filled('password')) {
-            $user->update(['password' => \Illuminate\Support\Facades\Hash::make($request->password)]);
+            $user->update(['password' => bcrypt($request->password)]);
         }
 
         $this->log(

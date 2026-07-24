@@ -134,7 +134,7 @@ class AuthController extends Controller
             'nama_lengkap'  => $request->nama_lengkap,
             'nim'           => $request->nim,
             'email'         => $email,
-            'password'      => Hash::make($request->password),
+            'password'      => bcrypt($request->password),
             'role'          => $role === 'dosen' ? 'dosen' : 'mahasiswa',
             'program_studi' => $request->program_studi,
             'is_active'     => 1,
